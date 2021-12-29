@@ -5,82 +5,160 @@
 
 .. contents::
 
+Introduction
+============
+
+This package contains a collection of tools developed for some specific simulation and calculus tasks
+in the fields of cold plasma processes and thin-film characterization.
+
+
 Package structure
 =================
 
+In the following, the modules and subpackages are listed.  Additional documentation is available in the docstrings.
 
-List of modules in the main package
------------------------------------
 
-*constants*
-    some physical constants used in various modules and packages
-*parameters*
-    some parameters used in various modules and packages
+constants (module)
+------------------
 
-    
-List of Sub-packages in the main package
-----------------------------------------
+Contains some physical constants used in various modules and packages.
 
-*analysis*
-    some modules which can be helpful to manage distribution functions and data histograms
-*fortran*
-    some general purpose modules compiled from Fortran using f2py
-*functions*
-    some general purpose functions    
-*io*
-    some tools for input-output management    
-*managers*
-    some modules and packages used to manage input/output of data from/to ascii files
-    to print physical quantities managing the unit prefixes
-    and to plot data by means of the gnuplot program
-*plasmapro*
-    a package containing tools for the simulation of plasma discharges
-    
+
+parameters (module)
+-------------------
+
+Contains some parameters used in various modules and packages.
 
     
-analysis
---------
-*univariate*
+analysis (package)
+------------------
 
-*bivariate*
+Contains some modules to manage distribution functions and data histograms.
 
-*spectra*
+*univariate (module)*
+  tools for the statistical analysis of univariate samples;
 
+*bivariate (module)*
+  tools for the statistical analysis of bivariate samples;
 
-
-
-functions
----------
-
-*physics*
-    functions used to calculate or convert some physical quantities
-*optical*
-    functions for analysis of the optical properties of thin films (absorption, reflection)
-*mathematics*
-    functions used to calculate averages, derivatives and other calculations
-*pdf*
-    collection of probability distribution functions used in the package
-*statistics*
-    some statistical tools
+*spectra (module)*
+  tools for the analysis of different types of spectra, whith a special focus on:
+    - optical data (e.g. transmission spectra) of thin films;
+    - surface morphology data (e.g. surface roughness analysis).
 
 
-fortran
--------
-*fmatehmatics*
-    mathematical functions written in Fortran: weighted average
+fortran (package)
+-----------------
+
+Contains some general purpose modules compiled from Fortran using f2py.
 
 
-io 
----
+*fmathematics (module)*
+  contains some general purpose mathematical functions used in other modules and
+  compiled from fortran to improve speed.
+
+  
+functions (package)
+-------------------
+
+Contains some general purpose functions.
 
 
-managers
---------
+io (package)
+------------
+
+Contains some tools for input-output management.
 
 
-plasmapro
----------
+*io_files (module)*
+  contains some tools to operate on files;
 
+
+*io_screen (module)*
+  contains some tools to operate on the screen.
+
+
+managers (package)
+------------------
+
+Contains some modules and packages used to manage input/output of data from/to ascii files,
+to print physical quantities managing the unit prefixes, and to plot data by means of the *gnuplot* program.
+
+*data_manager (module)*
+  tools to manage data reading and writing from files;
+
+
+*unit_manager (module)*
+  tools to manage the output of numerical data with automatic managment of unit prefixies;
+
+
+*gnuplot_manager (package)*
+  a package to facilitate the use of gnuplo inside python [#gnuplot_manager]_.
+
+
+.. [#gnuplot_manager] *gnuplot_manager* is also available as a standalone package (without the rest of *pysica*) on
+  `GitHub <https://github.com/pietromandracci/gnuplot_manager>`_  and
+  `PyPi <https://pypi.org/project/gnuplot-manager>`_.
+
+
+plasmapro (package)
+-------------------
+
+A package containing tools for the simulation of plasma discharges.
+
+*ccpla*
+  a script to simulate a ccp cold plasma discharge by means of the PIC-MC (1d3v) technique;
+
+*ccpla_analysis*
+  a module containing tools to analyze the output data from *ccpla*.
+    
+
+Installing and importing *pysica*
+=================================
+
+How to install
+--------------
+
+*Pysica*
+is distribuited as a pypi wheel so, if you have *pip* installed on your system, you can simply type at the console::
+
+$ pip install pysica
+
+In Debian-related linux distributions you will have to install the package inside a python virtual environment, since the operative
+system doesn't allow *pip* to install software in the main file hierarchy.  You can find instructions on how to create
+a virtual environment `here <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_.
+
+.. note:: The package has been developed and tested for use in linux. Some subpackages could probably be used under other systems also,
+          but *they have not been tested on them* and there is no guarantee that they would work.
+
+.. note:: The modules compiled from Fortran are linux libraries ('*.so*' files): if you want to use them in another operating system you need to
+          recompile them using the *f2py* program and a Fortran compiler. The directories named *fortran* contain the Fortran source files,
+          the compiled modules and the scripts used for the compilation (the name of which always start with 'f2py'), but the options
+          used in the scripts to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ fortran compiler.
+
+
+How to import
+-------------
+
+Once installed, you can import *pysica* using the *import* directive as usual:
+
+>>> import pysica
+
+Or you can import a single mudule or package that you need, such as:
+
+>>> from pysica.managers import gnuplot_manager
+
+or
+
+>>> from pysica.analysis import spectra
+
+
+Dependancies
+------------
+
+This package depends heavily on *numpy* and *matplotlib*, while some specific modules and packages depend on *scipy* also.
+
+Some packages make use of the the *gnuplot* progam, but they should work also without it, although without some features. 
 
 
 
