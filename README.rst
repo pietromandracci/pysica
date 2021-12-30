@@ -1,7 +1,7 @@
 
-#################################################
-*PYSICA* PYthon tools for SImulation and CAlculus
-#################################################
+##################################################
+*PYSICA*: PYthon tools for SImulation and CAlculus
+##################################################
 
 .. contents::
 
@@ -95,7 +95,6 @@ to print physical quantities managing the unit prefixes, and to plot data by mea
 *gnuplot_manager (package)*
   a package to facilitate the use of gnuplo inside python [#gnuplot_manager]_.
 
-
 .. [#gnuplot_manager] *gnuplot_manager* is also available as a standalone package (without the rest of *pysica*) on
   `GitHub <https://github.com/pietromandracci/gnuplot_manager>`_  and
   `PyPi <https://pypi.org/project/gnuplot-manager>`_.
@@ -116,11 +115,21 @@ A package containing tools for the simulation of plasma discharges.
 Installing and importing *pysica*
 =================================
 
+
+Dependancies
+------------
+
+This package depends heavily on `numpy <https://numpy.org/>`_ and `matplotlib <https://matplotlib.org/>`_,
+while some specific modules and packages depend on `scipy <https://scipy.org/>`_ also.
+Some packages make use of `tkinter <https://docs.python.org/3/library/tkinter.html>`_
+and of the `gnuplot <http://www.gnuplot.info/>`_ progam, but they should work also without it,
+although without some features. 
+
+
 How to install
 --------------
 
-*Pysica*
-is distribuited as a pypi wheel so, if you have *pip* installed on your system, you can simply type at the console::
+*pysica* is distribuited as a pypi wheel so, if you have *pip* installed on your system, you can simply type at the console::
 
 $ pip install pysica
 
@@ -134,7 +143,7 @@ a virtual environment `here <https://packaging.python.org/en/latest/guides/insta
 .. note:: The modules compiled from Fortran are linux libraries ('*.so*' files): if you want to use them in another operating system you need to
           recompile them using the *f2py* program and a Fortran compiler. The directories named *fortran* contain the Fortran source files,
           the compiled modules and the scripts used for the compilation (the name of which always start with 'f2py'), but the options
-          used in the scripts to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ fortran compiler.
+          used in the scripts to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ Fortran compiler.
 
 
 How to import
@@ -153,12 +162,10 @@ or
 >>> from pysica.analysis import spectra
 
 
-Dependancies
-------------
+Documentation
+=============
 
-This package depends heavily on *numpy* and *matplotlib*, while some specific modules and packages depend on *scipy* also.
-
-Some packages make use of the the *gnuplot* progam, but they should work also without it, although without some features. 
-
+Documentation about the modules and packages is available in the docstrings.  Additional documentation can be found in the
+`doc <https://github.com/pietromandracci/pysica/doc>`_ directory of the *GitHub* repository.
 
 

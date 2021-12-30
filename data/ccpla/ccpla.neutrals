@@ -1,0 +1,27 @@
+#############################################
+# Neutral species and their characteristics #
+#############################################
+
+# Each line describes one type of neutral gas molecule/atom/radical
+# Lines starting with a '#' are comments and are not parsed.
+# To add/remove a molecule to/from the gas mixture remove/add the leading '#' from/to the line
+# Values on each line are separated by a tab character and represent, in the following order:
+# - neutral name: string of max 8 char
+# - type of molecule (single char): 'a' = atom, 'm' = nonpolar molecule, 'p' = polar molecule
+# - gas flow: any unit can be used (only flow ratios will be used), but it must be the same for every gas
+# - molecular mass [atomic mass units or Da]
+# - secondary emission coefficient
+# - first ionization energy [eV]
+# If the molecule is not monoatomic (the type is not 'a')
+# - number of available dissociation processes
+# - dissociation energies [eV]
+#
+
+# Ionization energy taken from NIST database
+Ar	a	10.0	40	0.001	15.759
+
+# Ionization energy taken from NIST database
+He	a	10.0	4	0.1	24.587
+
+# Ionization energy taken from NIST database
+O2	m	10.0	32	0.1	12.07	1	5.16
