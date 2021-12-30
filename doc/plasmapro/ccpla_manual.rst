@@ -67,7 +67,7 @@ Two plain ASCII files are needed for configuration:
 Additionaly, a set of *.csv* (comma separated value) files are needed, which contain cross-section data about the gases.
 
 A set of files for the simulation of He, Ar and O2 plasmas (or their mixtures) can be downloded from the 
-`data <https://github.com/pietromandracci/pysica/data/ccpla>`_ directory of the *pysica* *GitHub* repository.
+`data <https://github.com/pietromandracci/pysica/tree/master/data/ccpla>`_ directory of the *pysica* *GitHub* repository.
 You can copy them in the directory from which you want to run the script and then modify them at your will,
 as explained in the comments inside each file.
 

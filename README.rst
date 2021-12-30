@@ -93,7 +93,7 @@ to print physical quantities managing the unit prefixes, and to plot data by mea
 
 
 *gnuplot_manager (package)*
-  a package to facilitate the use of gnuplo inside python [#gnuplot_manager]_.
+  a package to facilitate the use of gnuplot inside python [#gnuplot_manager]_.
 
 .. [#gnuplot_manager] *gnuplot_manager* is also available as a standalone package (without the rest of *pysica*) on
   `GitHub <https://github.com/pietromandracci/gnuplot_manager>`_  and
@@ -166,6 +166,6 @@ Documentation
 =============
 
 Documentation about the modules and packages is available in the docstrings.  Additional documentation can be found in the
-`doc <https://github.com/pietromandracci/pysica/doc>`_ directory of the *GitHub* repository.
+`doc <https://github.com/pietromandracci/pysica/tree/master/doc>`_ directory of the *GitHub* repository.
 
 
