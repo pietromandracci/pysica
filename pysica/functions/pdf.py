@@ -173,9 +173,9 @@ def pdf_margenau_energy(e, B, M, E, w, l):
 
 
 def pdf_maxwell_speed(v, m, kt):
-    """ Maxwell probability distribution function for the particle velocity
+    """ Maxwell probability distribution function for the particle speed
 
-        f(e) = sqrt(2/pi * (m/kt)**3) * v**2 * exp(-m*v**2 / (2*kt))
+        f(v) = sqrt(2/pi * (m/kt)**3) * v**2 * exp(-m*v**2 / (2*kt))
 
         Parameters
         ----------
@@ -183,7 +183,7 @@ def pdf_maxwell_speed(v, m, kt):
         v:   speed
         m:   mass of the particle
         kt:  temperature in energy units 
-             (must be compatible to the ones used for v)
+             (must be compatible to the ones used for v and m)
 
         Returns
         -------
@@ -192,3 +192,45 @@ def pdf_maxwell_speed(v, m, kt):
     """
 
     return sqrt( 2/pi * (m/kt)**3 ) * v*v * exp(- m*v*v / (2*kt) )
+
+
+def pdf_maxwell_reduced(x):
+    """ Maxwell probability distribution function for the adimensional particle speed
+
+        f(x) = 4/sqrt(pi) * x**2 * exp(-x**2)
+
+        where x = 2/sqrt(pi) v / v_mean
+
+        Parameters
+        ----------
+ 
+        x:     adimensional speed x = 2/sqrt(pi) v / v_mean
+        Returns
+        -------
+
+        pdf_maxwell_reduced: value of the pdf
+    """
+    
+    return 4 / sqrt(pi) * x*x * exp(- x*x )
+
+
+def pdf_maxwell_velocity_component(vx, m, kt):
+    """ Maxwell probability distribution function for a component of the particle velocity vector
+
+        f(vx) = (m / (2*pi*kt))**1/2 * exp(-m*v**2 / (2*kt))
+
+        Parameters
+        ----------
+ 
+        vx:  component of the velocity vector
+        m:   mass of the particle
+        kt:  temperature in energy units 
+             (must be compatible to the ones used for v and m)
+
+        Returns
+        -------
+
+        pdf_maxwell_speed: value of the pdf
+    """
+
+    return sqrt(m / (2*pi*kt)) * exp(- m*vx*vx / (2*kt) )

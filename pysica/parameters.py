@@ -24,6 +24,8 @@
 PLOT_INTERFACE  = 'pylab'
 PLOT_SYMBOL     = '+'
 PLOT_COLOR      = 'red'
+PLOT_SYMBOLS    = [ '.',     'o',    '+',    'x',     '^',    'v',       '>',   '<',      'D'      ]
+N_PLOT_SYMBOLS  = len(PLOT_SYMBOLS)
 PLOT_COLORS     = [ 'black', 'grey', 'blue', 'green', 'cyan', 'magenta', 'red', 'orange', 'yellow' ]
 N_PLOT_COLORS   = len(PLOT_COLORS)
 FILL_COLOR      = 'grey'

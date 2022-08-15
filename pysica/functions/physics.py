@@ -35,6 +35,24 @@ from ..constants import *
 # | Physical functions |
 # +--------------------+
 
+def mean_speed_maxwell(temperature, mass):
+    """ Calculates the mean speed of the molecules in a gas at thermal equilibrium 
+
+        Parameters
+        ----------
+
+        temperature:    gas temperature / K
+        mass:           molecular mass / atomic units
+
+        Returns
+        -------
+
+        mean speed / m s**-1
+
+    """
+
+    return numpy.sqrt(8 * K_BOLTZMANN * temperature / (numpy.pi * mass * ATOMIC_UNIT_MASS))
+
 
 def number_density(pressure, temperature):
     """ Calculates the number density of a gas at given pressure and temperature.
@@ -51,7 +69,7 @@ def number_density(pressure, temperature):
         number density: numer density of gas molecules / m**-3
     """
 
-    return pressure / (K_BOLTZMANN*temperature)
+    return pressure / (K_BOLTZMANN * temperature)
 
 
 def pressure_conversion(pressure_in, unit_in, unit_out):

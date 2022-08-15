@@ -94,7 +94,7 @@ def exit_ccpla(message="Exiting program", gui=False, error=False):
 
 def print_message(message, gui=False, error=False):
     if gui:
-        create_message_window(message=message, error=error)
+        create_message_window(message, error)
     else:
         if error: message = 'ERROR: ' + message
         print('\n' + message + '\n')
@@ -168,7 +168,7 @@ parser.add_option("-d", "--debug-level-python", action="store", type="int", dest
                   default=debug_level_python, help=help_string)
 
 # Debug level for Fotran code
-help_string = "Fortran debug level [0..2] (default="+str(debug_level_fortran)+")"
+help_string = "Fortran debug level [0..3] (default="+str(debug_level_fortran)+")"
 parser.add_option("-D", "--debug-level-fortran", action="store", type="int", dest="debug_lev_for",
                   default=debug_level_fortran, help=help_string)        
         
@@ -197,8 +197,8 @@ if (cl_options.debug_lev not in list(range(3))):
     exit_ccpla('ERROR: Python debug level must be in range 0..2' + EOL,
                gui=cl_options.gui_mode, error=True)
     
-if (cl_options.debug_lev_for not in list(range(3))):
-    exit_ccpla('ERROR: Fortran debug level must be in range 0..2' + EOL,
+if (cl_options.debug_lev_for not in list(range(4))):
+    exit_ccpla('ERROR: Fortran debug level must be in range 0..3' + EOL,
                gui=cl_options.gui_mode, error=True)
     
 if cl_options.gui_mode:
@@ -268,7 +268,6 @@ cl_options.text_window_font = (TEXT_WINDOW_FONT_TYPE, str(cl_options.text_window
 if (not cl_options.gui_mode): print(GPL_MESSAGE)
 
 if (not cl_options.batch_mode): wait_input()
-
     
 
 # +-------------------------+
@@ -304,7 +303,7 @@ ccp = reactors.CcpProperties(parameters.distance,
 # | Load gas properties |
 # +---------------------+
 
-if (cl_options.verbosity > 0): print('\nDefining neutrals ensamble from file \"' + FILENAME_NEUTRALS + '\" ...')
+if (cl_options.verbosity > 0): print('\nCreating neutrals ensamble from file \"' + FILENAME_NEUTRALS + '\" ...')
 neutrals = target_particles.TargetParticles( parameters.N_sigma,
                                              parameters.N_sigma_ions,
                                              parameters.T_neutrals,
@@ -345,7 +344,7 @@ if (status != 0): exit_ccpla(message + EOL, gui=cl_options.gui_mode, error=True)
 
 # Define the ensamble of charged particles moving in the plasma: electrons and ions
 if (cl_options.verbosity > 0): print('\nDefining charged particles ensambles ...')
-charges = moving_particles.MovingParticles(neutrals.types+1, parameters.Nmax_particles, START_WEIGHT, parameters.rescale_factor)
+charges = moving_particles.MovingParticles(neutrals.types+1, parameters.Nmax_particles, parameters.start_weight, parameters.rescale_factor)
 
 (status, message) = initialize_ensambles(charges, neutrals, parameters, cl_options)
 if (status!=0): exit_ccpla(message + EOL, gui=cl_options.gui_mode, error=True)
@@ -391,9 +390,12 @@ if cl_options.print_only: exit_ccpla()
 # +--------------------------+
 
 if (parameters.save_delay > 0):
-    charges.initialize_savefiles(parameters.filename_stat_ele, parameters.filename_distrib_ele, parameters.filename_distrib_ion,
+    charges.initialize_savefiles(parameters.filename_stat_ele,
+                                 parameters.filename_distrib_ele,
+                                 parameters.filename_distrib_ion,
                                  append=False, sep='\t', ext=EXT)
     neutrals.initialize_savefile(parameters.filename_stat_neu, append=False, sep='\t', ext=EXT)
+    ccp.initialize_savefiles(parameters.filename_I, parameters.filename_V, append=False, sep='\t', ext=EXT)    
 
         
 # +----------------+
@@ -444,6 +446,7 @@ while (charges.n_active(0) > 0):
         if ( (i_save_data >= parameters.save_delay) and (charges.n_active(0) > 0) ):
             charges.save_data_to_files()
             neutrals.save_data_to_files(charges.time)
+            ccp.save_data_to_files(charges.time)
             i_save_data = 0
         i_save_data += 1
 

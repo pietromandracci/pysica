@@ -26,12 +26,164 @@ module f_scattering
 
 contains
 
-   subroutine scattering_3d(versorx1, versory1, versorz1, vx, vy, vz, v, &
-                           &sinthetacosphi_scatter, sinthetasinphi_scatter, costheta_scatter, &
-                           &debug)
 
-      ! Calculates the new components of velocity after collision in the laboratory frame of reference 
-      ! starting from the angles describing the new velocity in the frame of reference of old velocity
+   subroutine isotropic_scattering(vers_x, vers_y, vers_z, debug)
+
+      ! Calculates the scattering angles for a completely isotropic scattering process
+
+      !f2py intent(out) :: vers_x, vers_y, vers_z
+      !f2py intent(in)  :: debug
+
+      ! Parameters
+      real(dp), intent(out) :: vers_x   ! Projection on x axis of velocity vector after scattering (sinthetacosphi)
+      real(dp), intent(out) :: vers_y   ! Projection on y axis of velocity vector after scattering (sinthetasinphi)
+      real(dp), intent(out) :: vers_z   ! Projection on z axis of velocity vector after scattering (costheta)
+      logical,  intent(in)  :: debug    ! Set debug mode 
+
+      ! Local variables
+      real(dp) :: sintheta, phi !theta
+      real(sp) :: r1,r2             ! Random numbers in range [0,1]
+
+      if (debug) then
+         print *,""
+         print *,"**SUBROUTINE ISOTROPIC SCATTERING**"
+      endif
+
+      ! Calculate scattering angles and projections of scattered velocity versor
+      call random_number(r1)
+ 
+      vers_z = 2 * r1 - 1                    ! cos(theta) uniformly distribuited in range [-1,1]
+      sintheta = sqrt(1 - vers_z * vers_z)
+
+      call random_number(r2)                 ! phi uniformly distribuited in range [0,2*PI]
+      phi = 2 * PI * r2
+      
+      vers_x = sintheta * cos(phi)
+      vers_y = sintheta * sin(phi)
+
+      if (debug) then
+         print *,"IN"
+         print *,"r1             = ", r1
+         print *,"r2             = ", r2
+         print *,"sinthetasinphi = ", vers_x
+         print *,"sinthetacosphi = ", vers_y
+         print *,"costheta       = ", vers_z
+         call pause
+      endif
+  
+   end subroutine isotropic_scattering
+   
+
+   subroutine anisotropic_scattering_electron(vers_x, vers_y, vers_z, xi, isatom, debug)
+
+      ! Calculates the scattering angles for elastic collision of an electron with an atom or a nonpolar molecule
+      ! the used formula is correct for elastic scattering with atoms (screened Coulomb potential) and is taken from the paper
+      ! PHYSICAL REVIEW E 65 (2002) 037402
+
+      !f2py intent(out) :: vers_x, vers_y, vers_z
+      !f2py intent(in)  :: xi, atom, debug
+
+      ! Parameters
+      real(dp), intent(out) :: vers_x   ! Projection on x axis of velocity vector after scattering (sinthetacosphi)
+      real(dp), intent(out) :: vers_y   ! Projection on y axis of velocity vector after scattering (sinthetasinphi)
+      real(dp), intent(out) :: vers_z   ! Projection on z axis of velocity vector after scattering (costheta)
+      real(dp), intent(in)  :: xi       ! Parameter the meaning of which depends on the type of target particle
+                                        !   atom     -> squared electron speed
+                                        !   molecule -> value of the xi function for the current electron energy 
+      logical,  intent(in)  :: isatom   ! if .true. the scattering is calculated for an atom, if .false. for a molecule
+      logical,  intent(in)  :: debug    ! Set debug mode 
+
+      ! Local variables
+      real(dp) :: e                     ! electron energy espressed in atomic energy units (au = 27.21 eV)
+      real(dp) :: sintheta, phi
+      real(sp) :: r1,r2 
+
+      if (debug) then
+         print *,""
+         print *,"**SUBROUTINE ELASTIC SCATTERING NEUTRAL**"
+      endif
+
+      ! Calculate scattering angles
+      call random_number(r1)
+
+      if (isatom) then
+         e = E_V2TOENERGY_AU * xi                     ! Calculate energy in atomic units
+         vers_z   = 1 - 2 * r1 / (1 + 8 * e * (1 - r1))   
+      else 
+         vers_z   = 1 - 2 * r1 * ( 1 - xi ) / ( 1 + xi * (1 - 2 * r1) )
+      endif
+      sintheta = sqrt(1 - vers_z * vers_z)     
+
+      call random_number(r2)
+      phi = 2 * PI * r2
+      vers_x = sintheta * cos(phi)
+      vers_y = sintheta * sin(phi)
+   
+      if (debug) then
+         print *,"IN"
+         print *,"isatom          = ", isatom
+         if (isatom) then
+            print *,"speed / m s**-1 = ", xi
+            print *,"energy / eu     = ", e
+         else 
+            print *,"xi              = ", xi
+         endif
+         print *,"r1              = ", r1
+         print *,"r2              = ", r2
+         print *,"OUT"
+         print *,"sinthetasinphi  = ", vers_x
+         print *,"sinthetacosphi  = ", vers_y
+         print *,"costheta        = ", vers_z
+         !call pause
+      endif
+  
+   end subroutine anisotropic_scattering_electron
+
+
+   subroutine scattering_elastic_comfor2tarfor(theta_tarfor, phi_tarfor, costheta_comfor, m_ratio)
+
+      ! Transform the scattering and recoil angles of an elastic scattering from the COMFOR to the TARFOR
+      ! TARFOR) target frame of reference, in which the target is at rest,
+      !         and the z axis is parallel to the direction of the relative (projectile-target) velocity vector before scattering.
+      ! COMFOR) center of mass frame of reference, in which the COM of projectile and target is at rest,
+      !         and the z axis is parallel to the direction of the relative (projectile-target) velocity vector before scattering.     
+      ! See e.g.: Lieberman M.A., Lichtenberg A.J. "Principles of Plasma Discharges and Materials Processing"
+      ! (Wiley 2005)(ISBN 0471720011) eq. 3.2.10-3.2.11 , pag. 51-52
+
+      !f2py intent(out) :: theta_tarfor, phi_tarfor
+      !f2py intent(in)  :: costheta_comfor, m_ratio
+
+      ! Parameters
+      real(dp), intent(out) :: theta_tarfor    ! Scattering angle in the TARFOR
+      real(dp), intent(out) :: phi_tarfor      ! Recoil angle     in the TARFOR
+      real(dp), intent(in)  :: costheta_comfor ! Cosinus of the scattering angle in the COMFOR      
+      real(dp), intent(in)  :: m_ratio         ! Mass ratio: projectile mass / target mass
+
+      ! Local variables
+      real(dp) :: sintheta_comfor ! Sinus of the scattering angle in the COMFOR
+      real(dp) :: theta_comfor    ! Scattering angle in the COMFOR
+
+      sintheta_comfor = sqrt(1 - costheta_comfor * costheta_comfor)
+      theta_comfor    = acos(costheta_comfor)
+      theta_tarfor    = atan( sintheta_comfor / ( m_ratio + costheta_comfor )  )
+      phi_tarfor      = (PI - theta_comfor) / 2.0
+
+   end subroutine scattering_elastic_comfor2tarfor
+
+   
+   subroutine scattering_tarfor2disfor(versorx1, versory1, versorz1, vx, vy, vz, v, &
+                                      &sinthetacosphi_scatter, sinthetasinphi_scatter, costheta_scatter, &
+                                      &debug)
+
+      ! Calculates the new components of velocity after collision in the discharge frame of reference starting from:
+      ! - the direction of projectile velocity before scattering in the discharge frame of reference
+      ! - the scattering angles in the target frame of reference
+      ! The discharge frame of reference (DISFOR) has
+      ! - the z axis parallel to the electric field direction
+      ! - the x and y axes parallel to the borders of the electrodes
+      ! The target frame or reference (TARFOR) has
+      ! - the z axis parallel to the direction of the relative projectile-target velocity vector before scattering
+      ! - the x and y' axes directions are not important since scattering anomaly angle is always random
 
       !f2py intent(out) :: versorx1, versory1, versorz1
       !f2py intent(in)  :: vx, vy, vz, v
@@ -39,19 +191,16 @@ contains
 
 
       ! Parameters
-      real(dp), intent(out) :: versorx1               ! Projection on x axis of velocity versor after scattering
-      real(dp), intent(out) :: versory1               ! Projection on y axis of velocity versor after scattering
-      real(dp), intent(out) :: versorz1               ! Projection on z axis of velocity versor after scattering
-      real(dp), intent(in)  :: vx                     ! Projection on x axis of velocity before scattering
-      real(dp), intent(in)  :: vy                     ! Projection on y axis of velocity before scattering
-      real(dp), intent(in)  :: vz                     ! Projection on z axis of velocity before scattering
+      real(dp), intent(out) :: versorx1               ! Projection on the DISFOR x axis of velocity versor after scattering
+      real(dp), intent(out) :: versory1               ! Projection on the DISFOR y axis of velocity versor after scattering
+      real(dp), intent(out) :: versorz1               ! Projection on the DISFOR z axis of velocity versor after scattering
+      real(dp), intent(in)  :: vx                     ! Projection on the DISFOR x axis of velocity before scattering
+      real(dp), intent(in)  :: vy                     ! Projection on the DISFOR y axis of velocity before scattering
+      real(dp), intent(in)  :: vz                     ! Projection on the DISFOR z axis of velocity before scattering
       real(dp), intent(in)  :: v                      ! Modulus of velocity before scattering
-      real(dp), intent(in)  :: sinthetacosphi_scatter ! Projection on x axis of velocity versor after scattering
-                                                      !    in the reference of the particle velocity
-      real(dp), intent(in)  :: sinthetasinphi_scatter ! Projection on y axis of velocity versor after scattering
-                                                      !    in the reference of the particle velocity
-      real(dp), intent(in)  :: costheta_scatter       ! Projection on z axis of velocity versor after scattering
-                                                      !    in the reference of the particle velocity
+      real(dp), intent(in)  :: sinthetacosphi_scatter ! Projection on the TARFOR x' axis of velocity versor after scattering
+      real(dp), intent(in)  :: sinthetasinphi_scatter ! Projection on the TARFOR y' axis of velocity versor after scattering
+      real(dp), intent(in)  :: costheta_scatter       ! Projection on the TARFOR z' axis of velocity versor after scattering
       logical,  intent(in)  :: debug                  ! Set debug mode 
 
       ! Local variables
@@ -77,7 +226,7 @@ contains
       endif
 
       ! Calculate angles before scattering
-     
+      ! vr is the projection of the velocity vector in the x-y plane
       if (v > 0) then
          costheta0 = vz / v
          vr = sqrt(vx * vx + vy * vy) 
@@ -124,112 +273,6 @@ contains
          call pause
       endif
   
-   end subroutine scattering_3d
-
-
-   subroutine isotropic_scattering(vers_x, vers_y, vers_z, debug)
-
-      ! Calculates the scattering angles for a completely isotropic scattering process
-
-      !f2py intent(out) :: vers_x, vers_y, vers_z
-      !f2py intent(in)  :: debug
-
-      ! Parameters
-      real(dp), intent(out) :: vers_x   ! Projection on x axis of velocity vector after scattering (sinthetacosphi)
-      real(dp), intent(out) :: vers_y   ! Projection on y axis of velocity vector after scattering (sinthetasinphi)
-      real(dp), intent(out) :: vers_z   ! Projection on z axis of velocity vector after scattering (costheta)
-      logical,  intent(in)  :: debug    ! Set debug mode 
-
-      ! Local variables
-      real(dp) :: sintheta, phi !theta
-      real(sp) :: r1,r2             ! Random numbers in range [0,1]
-
-      if (debug) then
-         print *,""
-         print *,"**SUBROUTINE ISOTROPIC SCATTERING**"
-      endif
-
-      ! Calculate scattering angles and projections of scattered velocity versor
-      call random_number(r1)
- 
-      vers_z = 2 * r1 - 1                    ! cos(theta) uniformly distribuited in range [-1,1]
-      sintheta = sqrt(1 - vers_z * vers_z)
-
-      call random_number(r2)                 ! phi uniformly distribuited in range [0,2*PI]
-      phi = 2 * PI * r2
-      vers_x = sintheta * cos(phi)
-      vers_y = sintheta * sin(phi)
-
-      if (debug) then
-         print *,"IN"
-         print *,"r1             = ", r1
-         print *,"r2             = ", r2
-         print *,"sinthetasinphi = ", vers_x
-         print *,"sinthetacosphi = ", vers_y
-         print *,"costheta       = ", vers_z
-         call pause
-      endif
-  
-   end subroutine isotropic_scattering
-
-
-   subroutine elastic_scattering_electron_neutral(vers_x, vers_y, vers_z, e, isatom, debug)
-
-      ! Calculates the scattering angles for elastic collision of an electron with an atom or a nonpolar molecule
-      ! the used formula is correct for elastic scattering with atoms (screened Coulomb potential) and is taken from the paper
-      ! PHYSICAL REVIEW E 65 (2002) 037402
-
-      !f2py intent(out) :: vers_x, vers_y, vers_z
-      !f2py intent(in)  :: e, atom, debug
-
-      ! Parameters
-      real(dp), intent(out) :: vers_x   ! Projection on x axis of velocity vector after scattering (sinthetacosphi)
-      real(dp), intent(out) :: vers_y   ! Projection on y axis of velocity vector after scattering (sinthetasinphi)
-      real(dp), intent(out) :: vers_z   ! Projection on z axis of velocity vector after scattering (costheta)
-      real(dp), intent(in)  :: e        ! Parameter the meaning of which depends on the type of target particle
-                                        !   atom     -> electron energy espressed in atomic energy units (au = 27.21 eV)
-                                        !   molecule -> value of the xi function for the current electron energy 
-      logical,  intent(in)  :: isatom   ! if .true. the scattering is calculated for an atom, if .false. for a molecule
-      logical,  intent(in)  :: debug    ! Set debug mode 
-
-      ! Local variables
-      real(dp) :: sintheta, phi
-      real(sp) :: r1,r2 
-
-      if (debug) then
-         print *,""
-         print *,"**SUBROUTINE ELASTIC SCATTERING NEUTRAL**"
-      endif
-
-      ! Calculate scattering angles
-      call random_number(r1)
-
-      if (isatom) then 
-         vers_z   = 1 - 2 * r1 / (1 + 8 * e * (1 - r1))   
-      else 
-         vers_z   = 1 - 2 * r1 * ( 1 - e ) / ( 1 + e * (1 - 2 * r1) )
-      endif
-      sintheta = sqrt(1 - vers_z * vers_z)     
-
-      call random_number(r2)
-      phi = 2 * PI * r2
-      vers_x = sintheta * cos(phi)
-      vers_y = sintheta * sin(phi)
-   
-      if (debug) then
-         print *,"IN"
-         print *,"isatom         = ", isatom
-         print *,"energy / xi    = ", e
-         print *,"r1             = ", r1
-         print *,"r2             = ", r2
-         print *,"OUT"
-         print *,"sinthetasinphi = ", vers_x
-         print *,"sinthetacosphi = ", vers_y
-         print *,"costheta       = ", vers_z
-         call pause
-      endif
-  
-   end subroutine elastic_scattering_electron_neutral
-
+   end subroutine scattering_tarfor2disfor
 
 end module f_scattering

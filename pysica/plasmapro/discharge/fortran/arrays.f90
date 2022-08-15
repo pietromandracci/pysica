@@ -22,6 +22,31 @@ module f_arrays
 
 contains
 
+!   subroutine tofalse_minima(data, mask, factor, n_data)
+
+      ! Given the data array and an associated logical mask, set to false the number of mask elements
+      ! required to have a number of true elements that is a multiple of factor
+      ! the removed elements are the ones with the lower values of corresponding data elements
+
+      ! Parameters
+!      real(dp), dimension(n_data), intent(in)    :: data
+!      logical,  dimension(n_data), intent(inout) :: mask
+!      integer,                     intent(in)    :: factor
+!      integer,                     intent(in)    :: n_data
+
+      ! Local variables
+!      integer :: n_remove, i, j
+
+!      n_remove = mod(n_data, factor)
+!      if (n_remove > 0) then
+!         do i = 1, n_remove
+!            j = minloc(data, mask)
+!            mask(j) = .false.
+!         enddo
+!      endif
+   
+!      end subroutine tofalse_minima
+
    real(dp) function array_average_masked(array, mask, n_rows, n_elements, row)
 
       ! Returns the average of a row of a two dimensional array using a mask
@@ -76,25 +101,25 @@ contains
       logical,  intent(in) :: nearest
 
       ! Local variables
-      integer :: index
+      integer :: array_index
 
-      do index = 1, n_elements
-         if (array(index) > value) exit
+      do array_index = 1, n_elements
+         if (array(array_index) > value) exit
       enddo
 
-      if (index > n_elements) then 
+      if (array_index > n_elements) then 
          search_index = n_elements
       else
-         if ((nearest) .and. (index > 1)) then
-            if ( (array(index) - value) <= (value - array(index-1)) ) then
-               search_index = index
+         if ((nearest) .and. (array_index > 1)) then
+            if ( (array(array_index) - value) <= (value - array(array_index-1)) ) then
+               search_index = array_index
             else
-               search_index = index -1 
+               search_index = array_index -1 
             endif
          else
-            search_index = index
-         endif !((nearest) .and. (index > 1))
-      endif !(index > n_elements)
+            search_index = array_index
+         endif !((nearest) .and. (array_index > 1))
+      endif !(array_index > n_elements)
 
    end function search_index
 
@@ -272,13 +297,13 @@ contains
       integer, intent(in) :: n_elements
 
       ! Local variables
-      integer:: i, size 
+      integer:: i, array_size 
       
-      size = 0 
+      array_size = 0 
       do i=1, n_elements
-         if (logical_array(i)) size = size + 1
+         if (logical_array(i)) array_size = array_size + 1
       enddo
-      true_size = size
+      true_size = array_size
 
    end function true_size
 

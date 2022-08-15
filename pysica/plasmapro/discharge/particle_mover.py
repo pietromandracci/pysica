@@ -122,8 +122,10 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                charges:     instance of the class MovingParticles, a collection of charged particles
                neutrals:    instance of the class TargetParticles, a collection of neutral particles
                ccp:         instance of the class CcpProperties, reactor properties
+
+
                duration:    required duration of the particle motion (simulation time)
-               dt-vat:      if True, timestep mus be recalculated
+               dt-var:      if True, timestep mus be recalculated
                maxcollfreq: maximum allowed vlaue collision frequency
 
                Initialized data attributes
@@ -142,6 +144,7 @@ def move_particles(charges, neutrals, ccp, parameters, options):
         neutrals.collisions_null.fill(0.0)
         neutrals.collisions_elastic.fill(0.0)
         neutrals.collisions_ionization.fill(0.0)
+        neutrals.collisions_excitation.fill(0.0)        
         neutrals.collisions_dissociation.fill(0.0)
         neutrals.collisions_recombination.fill(0.0)
         neutrals.dissociation_rate.fill(0.0)
@@ -152,7 +155,7 @@ def move_particles(charges, neutrals, ccp, parameters, options):
         # between fortran and python
         ccp.average_current.fill(0)
 
-        # This is needed since f2py seems not able to convert correctly logical arrays between Fortran and Python,
+        # This is needed since f2py seems unable to convert correctly logical arrays between Fortran and Python,
         # while it works well if using integer type arrays
         active  = charges.active.astype('i')
         restart = charges.restart_lf.astype('i')
@@ -164,32 +167,36 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                           active, restart,
                           charges.cm_ratio, 
                           charges.weight,
-                          charges.rescale_factor,
+                          charges.rescale_factor,                      
                           neutrals.sigma_velocities, 
                           neutrals.frequency_total_global_max, 
+                          neutrals.probability_limits, 
+                          neutrals.n_limits,
+                          neutrals.probability_index_exc,
+                          neutrals.probability_index_diss,
                           neutrals.sigma_velocities_ions, 
                           neutrals.frequency_total_global_max_ions, 
-                          neutrals.probability_limits, 
+                          neutrals.frequency_total_ions,
                           neutrals.probability_limits_ions,
-                          neutrals.n_limits, neutrals.n_limits_ions, 
                           neutrals.ratecoeff_recomb_diss, 
-                          neutrals.isactive_recomb, 
+                          neutrals.isactive_recomb,                      
                           neutrals.min_scattered,
-                          neutrals.v_ratio, 
-                          neutrals.v_ratio_ions,
-                          neutrals.ionization_energy, neutrals.dissociation_energy, 
-                          neutrals.dissociation_types, 
+                          neutrals.energy_loss,
+                          neutrals.energy_loss_ions,                      
+                          neutrals.ionization_energy, neutrals.excitation_energy, neutrals.dissociation_energy, 
+                          neutrals.excitation_types, neutrals.dissociation_types, 
                           neutrals.mean_v,
                           neutrals.secondary_emission,
                           ccp.distance, ccp.length, ccp.V_peak, ccp.pulsation, ccp.phase, ccp.lateral_loss,
                           ccp.charge_density, ccp.potential,
                           ccp.average_current,
                           charges.dt, parameters.dt_output, 
-                          neutrals.collisions_null, neutrals.collisions_elastic, neutrals.collisions_ionization, 
+                          neutrals.collisions_null, neutrals.collisions_elastic, neutrals.collisions_ionization,
+                          neutrals.collisions_excitation,
                           neutrals.collisions_dissociation, neutrals.collisions_recombination,
                           options.debug_lev_for)
 
-        # This is needed since f2py seems not able to convert correctly logical arrays between Fortran and Python (see above)
+        # This is needed since f2py seems unable to convert correctly logical arrays between Fortran and Python (see above)
         charges.active     = active.astype('bool')
         charges.restart_lf = restart.astype('bool')
 
@@ -202,8 +209,11 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                 ccp.V  = ccp.V_peak
 
         # Calculate the total number of electron collisions, of any type
-        neutrals.collisions_total_electron = neutrals.collisions_elastic.sum()      + neutrals.collisions_ionization.sum() + \
-                                             neutrals.collisions_dissociation.sum() + neutrals.collisions_recombination.sum()
+        neutrals.collisions_total_electron = (  neutrals.collisions_elastic.sum()
+                                              + neutrals.collisions_ionization.sum()
+                                              + neutrals.collisions_excitation.sum()
+                                              + neutrals.collisions_dissociation.sum()
+                                              + neutrals.collisions_recombination.sum() )
 
         # Calculate average time between electron collisions (rough estimation, since charges.n_active(0) changes during the cycle)
         if (neutrals.collisions_total_electron > 0):
@@ -259,7 +269,16 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                                 if (charges.v[i][k] == 0.0): 
                                         charges.theta[i][k] = 0.0
                                 else:
-                                        charges.theta[i][k] = numpy.arccos(charges.vz[i][k] / charges.v[i][k])
+                                        costheta_v = charges.vz[i][k] / charges.v[i][k]
+                                        if ( (costheta_v < -1.0) or (costheta_v > 1.0) ):
+                                             charges.theta[i][k] = 0.0
+                                             print(  "ERROR in angle calculation: v="
+                                                     + str(charges.v[i][k]),
+                                                     " vz="
+                                                     + str(charges.vz[i][k]),
+                                                     " ratio=" + str(costheta_v) )
+                                        else:
+                                             charges.theta[i][k] = numpy.arccos(charges.vz[i][k] / charges.v[i][k])
 
         if (options.debug_lev >= MIN_DEBUG_LEVEL): print('\n***** END OF PARTICLE MOVER *****\n')
         

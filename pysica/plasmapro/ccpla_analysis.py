@@ -15,11 +15,9 @@
 
 """ Read and show data saved by ccpla script """
 
-
 # +--------------------------------+
 # | Import required Python modules |
 # +--------------------------------+
-
 
 # Mudules from the standard Python library
 import math
@@ -37,19 +35,31 @@ from pysica.plasmapro.ccpla_defaults import *
 
 # Modules provided by plasmapro package
 from pysica.managers import data_manager
-from pysica.managers.unit_manager import print_unit
+from pysica.managers.unit_manager import print_unit, print_exp
 from pysica.analysis import univariate
 from pysica.functions.pdf import pdf_maxwell_energy
 from pysica.plasmapro.discharge.reactors import CcpProperties
 from pysica.plasmapro.discharge.target_particles import TargetParticles
-from pysica.plasmapro.ccpla_init import *       
+from pysica.plasmapro.ccpla_init import *
+
+plt.rcParams["mathtext.default"] = 'regular'
+plt.rcParams["font.size"]        = 20
 
 
 class CcplaSavedData:
     """Class of data saved by ccpla program"""
 
-    def __init__(self, name=None, verbose=False):
+    def __init__(self, name=None, verbose=False, read_edf=False, read_potential=False):
         """Initialize the collection of data to be analyzed"""
+
+        # Reading EEDF and IEDF as well as potential distribution can be suppressed to save memory and execution time
+        self.read_edf = read_edf
+        self.read_V   = read_potential
+
+        # Define some constants
+        self.DEBYE_CONST_A = 1.51E13                                # (J m)**(-1/2)
+        self.DEBYE_CONST_B = 4/3 * numpy.pi * self.DEBYE_CONST_A**3 # (J m)**(-3/2)
+        self.DEBYE_CONST_C = 56.41                                  # m**(3/2) s**-1         
 
         # Read data from configuration files
         self.parameters   = ConfigurationOptions()
@@ -85,9 +95,13 @@ class CcplaSavedData:
         generate_save_dir_name(self.parameters, abs_path=False)
         generate_save_file_names(self.parameters)
 
-        self.parameters.filename_stat_ele    +=  EXT
-        self.parameters.filename_stat_neu    +=  EXT
-        self.parameters.filename_distrib_ele +=  EXT
+        self.parameters.filename_stat_ele +=  EXT
+        self.parameters.filename_stat_neu +=  EXT
+        self.parameters.filename_I        +=  EXT
+        if self.read_edf:
+            self.parameters.filename_distrib_ele +=  EXT
+        if self.read_V:
+            self.parameters.filename_V +=  EXT                        
 
         if verbose: print('Reading electron mean data from file \''+ self.parameters.filename_stat_ele +'\'\n')
         self.means_ele = data_manager.DataGrid()
@@ -105,31 +119,61 @@ class CcplaSavedData:
             self.error =  (status, string)
             return
 
-        if verbose: print('Reading EEDF data from file \''+ self.parameters.filename_distrib_ele +'\'\n')
-        self.eedf = data_manager.DataGrid()
-        (status, message) = self.eedf.read_file(self.parameters.filename_distrib_ele, sep=SEP, pad_value=numpy.nan)
+        if verbose: print('Reading electric current data from file \''+ self.parameters.filename_I +'\'\n')
+        self.means_I = data_manager.DataGrid()
+        (status, message) = self.means_I.read_file(self.parameters.filename_I, sep=SEP, transpose=True, skip=1)
         if (status != 0):
-            string = 'Error reading file \"' + self.parameters.filename_distrib_ele + '\": '+message
+            string = 'Error reading file \"' + self.parameters.filename_I + '\": '+message
             self.error =  (status, string)
-            return
+            return   
 
-        self.iedf = []
-        for i in range(self.neutrals.types):
-            filename = self.parameters.filename_distrib_ion + '_' + self.neutrals.names[i] + '+' + EXT
-            if verbose: print('Reading IEDF data from file \''+ filename +'\'\n')
-            #iedf = data_manager.DataGrid()
-            self.iedf.append( data_manager.DataGrid() )
-            (status, message) = self.iedf[i].read_file(filename, sep=SEP, pad_value=numpy.nan)
+        if self.read_edf:
+            if verbose: print('Reading EEDF data from file \''+ self.parameters.filename_distrib_ele +'\'\n')
+            self.eedf = data_manager.DataGrid()
+            (status, message) = self.eedf.read_file(self.parameters.filename_distrib_ele, sep=SEP, pad_value=numpy.nan)
             if (status != 0):
-                string = 'Error reading file \"' + filename + '\": '+message
+                string = 'Error reading file \"' + self.parameters.filename_distrib_ele + '\": '+message
                 self.error =  (status, string)
                 return
+            self.iedf = []
+            for i in range(self.neutrals.types):
+                filename = self.parameters.filename_distrib_ion + '_' + self.neutrals.names[i] + '+' + EXT
+                if verbose: print('Reading IEDF data from file \''+ filename +'\'\n')
+                #iedf = data_manager.DataGrid()
+                self.iedf.append( data_manager.DataGrid() )
+                (status, message) = self.iedf[i].read_file(filename, sep=SEP, pad_value=numpy.nan)
+                if (status != 0):
+                    string = 'Error reading file \"' + filename + '\": '+message
+                    self.error =  (status, string)
+                    return
 
-        self.n_rows          = len(self.means_ele.data_array[0])
-        self.sim_duration    = self.means_ele.data_array[0, self.n_rows-1] * 1E-9
-        self.output_timestep = self.means_ele.data_array[0, self.n_rows-1] * 1E-9 / self.n_rows
-        self.n_cols          = len(self.means_neu.data_array)
-        self.mol_types         = int((self.n_cols - 1) / 2)
+        if self.read_V:
+            if verbose: print('Reading electric potential data from file \''+ self.parameters.filename_V +'\'\n')
+            self.V = data_manager.DataGrid()
+            (status, message) = self.V.read_file(self.parameters.filename_V, sep=SEP)
+            if (status != 0):
+                string = 'Error reading file \"' + self.parameters.filename_V + '\": '+message
+                self.error =  (status, string)
+                return
+                
+
+        self.n_rows           = len(self.means_ele.data_array[0])
+        self.sim_duration     = self.means_ele.data_array[0, self.n_rows-1] * 1E-9
+        self.output_timestep  = self.means_ele.data_array[0, self.n_rows-1] * 1E-9 / self.n_rows
+        self.n_cols           = len(self.means_neu.data_array)
+        self.mol_types        = int((self.n_cols - 1) / 2)
+
+        # lambda_D = A * sqrt(<E_e>**3 / n_e)
+        # NOTE: ELECTRON_CHARGE is negative, multiplying by it is necessary to convert energy from eV to J
+        self.debye_length     = (  self.DEBYE_CONST_A
+                                 * numpy.sqrt(- ELECTRON_CHARGE
+                                              * self.means_ele.data_array[3]
+                                              / self.means_ele.data_array[14] )
+                                )
+        # N_D = 4/3 * pi * lamnda_D**3 * n_e
+        self.debye_number     = 4/3 * numpy.pi * self.debye_length**3 * self.means_ele.data_array[14]
+        # f_pla ~ sqrt(n_e)
+        self.plasma_frequency = self.DEBYE_CONST_C * numpy.sqrt(self.means_ele.data_array[14])
 
         if verbose: print('Data loading completed\n')                
 
@@ -139,7 +183,10 @@ class CcplaSavedData:
         print('')
         print('Electrodes distance                 : ' + print_unit(self.ccp.distance,'m'))
         print('Electrodes lateral length           : ' + print_unit(self.ccp.length,'m'))
-        print('Electric bias                       : ' + print_unit(self.ccp.V,'V'))
+        print('Plasma volume                       : ' + str(self.ccp.volume) + ' m**3')
+        print('Number of PIC cells                 : ' + str(self.parameters.N_cells))
+        print('Cell dimension                      : ' + print_unit(self.ccp.delta_grid, 'm', 4 ))
+        print('Electric bias                       : ' + print_unit(self.ccp.V_peak,'V'))
         print('Electric bias frequency             : ' + print_unit(self.ccp.frequency,'Hz'))
         print('Electric bias phase (at t=0)        : ' + str(self.ccp.phase))
         print('')
@@ -149,7 +196,7 @@ class CcplaSavedData:
         print('Number of tabulated ion xsec values : ' + str(self.neutrals.n_sigma_ions))
         print('')
         print('Maximum number of electrons         : ' + str(self.parameters.Nmax_particles))
-        print('Required starting ionization degree : ' + str(self.parameters.start_ion_deg))
+        print('Required starting ionization degree : ' + print_exp(self.parameters.start_ion_deg,4))
         print('')
         print('Timestep [0=automatic]              : ' + print_unit(self.parameters.dt, 's'))
         print('Mean time between data acquisitions : ' + print_unit(self.output_timestep, 's'))
@@ -160,116 +207,240 @@ class CcplaSavedData:
         for row in range(self.n_rows):
             if (self.means_ele.data_array[0][row] >= time): break
         return row
+    
+    # +----------------------------------------+
+    # | Plasma parameters time evolution plots |
+    # +----------------------------------------+
         
-    def plot_electron_number(self):
+    def plot_electron_number(self, real=True, computational=True, line='None', symbol='.',
+                             color_real='red', color_comp='blue'):
         plt.ioff()
         plt.title('Number of electrons')
         plt.xlabel('Time / ns')
         plt.ylabel('Number of electrons')
-        plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[1], 
-                     marker='x', linestyle = 'None', color ='red', label="Computational e-")
-        plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[1] * self.means_ele.data_array[2], 
-                     marker='+', linestyle = 'None', color ='blue', label="Real e-")
+        if computational:
+            plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[1], 
+                         marker=symbol, linestyle=line, color=color_comp, label=r'Computational $e^-$')
+        if real:
+            plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[1] * self.means_ele.data_array[2], 
+                         marker=symbol, linestyle=line, color=color_real, label=r'Real $e^-$')
         plt.legend()
         plt.grid()
         plt.show()
 
-    def plot_electron_weight(self):
+    def plot_electron_weight(self,line='None', symbol='.', color='red'):
         plt.ioff()
-        plt.title('Weight of electrons')
+        plt.title('Electron weight')
         plt.xlabel('Time / ns')
         plt.ylabel('Weight')
         plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[2], 
-                     marker='x', linestyle = 'None', color ='red', label="Weight e-")
+                     marker=symbol, linestyle=line, color=color, label = r'Weight $e^-$')
         plt.legend()
         plt.grid()
         plt.show()     
 
-    def plot_electron_density(self):
+    def plot_electron_density(self, line='None', symbol='.', color='red'):
         plt.title('Electron density')
         plt.xlabel('Time / ns')
-        plt.ylabel('N_e / m**-3')
+        plt.ylabel(r'$n_e$ / $m^{-3}$')
         plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[14], 
-                       marker='.', linestyle='None', color ='blue', label = 'n_e')
+                     marker=symbol, linestyle=line, color=color, label = r'$n_e$')
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+    def plot_plasma_frequency(self,line='None', symbol='.', color='red'):
+        plt.title('Plasma frequency')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'$\nu_P$ / $s^{-1}$')
+        plt.semilogy(self.means_ele.data_array[0], self.plasma_frequency, 
+                     marker=symbol, linestyle=line, color=color, label = r'$\nu_P$')
+        plt.grid()
+        plt.legend()
+        plt.show()        
+
+    def plot_debye_length(self,line='None', symbol='.', color='red'):
+        plt.title('Debye length')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'$\lambda_D$ / m')
+        plt.semilogy(self.means_ele.data_array[0], self.debye_length, 
+                     marker=symbol, linestyle=line, color=color, label = r'$\lambda_D$')
         plt.grid()
         plt.legend()
         plt.show()
         
-       
-    def plot_electron_mean_energy(self, plot_sigma=True, plot_min=True, plot_max=True, semilog=False):
-        plt.ioff()
-        plt.title('Mean energy')
+    def plot_debye_number(self,line='None', symbol='.', color='red'):
+        plt.title('Debye number')
         plt.xlabel('Time / ns')
-        plt.ylabel('Energy / eV')
+        plt.ylabel(r'$N_D$')
+        plt.semilogy(self.means_ele.data_array[0], self.debye_number, 
+                     marker=symbol, linestyle=line, color=color, label = r'$N_D$')
+        plt.grid()
+        plt.legend()
+        plt.show()    
+               
+    def plot_electron_mean_energy(self, plot_sigma=False, plot_min=False, plot_max=False, semilog=False,
+                                  line='None', symbol='.', color='red', ecolor='orange',
+                                  maxcolor='cyan', mincolor='blue'):
+        plt.ioff()
+        plt.title('Electron mean energy')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'<$E_e$> / eV')
         if semilog:
                 plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[3],
-                             marker='.', linestyle = 'None', color ='red', label = 'Mean')
+                             marker=symbol, linestyle=line, color=color, label=r'<$E_e$>')
         else:
             if plot_sigma:
                 plt.errorbar(self.means_ele.data_array[0], self.means_ele.data_array[3], self.means_ele.data_array[4], 
-                             marker='o', linestyle = 'None', color ='red', label = 'Mean', 
-                             ecolor = 'orange')
+                             marker=symbol, linestyle=line, color=color, ecolor=ecolor, label = r'<$E_e$>')
             else:
                 plt.plot(self.means_ele.data_array[0], self.means_ele.data_array[3], 
-                         marker='.', linestyle = 'None', color ='red', label = 'Mean')
+                         marker=symbol, linestyle=line, color=color, label = r'<$E_e$>')
 
             if plot_min: plt.plot(self.means_ele.data_array[0], self.means_ele.data_array[5], 
-                                  marker='.', linestyle='None', color ='blue', label = 'Min')
+                                  marker=symbol, linestyle=line, color=mincolor, label = r'$E_e^{min}$')
             if plot_max: plt.plot(self.means_ele.data_array[0], self.means_ele.data_array[6], 
-                                  marker='.', linestyle='None', color ='cyan', label = 'Max')
+                                  marker=symbol, linestyle=line, color=maxcolor, label = r'$E_e^{max}$')
         plt.legend()
         plt.grid()
         plt.show()
 
-    def plot_electron_angle(self, plot_sigma=True, plot_min=True, plot_max=True):
+        
+    def plot_electron_angle(self, plot_sigma=True, plot_min=True, plot_max=True,
+                            line='None', symbol='.', color='red', ecolor='orange',
+                            maxcolor='cyan', mincolor='blue'):
         plt.ioff()
-        plt.title('Mean angle')
+        plt.title('Mean angle between electron velocity and electric field')
         plt.xlabel('Time / ns')
-        plt.ylabel('Angle / deg')
+        plt.ylabel(r'<$\theta$> / °')
         if plot_sigma:                        
             plt.errorbar(self.means_ele.data_array[0], self.means_ele.data_array[7], self.means_ele.data_array[8], 
-                         marker='o', linestyle = 'None', color ='red', label= 'Mean', 
-                         ecolor = 'orange')
+                         marker=symbol, linestyle=line, color=color, ecolor=ecolor, label=r'<$\theta$>')
         else:
             plt.plot(self.means_ele.data_array[0], self.means_ele.data_array[7], 
-                     marker='.', linestyle = 'None', color ='red', label= 'Mean')
+                     marker=symbol, linestyle=line, color=color, label = r'<$\theta$>')
 
         if plot_min: plt.plot(self.means_ele.data_array[0], self.means_ele.data_array[9], 
-                              marker='.', linestyle='None', color ='blue', label = 'min')
+                              marker=symbol, linestyle=line, color=mincolor, label = r'$\theta_{min}$')
         if plot_max: plt.plot(self.means_ele.data_array[0], self.means_ele.data_array[10], 
-                              marker='.', linestyle='None', color ='cyan', label = 'max')
+                              marker=symbol, linestyle=line, color=maxcolor, label = r'$\theta_{max}$')
         plt.legend()
         plt.grid()                
         plt.show()
 
         
-    def plot_tau(self):
+    def plot_tau(self, line='None', symbol='.', color='red'):
         plt.ioff()
         plt.title('Timestep and time between collisions')
         plt.xlabel('Time / ns')
         plt.ylabel('Time / fs')
         plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[11], 
-                     marker='x', linestyle='None', color ='red', label = 'dt')
+                     marker=symbol, linestyle=line, color=color, label = 'dt')
         plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[12], 
-                     marker='+', linestyle='None', color ='blue',  label = 'tau')
+                     marker=symbol, linestyle=line, color=color,  label = r'$\tau$')
         plt.legend()
         plt.grid()
         plt.show()
 
         
-    def plot_collision_frequency(self):
+    def plot_collision_frequency(self, line='None', symbol='.', color='red'):
         plt.ioff()
         plt.title('Collision frequency')
         plt.xlabel('Time / ns')
         plt.ylabel('f %')
         plt.plot(self.means_ele.data_array[0], self.means_ele.data_array[13], 
-                 marker='x', linestyle='None', color ='red', label = 'f')
+                 marker=symbol, linestyle=line, color=color, label = 'f')
+        plt.legend()
+        plt.grid()
+        plt.show()
+        
+    # +---------------------------+
+    # | Electric properties plots |
+    # +---------------------------+
+    
+    def plot_current_density(self, absolute=False, line='None', symbol='.', color='red'):
+        plt.ioff()
+        plt.title('Current density')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'j / $A m^{-2}$')
+        if absolute:
+            plt.plot(self.means_I.data_array[0] / (self.ccp.length * self.ccp.length),
+                     numpy.abs(self.means_I.data_array[1]), 
+                     marker=symbol, linestyle=line, color=color, label = 'j')            
+
+        else:
+            plt.plot(self.means_I.data_array[0] / (self.ccp.length * self.ccp.length),
+                     self.means_I.data_array[1], 
+                     marker=symbol, linestyle=line, color=color, label = 'j')
         plt.legend()
         plt.grid()
         plt.show()
 
+
+    def plot_potential(self,time, line='-', symbol='.', color='red'):
+        row = self.get_row(time)
+        plt.ioff()
+        plt.title('Electric potential')
+        plt.xlabel('z / mm')
+        plt.ylabel(r'$\Delta V$ / V')
+        plt.plot(self.ccp.grid_points*1.0E3, self.V.data_array[row], 
+                 marker=symbol, linestyle=line, color=color)
+        plt.grid()
+        plt.show()           
         
-    def plot_ensamble(self, index, time=None, row=None, log=False, color='red'):
+    # +---------------------------------------+
+    # | Dissociation rate/rate constant plots |
+    # +---------------------------------------+
+        
+    def plot_dissocation_rates(self, line='None', symbol='.', color='red'):
+        plt.title('Dissociation rates')
+        plt.xlabel('Time / ns')
+        plt.ylabel('R / m**3 s**-1')
+        i_name = 0
+        for i in range(self.mol_types):
+            col = 1 + i*2
+            # search the name of the molecule
+            for j in range(i_name, self.neutrals.types):
+                if (self.neutrals.molecule_type[j] != 'a'):
+                    i_name = j
+                    break
+            name = self.neutrals.names[i_name]
+            i_name += 1
+            plt.semilogy(self.means_neu.data_array[0], self.means_neu.data_array[col],
+                         marker=symbol, linestyle=line, color=color, label = name)
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+        
+    def plot_dissocation_rate_const(self, line='None', symbol='.', color='red'):
+        plt.title('Dissociation rate constants')
+        plt.xlabel('Time / ns')
+        plt.ylabel('k / m**3 s**-1')
+        i_name = 0                
+        for i in range(self.mol_types):
+            col = 1 + i*2 +1
+            # search the name of the molecule
+            for j in range(i_name, self.neutrals.types):
+                if (self.neutrals.molecule_type[j] != 'a'):
+                    i_name = j
+                    break
+            name = self.neutrals.names[i_name]
+            i_name += 1                        
+            plt.semilogy(self.means_neu.data_array[0],self.means_neu.data_array[col],
+                         marker=symbol, linestyle=line, color=color, label = name)
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+    # +---------------------------+
+    # | Energy distribution plots |
+    # +---------------------------+
+                
+    def plot_ensamble(self, index, time=None, row=None, log=False, color='red', symbol=','):
+        if not self.read_edf:
+            print('Distribution functions are not available')
+            return
         if (time is None):
             if (row is None):
                 print('Give either simulation time or data row number !')
@@ -289,9 +460,9 @@ class CcplaSavedData:
         plt.xlabel('Particle index')
         plt.ylabel('Energy / eV')
         if log:
-            plt.semilogy(ensamble, marker='+', linestyle='None', color=color, label=name+string)
+            plt.semilogy(ensamble, marker=symbol, linestyle='None', color=color, label=name+string)
         else:    
-            plt.plot(ensamble, marker='+', linestyle='None', color=color, label=name+string)
+            plt.plot(ensamble, marker=symbol, linestyle='None', color=color, label=name+string)
         plt.legend()
         plt.grid()
         plt.show()
@@ -330,7 +501,11 @@ class CcplaSavedData:
                                     'gnuplot' -> use gnuplot
 
         """
-
+        
+        if not self.read_edf:
+            print('Distribution functions are not available')
+            return
+        
         if (time is None):
                 if (row is None):
                         print('Give either simulation time or data row number !')
@@ -373,44 +548,3 @@ class CcplaSavedData:
         print('P-value     = ' + str(self.h.p_value))
         print(self.h.plot_histogram(interface=plot_interface))
         
-
-    def plot_dissocation_rates(self):
-        plt.title('Dissociation rates')
-        plt.xlabel('Time / ns')
-        plt.ylabel('R / m**3 s**-1')
-        i_name = 0
-        for i in range(self.mol_types):
-            col = 1 + i*2
-            # search the name of the molecule
-            for j in range(i_name, self.neutrals.types):
-                if (self.neutrals.molecule_type[j] != 'a'):
-                    i_name = j
-                    break
-            name = self.neutrals.names[i_name]
-            i_name += 1
-            plt.semilogy(self.means_neu.data_array[0], self.means_neu.data_array[col],
-                         marker='.', linestyle='none', label = name)
-        plt.grid()
-        plt.legend()
-        plt.show()
-
-        
-    def plot_dissocation_rate_const(self):
-        plt.title('Dissociation rate constants')
-        plt.xlabel('Time / ns')
-        plt.ylabel('k / m**3 s**-1')
-        i_name = 0                
-        for i in range(self.mol_types):
-            col = 1 + i*2 +1
-            # search the name of the molecule
-            for j in range(i_name, self.neutrals.types):
-                if (self.neutrals.molecule_type[j] != 'a'):
-                    i_name = j
-                    break
-            name = self.neutrals.names[i_name]
-            i_name += 1                        
-            plt.semilogy(self.means_neu.data_array[0],self.means_neu.data_array[col],
-                         marker='.', linestyle='none', label = name)
-        plt.grid()
-        plt.legend()
-        plt.show()

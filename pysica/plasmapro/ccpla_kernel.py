@@ -34,7 +34,7 @@ def kernel(signal_connection, time_connection, data_connection, debug=False):
         # If message is 'quit', exit from main loop
         if (message == 'quit'):
             stay_alive = False            
-        # If message is 'start', begin the simulation (anithing else, do nothing)
+        # If message is 'start', begin the simulation (if it is anything else, do nothing)
         elif (message == 'start'):            
             if debug: print('[Kernel]-> waiting for initialized data\n')
             (charges, neutrals, ccp, parameters, options) = data_connection.recv()

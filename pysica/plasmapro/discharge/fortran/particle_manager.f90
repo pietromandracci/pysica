@@ -34,7 +34,9 @@ contains
                            &isactive, restart, &
                            &weight, &
                            &rescale_factor, &
-                           &x_part_added, y_part_added, z_part_added, w_part_added, n_part_added, &
+                           & x_part_added,  y_part_added,  z_part_added, &
+                           &vx_part_added, vy_part_added, vz_part_added, &                           
+                           &w_part_added, n_part_added, &
                            &n_types, n_particles, &
                            &debug_level)
 
@@ -50,40 +52,67 @@ contains
       real(dp), dimension(0:n_types, 1:n_particles), intent(inout) :: x_part_added, &
                                                                      &y_part_added, &
                                                                      &z_part_added         ! Positions of particles that need to be added
-      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: w_part_added         ! Number of comp. particles to add for each real one
-      integer,  dimension(0:n_types),                intent(inout) :: n_part_added         ! Number of particles of each type that need
-                                                                                           !    to be added
+      real(dp), dimension(0:n_types, 1:n_particles), intent(inout) :: vx_part_added, &
+                                                                     &vy_part_added, &
+                                                                     &vz_part_added        ! Velocities of particles that need to be added
+      integer,  dimension(0:n_types),                intent(inout) :: n_part_added         ! Number of events (e.g. ionizations) leading to
+                                                                                           !    particle addition      
+      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: w_part_added         ! Number of comp. particles to add for each  event
+
       integer,                                       intent(in)    :: n_types, n_particles
       integer,                                       intent(in)    :: debug_level
 
       ! Local variables
       integer  :: n, m, t, n_active, n_min, n_add, ntot_part_added
-      real(dp) :: x0, y0, z0, vx0, vy0, vz0 
+      real(dp) :: x0, y0, z0, vx0, vy0, vz0, wratio, rand
+      logical  :: rescaled
    
       do t = 0, n_types
-         n_active = n_state_elements(isactive, n_types+1, n_particles, t+1, .true.)!!!!!!!!!!! SEMPLIFICABILE !!!!!!!!!!! count(isactive(t,:))
+         ! Calculate the active number of particles of this type
+         ! n_active = n_state_elements(isactive, n_types+1, n_particles, t+1, .true.)
+         n_active = count(isactive(t,:))
+         ! If there have been events that added particles of this type, manage particle addition
          if (n_part_added(t) > 0) then
-            ! Check that adding the required number of particles the max allowed number is not exceeded
-            ! otherwise rescale the number of particles and their weight
             ! Calculate the total number of computational particles to be added for this type
-!            ntot_part_added = sum(w_part_added(t,:))
-            ntot_part_added = 0
-            do n = 1, n_part_added(t)
-               ntot_part_added = ntot_part_added + w_part_added(t, n)
-            enddo
-            if ( (n_active + ntot_part_added) <= n_particles ) then
-               do n = 1, n_part_added(t) 
-                  ! Add the required number of computational particles of type t for each real particle 
-                  do m = 1, w_part_added(t, n)
-                     call add_particle(t, x_part_added(t, n), y_part_added(t, n), z_part_added(t, n), &
-                                      &0.0D0, 0.0D0, 0.0D0) 
-                  enddo !m
-               enddo !n
-               if (debug_level>1) print *,'ADDED PARTICLES: TYPE', t, 'n. ', n_part_added(t)
-            else
-               if (rescale_factor(t) > 1.0) call rescale_particles(t, rescale_factor(t), n_active)
+!            ntot_part_added = 0
+!            do n = 1, n_part_added(t)
+!               ntot_part_added = ntot_part_added + w_part_added(t, n)
+!            enddo
+            ntot_part_added = sum(w_part_added(t,:))
+            ! Check that, adding the required number of particles, the max allowed number is not exceeded
+            ! otherwise rescale the number of particles and their weight
+            rescaled = .false.
+            if ( ((n_active + ntot_part_added) > n_particles) .and. (rescale_factor(t) > 1.0) ) then
+               call rescale_particles(t, rescale_factor(t), n_active)
+               rescaled = .true.                 
             endif
-
+            ! Add the required number of computational particles of type t
+            do n = 1, n_part_added(t)
+               ! If the ensable has been rescaled, the number of comp. particles to add for each event must be rescaled as well
+               if (rescaled) then
+                  ! The number of particles to add must be reduced of the same factor used to increase their weight
+                  wratio = w_part_added(t, n) / rescale_factor(t)
+                  ! If the result is less than one particle to add, it becomes the probabilty that a particle is added
+                  if (wratio >= 1) then
+                     w_part_added(t, n) = nint(wratio)
+                  else
+                     call random_number(rand)
+                     if (rand < wratio) then
+                        w_part_added(t, n) = 1
+                     else
+                        w_part_added(t, n) = 0
+                     endif ! (rand < wratio)   
+                  endif ! (wratio >= 1)
+               endif ! (rescaled)
+               ! Add the proper number of computational particles
+               do m = 1, w_part_added(t, n)
+                  call add_particle(t, &
+                                  &  x_part_added(t, n) , y_part_added(t, n),  z_part_added(t, n), &
+                                  & vx_part_added(t, n), vy_part_added(t, n), vz_part_added(t, n))
+               enddo !m
+            enddo !n
+            if (debug_level > 1) print *,'ADDED PARTICLES: TYPE', t, 'n. ', n_part_added(t)
+            
 !            print *, 'ADDING PARTICLES'
 !            print *, 'type            =', t
 !            print *, 'n_active        =', n_active
@@ -94,25 +123,25 @@ contains
             n_part_added(t) = 0 ! Erase the number of particles of type t to add
          endif 
 
-        ! If the number of computational particles is too low, then
-        ! repopulate the particles ensamble and reduce their weight
-        if ( (n_particles >= 100 * rescale_factor(t)) .and. (weight(t) >= rescale_factor(t)) ) then
-           n_min = int(n_particles / 100)
-           if (n_active < n_min) then
-              ! Location and velocity of the new particles will be equal to the average of the existing ones
-              x0  = array_average_masked(x,  isactive, n_types+1, n_particles, t+1)
-              y0  = array_average_masked(y,  isactive, n_types+1, n_particles, t+1)
-              z0  = array_average_masked(z,  isactive, n_types+1, n_particles, t+1)
-              vx0 = array_average_masked(vx, isactive, n_types+1, n_particles, t+1)
-              vy0 = array_average_masked(vy, isactive, n_types+1, n_particles, t+1)
-              vz0 = array_average_masked(vz, isactive, n_types+1, n_particles, t+1)
-              n_add = nint(n_active * rescale_factor(t)) - n_active
-              do n = 1, n_add ! Add the required number of particles of type t
-                 call add_particle(t, x0, y0, z0, vx0, vy0, vz0)
-              enddo
-              weight(t) = weight(t) / rescale_factor(t)
-           endif ! n_active < n_min
-        endif ! n_particles >= 1000
+         ! If the number of computational particles is too low, then
+         ! repopulate the particles ensamble and reduce their weight
+         if ( (n_particles >= 100 * rescale_factor(t)) .and. (weight(t) >= rescale_factor(t)) ) then
+            n_min = int(n_particles / 100)
+            if (n_active < n_min) then
+               ! Location and velocity of the new particles will be equal to the average of the existing ones
+               x0  = array_average_masked(x,  isactive, n_types+1, n_particles, t+1)
+               y0  = array_average_masked(y,  isactive, n_types+1, n_particles, t+1)
+               z0  = array_average_masked(z,  isactive, n_types+1, n_particles, t+1)
+               vx0 = array_average_masked(vx, isactive, n_types+1, n_particles, t+1)
+               vy0 = array_average_masked(vy, isactive, n_types+1, n_particles, t+1)
+               vz0 = array_average_masked(vz, isactive, n_types+1, n_particles, t+1)
+               n_add = nint(n_active * rescale_factor(t)) - n_active
+               do n = 1, n_add ! Add the required number of particles of type t
+                  call add_particle(t, x0, y0, z0, vx0, vy0, vz0)
+               enddo
+               weight(t) = weight(t) / rescale_factor(t)
+            endif ! n_active < n_min
+         endif ! n_particles >= 1000        
       enddo ! t
 
    contains
@@ -162,7 +191,7 @@ contains
           ! Calculate the number of particles to remove
           n_remove = n_active - nint(abs(n_active / f))
 
-          if (debug_level > 0) then
+          if (debug_level > 1) then
              print *
              print *, "RESCALE PARTICLES of type", t
              print *, "Scaling factor           ", f
@@ -189,7 +218,7 @@ contains
           ! Increase proportionally the weight of this type of particle
           weight(t) = abs(weight(t) * f)
 
-          if (debug_level > 0) then
+          if (debug_level > 1) then
              print *, "New number of particles", n_state_elements(isactive, n_types+1, n_particles, t+1, .true.)
              call pause       
           endif

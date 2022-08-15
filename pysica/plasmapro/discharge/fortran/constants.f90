@@ -19,7 +19,10 @@ module f_constants
 
    implicit none
    
-   real(dp), parameter :: PI                   = 3.1415926535897931_dp 
+   real(dp), parameter :: E_EULER              = 2.718281828459045      ! exp(1.0_dp)
+   real(dp), parameter :: PI                   = 3.1415926535897931_dp
+   real(dp), parameter :: SQRT_PI              = 1.772453850905515      ! sqrt(PI)
+   real(dp), parameter :: K_BOLTZMANN          = 1.3806503E-23_dp       ! Boltzmann's constant / J K**-1
    real(dp), parameter :: ATOMIC_ENERGY_EV     = 27.21_dp               ! Atomic unit of energy / eV
    real(dp), parameter :: BOHR_RADIUS          = 0.29E-10_dp            ! Bohr radius / m
    real(dp), parameter :: E_CHARGE             = -1.602176E-19_dp       ! Electron charge / C

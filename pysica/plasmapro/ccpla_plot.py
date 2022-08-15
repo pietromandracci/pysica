@@ -364,8 +364,6 @@ class CcplaPlots:
         self.ccp = ccp
         if parameters.dot_points: self.plot_style = 'dots'
         else:                     self.plot_style = 'points'        
-
-        print(self.ccp.distance, self.ccp.length, self.plot_style)
         
         # Charge density vs z-position
         plot_set(self.charge_density_graph,         xmin=0, xmax=self.ccp.distance*1E3)
@@ -619,7 +617,8 @@ def plot_cross_sections(neutrals, electrons=True, ions=True, recombination=False
     (status,message) = (0, OK)
     
     if electrons:
-        (status, message) = neutrals.plot_xsec_electrons( plot_total       = True, 
+        (status, message) = neutrals.plot_xsec_electrons( plot_single      = not plot_all,
+                                                          plot_total       = not plot_all, 
                                                           plot_frequencies = plot_all, 
                                                           plot_relative    = plot_all, 
                                                           plot_boundaries  = plot_all,
@@ -629,10 +628,9 @@ def plot_cross_sections(neutrals, electrons=True, ions=True, recombination=False
     if ions:
         for ion_type in range(neutrals.types):
             (status, message) = neutrals.plot_xsec_ions( ion_type         = ion_type, 
-                                                         plot_total       = True, 
+                                                         plot_total       = not plot_all, 
                                                          plot_frequencies = plot_all, 
                                                          plot_relative    = plot_all, 
-                                                         plot_boundaries  = plot_all,
                                                          dot_points       = dot_points )
             if (status != 0): return (status, message)
 

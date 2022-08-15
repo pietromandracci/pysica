@@ -34,82 +34,84 @@ def print_simulation_information(neutrals, ccp, parameters, options,
     # Print information about physical parameters
     if print_physical:
         string += 'PHYSICAL PARAMETERS\n'
-        string += ('Total pressure of the gas mixture:  ' + unit_manager.print_unit(parameters.p_neutrals,'Pa',4)
+        string +=('Total pressure of the gas mixture:   ' + unit_manager.print_unit(parameters.p_neutrals,'Pa',4)
                                                           + ' ('
                                                           + unit_manager.print_unit(parameters.p_neutrals_torr,'Torr',4)
                                                           + ')' + '\n')
-        string += ('Temperature of the gas mixture:     ' + unit_manager.print_unit(parameters.T_neutrals, 'K',4)
+        string +=('Temperature of the gas mixture:      ' + unit_manager.print_unit(parameters.T_neutrals, 'K',4)
                                                           + ' ('
                                                           + unit_manager.print_unit(parameters.T_neutrals-ZERO_CELSIUS,'C',4)
                                                           + ')' + '\n')
-        string += 'Total number density of molecules:  '  + unit_manager.print_exp(parameters.neutrals_density, 2) + ' m**-3' + '\n'
-        string += 'Distance between electrodes:        '  + unit_manager.print_unit(parameters.distance,'m') + '\n'
-        string += 'Length of electrodes:               '  + unit_manager.print_unit(parameters.length,'m') + '\n'
-        string += 'Area of electrodes                  '  + unit_manager.print_exp(ccp.area, 2) + ' m**2' + '\n'
-        string += 'Plasma volume:                      '  + unit_manager.print_exp(ccp.volume, 2) + ' m**3' + '\n'
-        string += 'Starting electrons number density:  '  + unit_manager.print_exp(parameters.start_e_density, 2) + ' m**-3' + '\n'
-        string += 'Starting ionization degree:         '  + unit_manager.print_exp(parameters.start_ion_deg, 2) + '\n'
-        string += 'Electric bias peak value:           '  + unit_manager.print_unit(parameters.V_bias,'V', 4)  + '\n'
-        string += 'Mean electric field intensity:      '  + unit_manager.print_unit(ccp.E_peak,'V/m', 4) + '\n'
-        string += 'Electric bias frequency:            ' 
+        string += 'Total number density of molecules:   '  + unit_manager.print_exp(parameters.neutrals_density, 2) + ' m**-3' + '\n'
+        string += 'Distance between electrodes:         '  + unit_manager.print_unit(parameters.distance,'m') + '\n'
+        string += 'Length of electrodes:                '  + unit_manager.print_unit(parameters.length,'m') + '\n'
+        string += 'Area of electrodes                   '  + unit_manager.print_exp(ccp.area, 2) + ' m**2' + '\n'
+        string += 'Plasma volume:                       '  + unit_manager.print_exp(ccp.volume, 2) + ' m**3' + '\n'
+        string += 'Starting electrons number density:   '  + unit_manager.print_exp(parameters.start_e_density, 2) + ' m**-3' + '\n'
+        string += 'Starting ionization degree:          '  + unit_manager.print_exp(parameters.start_ion_deg, 2) + '\n'
+        string += 'Electric bias peak value:            '  + unit_manager.print_unit(parameters.V_bias,'V', 4)  + '\n'
+        string += 'Mean electric field intensity:       '  + unit_manager.print_unit(ccp.E_peak,'V/m', 4) + '\n'
+        string += 'Electric bias frequency:             ' 
         if (ccp.frequency == 0.0):
             string += 'STATIC' + '\n'
         else:
             string += unit_manager.print_unit(ccp.frequency,'Hz', 4) + '\n'
-            string += 'Electric bias period:               ' + unit_manager.print_unit(ccp.period,'s', 4) + '\n'
-            string += 'Electric bias phase at t=0:         ' + str(parameters.phase * 180.0 / math.pi) + ' deg' + '\n'
+            string += 'Electric bias period:                ' + unit_manager.print_unit(ccp.period,'s', 4) + '\n'
+            string += 'Electric bias phase at t=0:          ' + str(parameters.phase * 180.0 / math.pi) + ' deg' + '\n'
 
     # Print information about simulation parameters
     if print_simulation:
+        if not options.gui_mode: string += '\n'
         string += 'SIMULATION PARAMETERS\n'
-        string += 'Maximum  number of particles:       ' + str(parameters.Nmax_particles) + '\n'
-        string += 'Starting number of electrons:       ' + str(parameters.N0_electrons) + '\n'
-        string += 'Starting computational weight:      ' + str(START_WEIGHT) + '\n'
-        string += 'Rescaling factor                    ' + str(parameters.rescale_factor) + '\n'
-        string += 'Number of cells in PIC scheme:      ' + str(parameters.N_cells) + '\n'
-        string += 'Cell dimension:                     ' + unit_manager.print_unit(ccp.delta_grid,'m', 4) + '\n'
-        string += 'Simulation timestep:                '
+        string += 'Maximum  number of particles:        ' + str(parameters.Nmax_particles) + '\n'
+        string += 'Starting number of electrons:        ' + str(parameters.N0_electrons) + '\n'
+        string += 'Starting computational weight:       ' + unit_manager.print_exp(parameters.start_weight,3) + '\n'
+        string += 'Rescaling factor                     ' + str(parameters.rescale_factor) + '\n'
+        string += 'Number of cells in PIC scheme:       ' + str(parameters.N_cells) + '\n'
+        string += 'Cell dimension:                      ' + unit_manager.print_unit(ccp.delta_grid,'m', 4) + '\n'
+        string += 'Collisions required for fast method: ' + str(neutrals.min_scattered) + '\n'
+        string += 'Simulation timestep:                 '
         if parameters.dt_var:
             string += 'variable' + '\n'
-            string += 'Max allowed collision frequency:    ' + str(parameters.maxcollfreq*100) + ' %' + '\n'
+            string += 'Max allowed collision frequency:     ' + str(parameters.maxcollfreq*100) + ' %' + '\n'
         else:
             string += unit_manager.print_unit(parameters.dt,'s') + '\n'
-        string += 'Collisions for fast method:         ' + str(neutrals.min_scattered) + '\n'
-        string += 'Data output interval:               ' + unit_manager.print_unit(parameters.dt_output,'s', 4) + '\n'
-        string += 'Required simulation time:           '
+        string += 'Data output interval:                ' + unit_manager.print_unit(parameters.dt_output,'s', 4) + '\n'
+        string += 'Required simulation time:            '
         if (parameters.sim_duration > 0):
             string += unit_manager.print_unit(parameters.sim_duration,'s', 4)  + '\n'
         else:
             string += 'unlimited\n'
-        string += 'Electron and ion lateral loss:      '
+        string += 'Electron and ion lateral loss:       '
         if ccp.lateral_loss:
             string += 'ON' + '\n'
         else:
             string += 'OFF' + '\n'
-        string += 'Electron-ion recombination:         ' 
+        string += 'Electron-ion recombination:          ' 
         if neutrals.isactive_recomb:
             string += 'ON' + '\n'
         else:
             string += 'OFF' + '\n'
-        string += 'Electron impact cross section       ' + '\n'
-        string += '- Number of cross section values:   ' + str(parameters.N_sigma) + '\n'
-        string += '- Minimum cross section energy:     ' + unit_manager.print_unit(parameters.e_min_sigma, 'eV', 4) + '\n'
-        string += '- Maximum cross section energy:     ' + unit_manager.print_unit(parameters.e_max_sigma, 'eV', 4) + '\n'
-        string += 'Ion impact cross section            ' + '\n'
-        string += '- Number of cross section values:   ' + str(parameters.N_sigma_ions) + '\n'
-        string += '- Minimum cross section energy:     ' + unit_manager.print_unit(parameters.e_min_sigma_ions, 'eV', 4) + '\n'
-        string += '- Maximum cross section energy:     ' + unit_manager.print_unit(parameters.e_max_sigma_ions, 'eV', 4) + '\n'
+        string += 'Electron impact cross section        ' + '\n'
+        string += '- Number of cross section values:    ' + str(parameters.N_sigma) + '\n'
+        string += '- Minimum cross section energy:      ' + unit_manager.print_unit(parameters.e_min_sigma, 'eV', 4) + '\n'
+        string += '- Maximum cross section energy:      ' + unit_manager.print_unit(parameters.e_max_sigma, 'eV', 4) + '\n'
+        string += 'Ion impact cross section             ' + '\n'
+        string += '- Number of cross section values:    ' + str(parameters.N_sigma_ions) + '\n'
+        string += '- Minimum cross section energy:      ' + unit_manager.print_unit(parameters.e_min_sigma_ions, 'eV', 4) + '\n'
+        string += '- Maximum cross section energy:      ' + unit_manager.print_unit(parameters.e_max_sigma_ions, 'eV', 4) + '\n'
 
     # Print output information
     if print_output:
+        if not options.gui_mode: string += '\n'
         string += 'DATA OUTPUT PARAMETERS\n'
-        string += 'Verbosity level [0..3]:             ' + str(options.verbosity) + '\n'
-        string += 'Python debug level [0..2]:          ' + str(options.debug_lev) + '\n'
-        string += 'Fortran debug level [0..2]:         ' + str(options.debug_lev_for) + '\n'
-        string += 'Plot cross sections:                ' 
+        string += 'Verbosity level [0..3]:              ' + str(options.verbosity) + '\n'
+        string += 'Python debug level [0..2]:           ' + str(options.debug_lev) + '\n'
+        string += 'Fortran debug level [0..2]:          ' + str(options.debug_lev_for) + '\n'
+        string += 'Plot cross sections:                 ' 
         if options.plot_xsec: string += 'YES' + '\n'
         else:                 string += 'NO' + '\n'
-        string += 'Save data to file:                  '
+        string += 'Save data to file:                   '
         if (parameters.save_delay == 0):
             string += 'never' + '\n'
         elif (parameters.save_delay == 1):
@@ -118,13 +120,16 @@ def print_simulation_information(neutrals, ccp, parameters, options,
             string += 'every ' + str(parameters.save_delay) + ' cycles' + '\n'
         if (print_filenames and (parameters.save_delay > 0) ):
             string += '\n'
-            string += 'Filename electron mean data:        ' + '\"' + parameters.filename_stat_ele    + EXT +'\"\n'
-            string += 'Filename ion mean data:             ' + '\"' + parameters.filename_stat_neu    + EXT + '\"\n'
-            string += 'Filename eedf:                      ' + '\"' + parameters.filename_distrib_ele + EXT + '\"\n'
-            string += 'Filename iedf:                      ' + '\"' + parameters.filename_distrib_ion + EXT + '\"\n'
+            string += 'Filename electron mean data:         ' + '\"' + parameters.filename_stat_ele    + EXT +'\"\n'
+            string += 'Filename ion mean data:              ' + '\"' + parameters.filename_stat_neu    + EXT + '\"\n'
+            string += 'Filename eedf:                       ' + '\"' + parameters.filename_distrib_ele + EXT + '\"\n'
+            string += 'Filename iedf:                       ' + '\"' + parameters.filename_distrib_ion + EXT + '\"\n'
+            string += 'Filename electric current:           ' + '\"' + parameters.filename_I           + EXT + '\"\n'
+            string += 'Filename electric potential:         ' + '\"' + parameters.filename_V           + EXT + '\"\n'
+            
         if options.gui_mode:
-            string += 'Max number of points in plots:      ' + str(parameters.n_max_points) + '\n'
-            string += 'Decimation factor:                  ' + str(parameters.decimation_factor) + '\n'
+            string += 'Max number of points in plots:       ' + str(parameters.n_max_points) + '\n'
+            string += 'Decimation factor:                   ' + str(parameters.decimation_factor) + '\n'
                         
     return string
 
@@ -148,17 +153,24 @@ def print_gas_information(neutrals):
         string +=('Number density [m**-3]:                   ' + str( unit_manager.fix_digits(neutrals.number_density[i], 4) )
                                                                + '\n')
         string += 'Mass [u]:                                 ' + str( neutrals.mass[i] ) + '\n'
-        string +=('Energy loss per scattering:               ' + str( unit_manager.fix_digits(neutrals.energy_loss[i], 6) )
+        string += 'Mean molecule speed [m s**-1]             ' + str( unit_manager.fix_digits(neutrals.mean_v[i], 4) ) + '\n'   
+        string +=('Electron energy loss (elastic):           ' + str( unit_manager.fix_digits(neutrals.energy_loss[i], 6) )
                                                                + '\n')
-        string += 'Velocity ratio:                           ' + str( unit_manager.fix_digits(neutrals.v_ratio[i], 6) ) + '\n'
         string += 'Secondary emission coefficient            ' + str( neutrals.secondary_emission[i] ) + '\n'
         string += 'Ionization energy [eV]:                   ' + str( neutrals.ionization_energy[i] ) + '\n'
+        string += 'Number of excitation processes:           ' + str( neutrals.excitation_types[i] ) + '\n'
+        string += 'Excitation energies [eV]                  '
+        for j in range(neutrals.excitation_types[i]):
+            string += str(neutrals.excitation_energy[i][j])
+        string += '\n'
+
         if (neutrals.molecule_type[i] != 'a'):
             string += 'Number of dissociation processes:         ' + str( neutrals.dissociation_types[i] ) + '\n'
-            string += 'Dissociation energies [eV]                ' #neutrals.dissociation_energy[i]
+            string += 'Dissociation energies [eV]                ' 
             for j in range(neutrals.dissociation_types[i]):
                 string += str(neutrals.dissociation_energy[i][j])
             string += '\n'
+            
         #string += '\nTotal number density relative error = ' + \
         #           str( (neutrals.number_density.sum() - neutrals_density) / neutrals_density ) + '\n'
 
@@ -200,9 +212,9 @@ def print_runtime_info(charges, neutrals, ccp, parameters, options, time_before,
         else:      charge_density = charge_density - charges.number_density[i]
     charge_density = charge_density * ELECTRON_CHARGE #ELECTRON_CHARGE is negative
     text += 'Net charge density                       = ' + unit_manager.print_unit(charge_density,'C*m**-3',3) + '\n'
-    text += 'Total number of collisions               = ' + unit_manager.print_exp(neutrals.collisions_total_electron, 3) + \
+    text += 'Real electron collisions                 = ' + unit_manager.print_exp(neutrals.collisions_total_electron, 3) + \
                                                             str(' (%2.2f' % charges.p_coll) + '%) ' + '\n'
-    text += 'Null collisions                          = ' + unit_manager.print_exp(neutrals.collisions_null[0], 3) + '\n'
+    text += 'Null electron collisions                 = ' + unit_manager.print_exp(neutrals.collisions_null[0], 3) + '\n'
     if True: #(options.verbosity > 2):
         text += '\n'
         text += 'Number of computational particles (max '+str(parameters.Nmax_particles) + \
@@ -244,21 +256,28 @@ def print_runtime_info(charges, neutrals, ccp, parameters, options, time_before,
         text += 'Electron collisions' + '\n'
         string = ''
         length = 14
-        string += 'Gas'.ljust(gas_length) + '| Total'.ljust(length+1) + \
-                '| Elastic'.ljust(length+1) + '| Ionization'.ljust(length+1) + \
-                '| Recombination'.ljust(length+1) + '| Dissociation'.ljust(length+1)
+        string += ( 'Gas'.ljust(gas_length)
+                    + '| Total'.ljust(length+1)
+                    + '| Elastic'.ljust(length+1)
+                    + '| Ionization'.ljust(length+1)
+                    + '| Excitation'.ljust(length+1)
+                    + '| Dissociation'.ljust(length+1)
+                    + '| Recombination'.ljust(length+1)                    
+                   )
 
-        for j in range(MAX_DISSOCIATION_TYPES):
-                string += '| Type' + str(j).rjust(2) + '  '
+#        for j in range(MAX_DISSOCIATION_TYPES):
+#                string += '| Type' + str(j).rjust(2) + '  '
         text += string + '|' + '\n'   
-        string_line = ''.ljust(gas_length+1 + (length+1)*5 + 10*MAX_DISSOCIATION_TYPES, '-')
+#        string_line = ''.ljust(gas_length+1 + (length+1)*6 + 10*MAX_DISSOCIATION_TYPES, '-')
+        string_line = ''.ljust(gas_length+1 + (length+1)*6, '-')
         text += string_line + '\n'
         text += ( 'TOT'.ljust(gas_length) + '|'
-                 + unit_manager.print_exp(neutrals.collisions_total_electron,3).rjust(length)      + '|'
-                 + unit_manager.print_exp(neutrals.collisions_elastic.sum(),3).rjust(length)       + '|'
-                 + unit_manager.print_exp(neutrals.collisions_ionization.sum(),3).rjust(length)    + '|'
-                 + unit_manager.print_exp(neutrals.collisions_recombination.sum(),2).rjust(length) + '|'
+                 + unit_manager.print_exp(neutrals.collisions_total_electron,2).rjust(length)      + '|'
+                 + unit_manager.print_exp(neutrals.collisions_elastic.sum(),2).rjust(length)       + '|'
+                 + unit_manager.print_exp(neutrals.collisions_ionization.sum(),2).rjust(length)    + '|'
+                 + unit_manager.print_exp(neutrals.collisions_excitation.sum(),2).rjust(length)    + '|'
                  + unit_manager.print_exp(neutrals.collisions_dissociation.sum(),2).rjust(length)  + '|'
+                 + unit_manager.print_exp(neutrals.collisions_recombination.sum(),2).rjust(length) + '|'                  
                  + '\n' )
         text += string_line + '\n'
 
@@ -267,21 +286,23 @@ def print_runtime_info(charges, neutrals, ccp, parameters, options, time_before,
             string += str(neutrals.names[i]).ljust(gas_length) + '|'
             string += unit_manager.print_exp( ( neutrals.collisions_elastic[i]
                                                 + neutrals.collisions_ionization[i]
-                                                + neutrals.collisions_recombination[i].sum()
-                                                + neutrals.collisions_dissociation[i].sum() ) ,
+                                                + neutrals.collisions_excitation[i].sum()
+                                                + neutrals.collisions_dissociation[i].sum()
+                                                + neutrals.collisions_recombination[i].sum()) ,
                                                 2 ).rjust(length) + '|'
             string += unit_manager.print_exp( neutrals.collisions_elastic[i],              2 ).rjust(length) + '|'
             string += unit_manager.print_exp( neutrals.collisions_ionization[i],           2 ).rjust(length) + '|'
-            string += unit_manager.print_exp( neutrals.collisions_recombination[i].sum(),  2 ).rjust(length) + '|'
+            string += unit_manager.print_exp( neutrals.collisions_excitation[i].sum(),     2 ).rjust(length) + '|'
             if (neutrals.molecule_type[i] == 'a'):
                 string += '-'.rjust(length) + '|'
             else:
                 string += unit_manager.print_exp(neutrals.collisions_dissociation[i].sum(), 2).rjust(length)  + '|'
-            for k in range(MAX_DISSOCIATION_TYPES):
-                if ( (neutrals.molecule_type[i] == 'a') or (k >= neutrals.dissociation_types[i]) ):
-                    string += '-'.rjust(9) + '|'
-                else:
-                    string += unit_manager.print_exp(neutrals.collisions_dissociation[i][k],2).rjust(9) + '|'
+#            for k in range(MAX_DISSOCIATION_TYPES):
+#                if ( (neutrals.molecule_type[i] == 'a') or (k >= neutrals.dissociation_types[i]) ):
+#                    string += '-'.rjust(9) + '|'
+#                else:
+#                    string += unit_manager.print_exp(neutrals.collisions_dissociation[i][k],2).rjust(9) + '|'
+            string += unit_manager.print_exp( neutrals.collisions_recombination[i].sum(),  2 ).rjust(length) + '|'                    
             text += string + '\n'
 
         # Print table of dissociation rates and rate constants

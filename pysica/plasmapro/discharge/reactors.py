@@ -27,6 +27,7 @@
 
 import math
 import numpy
+from pysica.plasmapro.ccpla_defaults import *
 
 # +-------------+
 # | CCP Reactor |
@@ -71,7 +72,7 @@ class CcpProperties:
                                                 automatic conversion between fortran and python
                         self.potential          array used to store electric potential values at cells boundaries in PIC scheme
                         self.charge_density     array used to store electric charge density values at cells boundaries in PIC scheme
-                        self.grid_points        array used to store the posizion along z-axix of the grid nodes in PIC scheme
+                        self.grid_points        array used to store the position along z-axis of the grid nodes in PIC scheme
 
                 """
                 
@@ -98,3 +99,67 @@ class CcpProperties:
                 for i in range(n_cells+1):
                         self.grid_points[i] = i * self.delta_grid
 
+
+        def initialize_savefiles(self, filename_I, filename_V, append=False, sep=SEP, ext='.csv'):
+                """ Initialize the file where the electric potential spatial distribution is saved
+
+                    Parameters
+                    ----------
+                    filename_I:            name of the file to which the electric current at the electrodes is saved
+                    filename_V:            name of the file to which the electric potential values are saved
+                    sep:                   character or sequence used to separate data columns
+                    ext:                   extension to give to the filename (default is '.csv')
+
+                    Initialized data attributes
+                    ---------------------------
+
+                    append:                if True, open the file for appending new data to the end,
+                                           the header will not be re-written
+                    self.sep:              character or sequence to separate data columns
+                    delf.f_I:              file to which values of electric current are saved
+                    self.f_v:              file to which values of electric potential are saved
+                """
+
+                self.sep = sep
+                self.filename_I = str(filename_I) + ext
+                self.filename_V = str(filename_V) + ext                        
+
+                # Open data file where to save electric current
+                if append:
+                        data_file_I = open(self.filename_I,'a')
+                else:
+                        data_file_I = open(self.filename_I,'w')
+                        # Write header
+                        data_file_I.write('\"t[ns]\"' + self.sep + 'I [A]')
+                        data_file_I.write(EOL)
+                data_file_I.close()
+
+                # Open data file where to save electric potential spatial distribution
+                if append:
+                        data_file_V = open(self.filename_V,'a')
+                else:
+                        data_file_V = open(self.filename_V,'w')
+                        # Write header
+                        n = len(self.grid_points)
+                        for i in range(n):
+                                data_file_V.write(str(self.grid_points[i] * 1.0E-3))
+                                if (i < n-1): data_file_V.write(self.sep)
+                        data_file_V.write(EOL)
+                data_file_V.close()
+
+
+        def save_data_to_files(self, time):
+                """Saves actual data values of electric current and potential spatial distribution to the savefiles """
+
+                data_file_I = open(self.filename_I,'a')                        
+                data_file_I.write( str(1E9*time) + self.sep + str(self.average_current[0]) )
+                data_file_I.write(EOL)
+                data_file_I.close()
+
+                data_file_V = open(self.filename_V,'a')
+                n = len(self.potential)
+                for i in range(n):
+                        data_file_V.write(str(self.potential[i]))
+                        if (i < n-1): data_file_V.write(self.sep)
+                data_file_V.write(EOL)
+                data_file_V.close()

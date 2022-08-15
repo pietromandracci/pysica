@@ -58,12 +58,12 @@ contains
       integer,                                       intent(in)    :: debug_level
 
       ! Local variables
-      integer  :: type, particle
+      integer  :: particle_type, particle
  
-      do type = 0, n_types
-!         dv_z = dvmax_z(type) * sinphi
+      do particle_type = 0, n_types
+!         dv_z = dvmax_z(particle_type) * sinphi
          do particle = 1, n_particles
-            if (isactive(type,particle)) then 
+            if (isactive(particle_type, particle)) then 
                call leap_frog_particle
             endif
          enddo
@@ -79,39 +79,41 @@ contains
          ! Calculates new particle velocity v(t-dt/2)
          ! If restart is true, then stored values of velocity and position are referred to the same time
          ! so it is needed to shift velocity of dt/2 in order to apply leap-frog scheme
-         if (restart(type, particle)) then                                         ! restart = .true. -->  vz is vz(0)
-            vz(type, particle) = vz(type, particle) + dv_z(type, particle) / 2     ! vz becomes vz(dt/2) = vz(0) + az(0) * dt/2
-            restart(type, particle) = .false.
+         if (restart(particle_type, particle)) then                                         ! restart = .true. -->  vz is vz(0)
+            vz(particle_type, particle) = vz(particle_type, particle) + &
+                                         &dv_z(particle_type, particle) / 2     ! vz becomes vz(dt/2) = vz(0) + az(0) * dt/2
+            restart(particle_type, particle) = .false.
             restarted_particle = .true.
          else                                                                      ! restart = .false. --> vz is vz(t-3*dt/2)
-            vz(type, particle) = vz(type, particle) + dv_z(type, particle)         ! vz becomes vz(t-dt/2) = vz(t-3*dt/2) + az(t-dt) * dt
+            vz(particle_type, particle) = vz(particle_type, particle) + &
+                                          &dv_z(particle_type, particle)         ! vz becomes vz(t-dt/2) = vz(t-3*dt/2) + az(t-dt) * dt
             restarted_particle = .false.
-         endif ! (restart(type, particle))
+         endif ! (restart(particle_type, particle))
 
          ! Calculate the modulus of velocity (v) and store its squared value (to be used later)
-         v2(type, particle) = vx(type,particle) * vx(type,particle) + &
-                             &vy(type,particle) * vy(type,particle) + &
-                             &vz(type,particle) * vz(type,particle)
-         v(type, particle)  = sqrt(v2(type, particle))
+         v2(particle_type, particle) = vx(particle_type,particle) * vx(particle_type,particle) + &
+                             &vy(particle_type,particle) * vy(particle_type,particle) + &
+                             &vz(particle_type,particle) * vz(particle_type,particle)
+         v(particle_type, particle)  = sqrt(v2(particle_type, particle))
 
          ! Calculates new position x(t), y(t), z(t)
-         x(type,particle) = x(type,particle) + vx(type,particle) * dt  ! x(i*dt) = x((i-1)*dt) + vx((i-1/2)*dt) * dt
-         y(type,particle) = y(type,particle) + vy(type,particle) * dt  ! y(i*dt) = y((i-1)*dt) + vy((i-1/2)*dt) * dt
-         z(type,particle) = z(type,particle) + vz(type,particle) * dt  ! z(i*dt) = z((i-1)*dt) + vz((i-1/2)*dt) * dt
+         x(particle_type,particle) = x(particle_type,particle) + vx(particle_type,particle) * dt  ! x(i*dt) = x((i-1)*dt) + vx((i-1/2)*dt) * dt
+         y(particle_type,particle) = y(particle_type,particle) + vy(particle_type,particle) * dt  ! y(i*dt) = y((i-1)*dt) + vy((i-1/2)*dt) * dt
+         z(particle_type,particle) = z(particle_type,particle) + vz(particle_type,particle) * dt  ! z(i*dt) = z((i-1)*dt) + vz((i-1/2)*dt) * dt
 
-         if (debug_level > 1) then 
+         if (debug_level > 2) then 
             print *, ""
             if (restarted_particle) print *, " -> Restarted !"
-            print *, "Particle type, max type, weight     = ", type, n_types, weight(type)
+            print *, "Particle type, max type, weight     = ", particle_type, n_types, weight(particle_type)
             print *, "Particle number, max particles      = ", particle, n_particles
-            print *, "dv_z [m/s]                          = ", dv_z(type, particle)
-            print *, "vx, vy, vz, v [m/s]                 = ", vx(type,particle), &
-                                                              &vy(type,particle), &
-                                                              &vz(type,particle), &
-                                                              &v(type,particle)
-            print *, "x,y,z [m]                           = ", x(type,particle), &
-                                                              &y(type,particle), &
-                                                              &z(type,particle)
+            print *, "dv_z [m/s]                          = ", dv_z(particle_type, particle)
+            print *, "vx, vy, vz, v [m/s]                 = ", vx(particle_type,particle), &
+                                                              &vy(particle_type,particle), &
+                                                              &vz(particle_type,particle), &
+                                                              &v(particle_type,particle)
+            print *, "x,y,z [m]                           = ", x(particle_type,particle), &
+                                                              &y(particle_type,particle), &
+                                                              &z(particle_type,particle)
          endif
 
       end subroutine leap_frog_particle
@@ -131,39 +133,42 @@ contains
                              &debug_level)
 
       ! Parameters
-      real(dp), dimension(0:n_types, 1:n_particles), intent(inout) :: x, y, z                                  ! Positions and velocities
-                                                                                                               !    of the particles
-      logical,  dimension(0:n_types, 1:n_particles), intent(inout) :: isactive                                 ! Select which particles
-                                                                                                               !    are active, and which ones
-                                                                                                               !    must restart leap-frog
-                                                                                                               !    scheme at the next iteration
-      real(dp), dimension(0:n_types),                intent(inout) :: weight                                   ! Weight of each particle type 
-                                                                                                               !    (number of real particles
-                                                                                                               !     represented by each !
-                                                                                                               !    simulated one)
-      real(dp), dimension(0:n_types, 1:n_particles), intent(inout) :: x_part_added, y_part_added, z_part_added ! Positions of particles that need to be added
-      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: w_part_added                             ! Number of comp. particles to add for each real one
-      integer,  dimension(0:n_types),                intent(inout) :: n_part_added                             ! Number of particles that need to be added
-      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: indexes_removed                          ! Indexes of removed particles of each type
-      integer,  dimension(0:n_types),                intent(inout) :: n_removed                                ! Number of removed particles of each type
-      integer,                                       intent(inout) :: n_ele_abs_0                              ! Number of electrons absorbed by electrode at z=0
-      integer,                                       intent(inout) :: n_ele_abs_d                              ! Number of electrons absorbed by electrode at z=d
-      integer,                                       intent(inout) :: n_ion_abs_0                              ! Number of ions absorbed by electrode at z=0
-      integer,                                       intent(inout) :: n_ion_abs_d                              ! Number of ions absorbed by electrode at z=d 
-      real(dp),                                      intent(in)    :: distance                                 ! Distance between electrodes / m
-      real(dp),                                      intent(in)    :: length                                   ! Lateral length of the electrodes / m
-      logical,                                       intent(in)    :: lateral_loss                             ! Decide if e-/i+ are lost at the border, or recovered       
+      real(dp), dimension(0:n_types, 1:n_particles), intent(inout) :: x, y, z                ! Positions and velocities
+                                                                                             !    of the particles
+      logical,  dimension(0:n_types, 1:n_particles), intent(inout) :: isactive               ! Select which particles
+                                                                                             !    are active, and which ones
+                                                                                             !    must restart leap-frog
+                                                                                             !    scheme at the next iteration
+      real(dp), dimension(0:n_types),                intent(inout) :: weight                 ! Weight of each particle type 
+                                                                                             !    (number of real particles
+                                                                                             !     represented by each !
+                                                                                             !    simulated one)
+      real(dp), dimension(0:n_types, 1:n_particles), intent(inout) :: x_part_added, &        ! Positions of particles that need to be added
+                                                                     &y_part_added, &
+                                                                     &z_part_added         
+      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: w_part_added           ! Number of comp. particles to add for each real one
+      integer,  dimension(0:n_types),                intent(inout) :: n_part_added           ! Number of particles that need to be added
+      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: indexes_removed        ! Indexes of removed particles of each type
+      integer,  dimension(0:n_types),                intent(inout) :: n_removed              ! Number of removed particles of each type
+      integer,                                       intent(inout) :: n_ele_abs_0            ! Number of electrons absorbed by electrode at z=0
+      integer,                                       intent(inout) :: n_ele_abs_d            ! Number of electrons absorbed by electrode at z=d
+      integer,                                       intent(inout) :: n_ion_abs_0            ! Number of ions absorbed by electrode at z=0
+      integer,                                       intent(inout) :: n_ion_abs_d            ! Number of ions absorbed by electrode at z=d 
+      real(dp),                                      intent(in)    :: distance               ! Distance between electrodes / m
+      real(dp),                                      intent(in)    :: length                 ! Lateral length of the electrodes / m
+      logical,                                       intent(in)    :: lateral_loss           ! Decide if e-/i+ are lost at the border,
+                                                                                             !    or recovered       
       real(dp), dimension(1:n_types),                intent(in)    :: se_coefficient
-      integer,                                       intent(in)    :: n_types, n_particles
+      integer,                                       intent(in)    :: n_types, n_particles   
       integer,                                       intent(in)    :: debug_level
 
 
       ! Local variables
-      integer :: type, particle
+      integer :: particle_type, particle
 
-      do type = 0, n_types
+      do particle_type = 0, n_types
          do particle = 1, n_particles
-            if (isactive(type,particle)) then 
+            if (isactive(particle_type,particle)) then 
                call check_boundaries_particle
             endif
          enddo
@@ -175,47 +180,49 @@ contains
 
          ! If the particle has reached one of the electrodes, remove it and add to the electric current
          ! if it is an ion reaching an electrode, activate secondary emission process
-         if (z(type, particle) > distance) then
-            if (type == 0) then
-                n_ele_abs_d = n_ele_abs_d + int(weight(type))
+         if (z(particle_type, particle) > distance) then
+            if (particle_type == 0) then
+                n_ele_abs_d = n_ele_abs_d + int(weight(particle_type))
             else
-                n_ion_abs_d = n_ion_abs_d + int(weight(type))
+                n_ion_abs_d = n_ion_abs_d + int(weight(particle_type))
             endif
-            if (type > 0) call secondary_emission(type, x(type,particle), y(type,particle), distance)
-            n_removed(type) = n_removed(type) + 1
-            indexes_removed(type, n_removed(type)) = particle 
-         elseif (z(type, particle) < 0) then
-            if (type == 0) then
-               n_ele_abs_0 = n_ele_abs_0 + int(weight(type))
+            if (particle_type > 0) call secondary_emission(particle_type, x(particle_type,particle), y(particle_type,particle), &
+                                                          &distance)
+            n_removed(particle_type) = n_removed(particle_type) + 1
+            indexes_removed(particle_type, n_removed(particle_type)) = particle 
+         elseif (z(particle_type, particle) < 0) then
+            if (particle_type == 0) then
+               n_ele_abs_0 = n_ele_abs_0 + int(weight(particle_type))
             else
-               n_ion_abs_0 = n_ion_abs_0 + int(weight(type))
+               n_ion_abs_0 = n_ion_abs_0 + int(weight(particle_type))
             endif
-            if (type > 0)  call secondary_emission(type, x(type,particle), y(type,particle), 0.0_dp)
-            n_removed(type) = n_removed(type) + 1
-            indexes_removed(type, n_removed(type)) = particle
-         endif ! (z(type, particle) > distance) 
+            if (particle_type > 0)  call secondary_emission(particle_type, x(particle_type,particle), y(particle_type,particle), &
+                                                           &0.0_dp)
+            n_removed(particle_type) = n_removed(particle_type) + 1
+            indexes_removed(particle_type, n_removed(particle_type)) = particle
+         endif ! (z(particle_type, particle) > distance) 
 
         ! What to do if the particle has reached the edge of the electrode
          if (lateral_loss) then
             ! If the particle has reached the edge of the electrode, remove it
-            if ( (x(type,particle) > length) .or. &
-                &(y(type,particle) > length) .or. &
-                &(x(type,particle) < 0     ) .or. &
-                &(y(type,particle) < 0     )       ) then 
-               n_removed(type) = n_removed(type) + 1
-               indexes_removed(type, n_removed(type)) = particle
+            if ( (x(particle_type,particle) > length) .or. &
+                &(y(particle_type,particle) > length) .or. &
+                &(x(particle_type,particle) < 0     ) .or. &
+                &(y(particle_type,particle) < 0     )       ) then 
+               n_removed(particle_type) = n_removed(particle_type) + 1
+               indexes_removed(particle_type, n_removed(particle_type)) = particle
             endif
          else   
             ! If the particle has reached the edge of the electrode, re-enters at the opposite border (infinite length electrodes)
-            if (x(type,particle) > length)     then
-               x(type,particle) = 0.0
-            elseif (x(type,particle) < 0     ) then
-               x(type,particle) = length
+            if (x(particle_type,particle) > length)     then
+               x(particle_type,particle) = 0.0
+            elseif (x(particle_type,particle) < 0     ) then
+               x(particle_type,particle) = length
             endif
-            if     (y(type,particle) > length) then
-               y(type,particle) = 0.0
-            elseif (y(type,particle) < 0     ) then
-               y(type,particle) = length
+            if     (y(particle_type,particle) > length) then
+               y(particle_type,particle) = 0.0
+            elseif (y(particle_type,particle) < 0     ) then
+               y(particle_type,particle) = length
             endif   
          endif
 

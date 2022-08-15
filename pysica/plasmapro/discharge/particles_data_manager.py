@@ -35,7 +35,7 @@ from pysica.plasmapro.ccpla_defaults import *
 # +--------------------------------------------------+
 
 def read_file_ntypes(filename, particles):
-        """Gets the number of neutrals types from the nutrals ascii file.
+        """Gets the number of neutral types from the neutrals ascii file.
 
                 Parameters
                 ----------
@@ -113,6 +113,7 @@ def read_file_properties(filename, sep, particles, debug=False):
                                          3 = numerical value expected
                                          4 = positive value expected
                                          5 = unknown molecule type
+                                         6 = number of types exceedes max allowed
                                 message: a string containing an error message or 'Ok'
                 """
 
@@ -136,7 +137,7 @@ def read_file_properties(filename, sep, particles, debug=False):
                 line = line + 1
                 if debug: print("Line: " +str(line)+ " = \'" +string+ "\'")
  
-                # Cut newline charater from the end of line
+                # Cut newline character from the end of line
                 string = string.strip(EOL)
 
                 # Cut line portion at right of '#' char
@@ -150,7 +151,7 @@ def read_file_properties(filename, sep, particles, debug=False):
 
                         # Get a list of the strings in the line
                         l = string.split(sep)
-                        if (len(l) < 6):
+                        if (len(l) < 8):  # 8 is the number of strings expected for 1 excitation process and no dissociation
                                 status  = 2
                                 message = "line " + str(line) + ", missing values"
                                 f_input.close()
@@ -248,10 +249,65 @@ def read_file_properties(filename, sep, particles, debug=False):
                                 return (status, message)                                
                         particles.ionization_energy[row] = value
 
-                        # If molecule is not monoatomic, get dissociation energies
+                        # Get excitation energies
+                        try:
+                                value = int(l[6].strip())
+                        except IndexError:
+                                status  = 2
+                                message = "line "+str(line)+", missing values"
+                                f_input.close()
+                                return (status, message)
+                        except ValueError:
+                                status  = 3
+                                message = "line "+str(line) + \
+                                          ", numerical value expected for number of excitation types "+\
+                                          "of "+particles.names[row]
+                                f_input.close()
+                                return (status, message)
+                        if (value < 1): 
+                                status  = 4
+                                message = "line "+str(line)+", positive value expected for number of excitation types "+\
+                                          "of "+particles.names[row]
+                                f_input.close()
+                                return (status, message)
+                        if (value > MAX_EXCITATION_TYPES): 
+                                status  = 6
+                                message = "line "+str(line)+", number of excitation types exceeds maximum allowed"+\
+                                          " (" + str(MAX_EXCITATION_TYPES) + ')'
+                                f_input.close()
+                                return (status, message)                        
+                        if (len(l) < value + 7): 
+                                status  = 2
+                                message = "line "+str(line)+", missing excitation energy values for "+\
+                                          particles.names[row]
+                                f_input.close()
+                                return (status, message)
+                        particles.excitation_types[row] = abs(value)
+                        for i in range(value):
+                                try:
+                                        value2 = float(l[7+i].strip())
+                                except ValueError:
+                                        status  = 3
+                                        message = "line " + str(line) + ", numerical value expected"+\
+                                                  " for excitation energy of "+\
+                                                  particles.names[row]
+                                        f_input.close()
+                                        return (status, message)
+                                if (value2 <= 0):
+                                        status  = 4
+                                        message = "line " + str(line) + ", positive value expected"+\
+                                                  " for excitation energy of "+\
+                                                  particles.names[row]
+                                        f_input.close()
+                                        return (status, message)                                                
+                                particles.excitation_energy[row,i] = abs(value2)
+                        i_diss = 7 + value  # First index for dissociation data (if any)
+                        if debug: print('value=', value, 'i_diss=', i_diss)
+
+                        # If the molecule is not monoatomic, get dissociation energies
                         if (particles.molecule_type[row] != 'a'):
                                 try:
-                                        value = int(l[6].strip())
+                                        value = int(l[i_diss].strip())
                                 except IndexError:
                                         status  = 2
                                         message = "line "+str(line)+", missing values"
@@ -270,7 +326,13 @@ def read_file_properties(filename, sep, particles, debug=False):
                                                   "of "+particles.names[row]
                                         f_input.close()
                                         return (status, message)
-                                if (len(l) < value + 7): 
+                                if (value > MAX_DISSOCIATION_TYPES): 
+                                        status  = 6
+                                        message = "line "+str(line)+", number of dissociation types exceeds maximum allowed"+\
+                                                  " (" + str(MAX_DISSOCIATION_TYPES) + ')'
+                                        f_input.close()
+                                        return (status, message)                                
+                                if (len(l) < value + i_diss + 1): 
                                         status  = 2
                                         message = "line "+str(line)+", missing dissociation energy values for "+\
                                                   particles.names[row]
@@ -279,7 +341,7 @@ def read_file_properties(filename, sep, particles, debug=False):
                                 particles.dissociation_types[row] = abs(value)
                                 for i in range(value):
                                         try:
-                                                value2 = float(l[7+i].strip())
+                                                value2 = float(l[i_diss+i+1].strip())
                                         except ValueError:
                                                 status  = 3
                                                 message = "line " + str(line) + ", numerical value expected"+\

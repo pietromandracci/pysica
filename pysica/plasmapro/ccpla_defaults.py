@@ -102,6 +102,8 @@ SAVE_DIRECTORY_NAME       = SCRIPTNAME + '.out'           # Directory into which
 FILENAME_DEFAULTS         = SCRIPTNAME + '.defaults'      # Name of the file to which default parameters are saved with -s option
 FILENAME_CONFIG           = SCRIPTNAME + '.conf'          # Configuration file 
 FILENAME_NEUTRALS         = SCRIPTNAME + '.neutrals'      # Filename for neutrals properties
+FILENAME_I                = SCRIPTNAME + '.I'             # Filename for electric current
+FILENAME_V                = SCRIPTNAME + '.V'             # Filename for electric potential spatial distribution
 FILENAME_OUTPUT_LOG       = SCRIPTNAME + '_output.log'    # File to which output will be saved
 FILENAME_ERROR_LOG        = SCRIPTNAME + '_errors.log'    # File to which python error messages will be saved
 NAME_STAT_ELE             = '_means_ele'                  # Name of output file: time evolution of several parameters
@@ -112,7 +114,7 @@ NAME_ION_ELASTIC          = '_sigma4ions_Ar_elastic'
 NAME_ION_CHARGE_EX        = '_sigma4ions_Ar_charge-exchange'
 
 # Simulation parameters
-NMAXPARTICLES             = 100000                        # Maximum  allowed number of computational particles
+NMAXPARTICLES             = 100000                        # Maximum allowed number of computational particles
 MAX_RESCALE_FACTOR        = 1.0E6                         # Maximum allowed rescale factor
 DEFAULT_RESCALE_FACTOR    = 10.0                          # Default scaling factor for rescaling of particles weight
 DEFAULT_MIN_SCATTERED     = 100                           # Default minimum number of scattering (including null) processes
@@ -120,11 +122,12 @@ DEFAULT_MIN_SCATTERED     = 100                           # Default minimum numb
 START_WEIGHT              = 1.0                           # Initial value of computational weight for electrons and ions
 NMAXCELLS                 = 1000                          # Maximum allowed number of cells in PIC scheme
 NMINCELLS                 = 10                            # Minimum allowed number of cells in PIC scheme
-MINTRATIO                 = 1000                          # Minimum allowed ratio between electric field period 
+MINTRATIO                 = 100                           # Minimum allowed ratio between electric field period 
                                                           #       and simulation timstep (dt)
-MAX_IONIZATION_DEGREE     = 1.0E-4                        # Mximum allowed initial value of ionization degree
+MAX_IONIZATION_DEGREE     = 1.0E-4                        # Maximum allowed initial value of ionization degree
 
 MAX_DISSOCIATION_TYPES    = 3                             # Maximum allowed number of dissociation channels for each neutral type
+MAX_EXCITATION_TYPES      = 3                             # Maximum allowed number of excitation channels for each neutral type
 MOLECULE_TYPES            = ('a', 'm', 'p')               # Types of molecules
 INITIAL_VELOCITY          = 0.0                           # / m*s**-1 starting speed of electrons
 INITIAL_ANGLE             = pi/6                          # / rad     starting angle between electrons velocity and z-axis direction
@@ -159,7 +162,7 @@ DEF_PLOT_DELAY            = 1                             # Default value of num
 # Plot parameters
 N_MAX_OUTPUT              = 1000                          # Maximum number of data values registered for historic plots
 MAX_DECIMATION_FACTOR     = 20                            # Maximum allowed value of the decimation factor
-N_BINS_LOG                = 30                            # Number of bins over which log scale is activated
+N_BINS_LOG                = 100                           # Number of bins over which x log scale is activated in EEDF and IEDF plots
 DEFAULT_TERMINAL          = 'x11'                         # Gnuplot terminal type
 PERSIST                   = 0                             # Persistency of gnuplot graphs, after end of script (1=Yes, 0=No)
 SCREEEN_WIDTH             = 1024                          # Default screen width

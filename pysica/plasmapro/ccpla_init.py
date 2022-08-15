@@ -33,6 +33,7 @@ import numpy
 # Import required constants and parameters
 from pysica.parameters import *
 from pysica.constants import *
+from pysica.functions.random_pdf import random_maxwell_velocity
 from pysica.plasmapro.ccpla_defaults import *
 
 # Import required modules, classes, and functions
@@ -41,7 +42,15 @@ from pysica.managers import data_manager, unit_manager
 from pysica.functions.physics import pressure_conversion, number_density
 
 
-def initialize_parameters(parameters, verbose=False, saveonly=False, filename_config='', filename_defaults=''):
+def initialize_parameters(parameters, verbose=False, saveonly=False, filename_config='', filename_defaults='', restricted=False):
+    """  Read the simulation parameters from a configuration file
+
+         parameters:        an istance of the ConfigurationOptions class, defined in ccpla_defaults.py
+         verbose:           if True, write some info to the console
+         saveonly:          if True, save default values of the parameters to a file and then return
+         restricted:        if True, some parameters are not read 
+    """
+    
 
     (status, message) = (0, OK)
 
@@ -51,7 +60,7 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
         
     # Define a dictionary with variable names, their default values, descriptive strings, and allowed ranges
     configuration_data = data_manager.ConfigurationData()        
-    configuration_data.d['Nmax_particles']    = [ parameters.Nmax_particles, 'max number of electrons', 'checkrange', 1, 
+    configuration_data.d['Nmax_particles']    = [ parameters.Nmax_particles, 'max number of electrons/ions', 'checkrange', 1, 
                                                   NMAXPARTICLES ]
     configuration_data.d['rescale_factor']    = [ parameters.rescale_factor, 'rescale factor', 'checkrange', 1, 
                                                   MAX_RESCALE_FACTOR ]
@@ -68,7 +77,7 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
                                                   NMINCELLS, NMAXCELLS ]
     configuration_data.d['duration']          = [ parameters.sim_duration, 'requested duration of the simulation',
                                                   'checkmin', 0.0,  ]
-    configuration_data.d['dt_output']         = [ parameters.dt_output, 'time between data output', 'checkmin', 0 ]
+    configuration_data.d['dt_output']         = [ parameters.dt_output, 'time between data outputs', 'checkminstrict', 0 ]
     configuration_data.d['dt']                = [ parameters.dt, 'simulation timestep', 'checkmin', 0 ]
     configuration_data.d['save_delay']        = [ parameters.save_delay, 'data save periodicity', 'checkmin', 0 ]
     configuration_data.d['maxcollfreq']       = [ parameters.maxcollfreq, 'maximum allowed collision frequency for variable dt',
@@ -120,7 +129,7 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
     ERROR = 'Error reading file \"' + FILENAME_CONFIG + '\": '
 
     # Number of particles
-    parameters.Nmax_particles = int(configuration_data.d['Nmax_particles'][0])
+    if not restricted: parameters.Nmax_particles = int(configuration_data.d['Nmax_particles'][0])
 
     # Rescale factor
     if ( (configuration_data.d['rescale_factor'][0] > 1                           ) and \
@@ -218,7 +227,7 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
         return (status, message)
     parameters.sim_duration = configuration_data.d['duration'][0]
 
-    # Save to file preriodicity
+    # Save to file periodicity
     parameters.save_delay = int(configuration_data.d['save_delay'][0])
         
     # Maximum collision frequency allowed in calcolus of dt (for variable dt)
@@ -269,6 +278,9 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
     # Calculate starting number of electrons
     parameters.N0_electrons = int(parameters.start_e_density * parameters.volume)
 
+    # Initilize particles weight
+    parameters.start_weight = START_WEIGHT
+
     # If the number of starting electrons is greater than the maximum allowed, lower it and increase the weight 
     if (parameters.N0_electrons > parameters.Nmax_particles): 
         parameters.start_weight = 10.0**math.ceil( math.log10( parameters.N0_electrons*1.0 / parameters.Nmax_particles ) ) 
@@ -283,7 +295,7 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
             print("\nWARNING: starting ionization degree was increased to get at least one electron")
 
     # Recaculate electron density and ionization degree on the basis of the number of electrons that was obtained
-    parameters.start_e_density = parameters.N0_electrons / parameters.volume
+    parameters.start_e_density = parameters.N0_electrons * parameters.start_weight / parameters.volume
     parameters.start_ion_deg   = parameters.start_e_density / parameters.neutrals_density
 
     return (status, message)
@@ -305,9 +317,9 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
         if (cl_options.verbosity > 1): print('\n--> file \"' + filename_sigma + '\"')
         ERROR = '\nERROR in file \"' + filename_sigma+'\": '
         (status, message) = neutrals.read_xsec_electrons_elastic(filename_sigma, '\t', neutral_index, 
-                                                                 plot=( cl_options.plot_xsec and (cl_options.debug_lev > 0) ) )
+                                                                 plot=( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
         if (status != 0): return (status, ERROR + message )
-        if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()
+        if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Read ionization cross-sections for electron impact
     for neutral_index in range(neutrals.types):
@@ -318,12 +330,25 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
         (status, message) = neutrals.read_xsec_electrons_ionization(filename_sigma, '\t', neutral_index, 
                                                                     check=True,
                                                                     plot=( cl_options.plot_xsec and \
-                                                                           (cl_options.debug_lev > 0)
+                                                                           (cl_options.debug_lev > 1)
                                                                          )
                                                                    )
         if (status != 0): return (status, ERROR + message)
-        if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()
+        if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
+    # Read excitation cross-sections for electron impact
+    for neutral_index in range(neutrals.types):
+        for exc_type in range(neutrals.excitation_types[neutral_index]):
+            filename_sigma = ( SCRIPTNAME+'_sigma_' + neutrals.names[neutral_index]
+                               + '_excitation_' + str(exc_type)+EXT )
+            if (cl_options.verbosity > 1): print('\n--> file \"'+filename_sigma+'\"')
+            ERROR = '\nERROR in file \"'+filename_sigma+'\": '
+            (status, message) = neutrals.read_xsec_electrons_excitation(
+                    filename_sigma, '\t', neutral_index, exc_type, check=True,
+                    plot=( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
+            if (status != 0): return (status, ERROR + message )
+            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+        
     # Read dissociation cross-sections for electron impact
     for neutral_index in range(neutrals.types):
         for diss_type in range(neutrals.dissociation_types[neutral_index]):
@@ -333,16 +358,17 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
             ERROR = '\nERROR in file \"'+filename_sigma+'\": '
             (status, message) = neutrals.read_xsec_electrons_dissociation(
                     filename_sigma, '\t', neutral_index, diss_type, check=True,
-                    plot=( cl_options.plot_xsec and (cl_options.debug_lev > 0) ) )
+                    plot=( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
             if (status != 0): return (status, ERROR + message )
-            if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()
+            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Calculate total cross-sections, scattering frequencies and probabilities for electron impact
     (status, message) = neutrals.calculate_total_xsec_electrons()
     if (status != 0): return (status, ERROR + message )
 
     # Plot total cross-sections, scattering rates and probabilities for electron impact
-    (status, message) = neutrals.plot_xsec_electrons( plot_total       = cl_options.plot_xsec, 
+    (status, message) = neutrals.plot_xsec_electrons( plot_single      = cl_options.plot_xsec,
+                                                      plot_total       = cl_options.plot_xsec, 
                                                       plot_frequencies = cl_options.plot_xsec and (cl_options.debug_lev > 0), 
                                                       plot_relative    = cl_options.plot_xsec and (cl_options.debug_lev > 0), 
                                                       plot_boundaries  = cl_options.plot_xsec and (cl_options.debug_lev > 0) 
@@ -366,9 +392,9 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
             ERROR = '\nERROR in file \"'+filename_sigma+'\": '
             (status, message) = neutrals.read_xsec_ions_elastic(
                     filename_sigma, '\t', ion_index, neutral_index,
-                    ( cl_options.plot_xsec and (cl_options.debug_lev > 0) ) )
+                    ( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
             if (status != 0): return(status,  ERROR + message)
-            if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()
+            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Read charge exchange scattering cross-sections for ions
     filename_sigma = SCRIPTNAME + NAME_ION_CHARGE_EX + EXT
@@ -379,9 +405,9 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
             ERROR = '\nERROR in file \"' + filename_sigma + '\": '
             (status, message) = neutrals.read_xsec_ions_charge_exchange(
                 filename_sigma, '\t', ion_index, neutral_index,
-                ( cl_options.plot_xsec and (cl_options.debug_lev > 0) ) )
+                ( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
             if (status != 0): return(status, ERROR + message)
-            if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()
+            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Calculate total cross-sections, scattering rates and probabilities for ions
     (status, message) = neutrals.calculate_total_xsec_ions( )
@@ -393,8 +419,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
         (status, message) = neutrals.plot_xsec_ions( ion_type         = ion_type, 
                                                      plot_total       = cl_options.plot_xsec, 
                                                      plot_frequencies = cl_options.plot_xsec and (cl_options.debug_lev > 0), 
-                                                     plot_relative    = cl_options.plot_xsec and (cl_options.debug_lev > 0), 
-                                                     plot_boundaries  = cl_options.plot_xsec and (cl_options.debug_lev > 0) 
+                                                     plot_relative    = cl_options.plot_xsec and (cl_options.debug_lev > 0)
                                                    )
         if (status != 0): return(status, ERROR + message)
         if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()  
@@ -455,10 +480,11 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
         if (status != 0): return (status,  ERROR + message)
         if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()
 
-    return (status, message)
-
+    return (status, message)   
+    
 
 def initialize_ensambles(charges, neutrals, parameters, cl_options):
+    """ Initialize position and velocity of electrons and ions """
     
     (status, message) = (0, OK)
 
@@ -472,7 +498,7 @@ def initialize_ensambles(charges, neutrals, parameters, cl_options):
     charges.charge[0]            = ELECTRON_CHARGE
     charges.mass[0]              = ELECTRON_MASS
     charges.cm_ratio[0]          = charges.charge[0] / charges.mass[0]
-    charges.weight[0]            = START_WEIGHT
+    charges.weight[0]            = parameters.start_weight
 
     # Set all particles as inactive, i.e. wipe clear the ensambles before introducing new particles
     # also set all leap-frog flags to true, so that when a particle will be activated,
@@ -489,12 +515,15 @@ def initialize_ensambles(charges, neutrals, parameters, cl_options):
         charges.y[0][i]  = random() * parameters.length
         charges.z[0][i]  = random() * parameters.distance
         # Set starting velocity components
-        charges.vx[0][i] = 0
-        charges.vy[0][i] = 0
-        charges.vz[0][i] = 0
-        charges.v[0][i]  = math.sqrt(  charges.vx[0][i] * charges.vx[0][i]
-                                     + charges.vy[0][i] * charges.vy[0][i]
-                                     + charges.vz[0][i] * charges.vz[0][i] ) 
+        mean_v_el = numpy.sqrt(K_BOLTZMANN * neutrals.temperature / charges.mass[0])
+        (vx, vy, vz, v) = random_maxwell_velocity(mean_v_el, modulus=True)
+        charges.vx[0][i] = vx
+        charges.vy[0][i] = vy
+        charges.vz[0][i] = vz
+        charges.v[0][i]  = v
+#        charges.v[0][i]  = math.sqrt(  charges.vx[0][i] * charges.vx[0][i]
+#                                     + charges.vy[0][i] * charges.vy[0][i]
+#                                     + charges.vz[0][i] * charges.vz[0][i] ) 
         if (charges.v[0][i] != 0): 
             charges.theta[0][i] = math.acos( charges.vz[0][i] / charges.v[0][i] )
 
@@ -506,7 +535,7 @@ def initialize_ensambles(charges, neutrals, parameters, cl_options):
         charges.charge[i]            = - ELECTRON_CHARGE
         charges.mass[i]              = neutrals.mass[i-1] * ATOMIC_UNIT_MASS
         charges.cm_ratio[i]          = charges.charge[i] / charges.mass[i]
-        charges.weight[i]            = START_WEIGHT
+        charges.weight[i]            = parameters.start_weight
 
         # Starting density of ions of type i is proportional to the density of neutral species i 
         parameters.N0_ions = int(parameters.N0_electrons * neutrals.number_density[i-1] / neutrals.number_density.sum())
@@ -518,12 +547,14 @@ def initialize_ensambles(charges, neutrals, parameters, cl_options):
             charges.y[i][j]  = random() * parameters.length
             charges.z[i][j]  = random() * parameters.distance
             # Set starting velocity components
-            charges.vx[i][j] = 0
-            charges.vy[i][j] = 0
-            charges.vz[i][j] = 0
-            charges.v[i][j]  = math.sqrt(  charges.vx[i][j] * charges.vx[i][j]
-                                         + charges.vy[i][j] * charges.vy[i][j]
-                                         + charges.vz[i][j] * charges.vz[i][j] )
+            (vx, vy, vz, v) = random_maxwell_velocity(neutrals.mean_v[i-1], modulus=True)
+            charges.vx[i][j] = vx
+            charges.vy[i][j] = vy
+            charges.vz[i][j] = vz
+            charges.v[i][j]  = v           
+#            charges.v[i][j]  = math.sqrt(  charges.vx[i][j] * charges.vx[i][j]
+#                                         + charges.vy[i][j] * charges.vy[i][j]
+#                                         + charges.vz[i][j] * charges.vz[i][j] )
             # Set angle between velocity vector and z-axis
             if (charges.v[i][j] != 0): 
                 charges.theta[i][j] = math.acos( charges.vz[i][j] / charges.v[i][j] )
@@ -570,6 +601,8 @@ def generate_save_file_names(parameters):
     parameters.filename_distrib_ion = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_DISTRIB_ION)
     parameters.filename_config      = os.path.join(parameters.save_directory, FILENAME_CONFIG)
     parameters.filename_neutrals    = os.path.join(parameters.save_directory, FILENAME_NEUTRALS)
+    parameters.filename_I           = os.path.join(parameters.save_directory, FILENAME_I)
+    parameters.filename_V           = os.path.join(parameters.save_directory, FILENAME_V)
         
 
 def create_save_dir(parameters):

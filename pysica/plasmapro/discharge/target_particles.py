@@ -43,12 +43,18 @@
                 p_i = r_i(v)/r(v)
         where:
                 i      -> identifies the type of scattering process
-                          0            <= i <= self.types-1   -> elastic scattering (with neutral type i)
-                          self.types   <= i <= 2*self.types-1 -> ionization 
-                                                                        (of neutral type i-self.types)
-                          2*self.types <= i                   -> dissociation 
-                                                                        (neutral type and dissociation
-                                                                         process depending on value of i)
+                          0                <= i < self.types-1      -> elastic scattering (with neutral type i)
+                          self.types       <= i < 2*self.types-1    -> ionization 
+                                                                       (of neutral type i-self.types)
+                          2*self.types     <= i < 2*self.types   
+                                                  + n_excitations   -> excitation
+                                                                       (neutral type and dissociation
+                                                                       process depending on the value of i)
+                          2*self.types-1 +     
+                          + n_excitations  <= i                     -> dissociation 
+                                                                       (neutral type and dissociation
+                                                                       process depending on the value of i)
+
                 r_i(v) -> scattering rate for process i at speed v
                 r(v)   -> total scattering rate for all processes at speed v
                 of course, the sum of all p_i gives 1.
@@ -85,7 +91,7 @@ import numpy
 from pysica.parameters import *
 from pysica.constants import *
 from pysica.plasmapro.ccpla_defaults import *     
-from pysica.functions.physics import number_density
+from pysica.functions.physics import number_density, mean_speed_maxwell
 from pysica.managers.data_manager import DataGrid
 from pysica.managers.gnuplot_manager import gnuplot_installed, new_plot, plot2d, plot_curves, plot_close, plot_close_all
 from pysica.io.io_files import write_to_disk
@@ -223,23 +229,27 @@ class TargetParticles:
                         self.names:                      names of the gas molecules (max 8 char)
                         self.molecule_type:              string describing the type of molecule (1 char)
                                                                 'a'= atom, 'm'= nonpolar molecule, 'p'= polar molecule
+                                                                actually polar and non-polar molecules are treated in the 
+                                                                same way, but this may change in the future
                         self.mass:                       masses of gas molecules / u
                         self.mean_v:                     mean speeds of gas molecules (all at the same temperature)
                         self.gas_flow:                   array of gas fluxes / arbitrary units
                         self.partial_pressure:           array of gases partial pressures / Pa
                         self.number_density:             number density of neutral species
                         self.secondary_emission:         secondary emission coeff. i.e. average number of e- emitted 
-                                                                when an ion is collected at the cathode
+                                                                when an ion is collected at one electrode
                         self.dissociation_rate           dissociation rate for each molecule type and its dissociation types
                         self.dissociation_rate_constant  dissociation rate constant for each molecule type and its dissociation types
 
-                        self.energy_loss:                fraction of energy transferred from electron to neutral 
+                        self.energy_loss:                fraction of energy transferred from an electron to a neutral particle
                                                                 during elastic scattering
-                        self.energy_loss_ions:           fraction of energy transferred from ions to neutral 
+                        self.energy_loss_ions:           fraction of energy transferred from an ion to a neutral particle
                                                                 during elastic scattering
                         self.v_ratio:                    electron speed reduction during elastic scattering
-                        self.v_ratio_ions:               ions speed reduction during elastic scattering
+                        self.v_ratio_ions:               ion speed reduction during elastic scattering
                         self.ionization_energy:          first ionization energy / eV
+                        self.excitation_tpyes            number of excitation processes for each neutral type
+                        self.excitation_energy:          excitation energies for processes to be considered / eV
                         self.dissociation_types:         number of dissociation processes for each neutral type
                         self.dissociation_energy:        dissociation energies for processes to be considered / eV
 
@@ -250,28 +260,30 @@ class TargetParticles:
 
                         self.sigma_elastic:              cross section table for electron impact elastic scattering 
                         self.sigma_ionization:           cross section table for electron impact ionization
+                        self.sigma_excitation            cross section table for electron impact excitation
                         self.sigma_dissociation:         cross section table for electron impact dissociation   
 
-                        self.sigma_recombination_diss    cross section table for electron impact dissociative recombination 
+                        self.sigma_recombination_diss:   cross section table for electron impact dissociative recombination 
                                                                 of ionized molecules
-#                       self.sigma_recombination_3body   cross section table for electron impact three body recombination 
-                                                                of ionized atoms/molecules
-#                       self.sigma_recombination_rad     cross section table for electron impact radiative recombination 
-                                                                of ionized atoms/molecules
+#                       self.sigma_recombination_3body:  cross section table for electron impact three body recombination 
+#                                                                of ionized atoms/molecules
+#                       self.sigma_recombination_rad:    cross section table for electron impact radiative recombination 
+#                                                                of ionized atoms/molecules
 
-                        self.sigma_elastic_ions:         cross section table for ions impact elastic scattering 
-                        self.sigma_charge_exchange_ions: cross section table for ions impact elastic scattering 
+                        self.sigma_elastic_ions:         cross section table for ion impact elastic scattering 
+                        self.sigma_charge_exchange_ions: cross section table for ion impact elastic scattering 
 
-                        self.collisions_null:             number of electron null collisions
-                        self.collisions_elastic:          number of electron elastic collisions
-                        self.collisions_ionization:       number of electron ionization collisions
-                        self.collisions_dissociation:     number of electron dissociation collisions
-                        self.collisions_recombination:    number of electron/ion recombination collisions
-                        self.collisions_total_electron    total number of electron collisions, of any type
-                        self.dissociation_rate:           dissociation rate of neutral particles, 
-                                                                for each type and dissociation process
-                        self.dissociation_rate_constant:  dissociation rate constant of neutral particles, 
-                                                                for each type and dissociation process
+                        self.collisions_null:            number of electron null collisions
+                        self.collisions_elastic:         number of electron elastic collisions
+                        self.collisions_ionization:      number of electron ionization collisions
+                        self.collisions_excitation:      number of electron excitation collisions
+                        self.collisions_dissociation:    number of electron dissociation collisions
+                        self.collisions_recombination:   number of electron/ion recombination collisions
+                        self.collisions_total_electron:  total number of electron collisions, of any type
+                        self.dissociation_rate:          dissociation rate of neutral particles, 
+                                                               for each type and dissociation process
+                        self.dissociation_rate_constant: dissociation rate constant of neutral particles, 
+                                                               for each type and dissociation process
 
                         Returns
                         -------
@@ -299,14 +311,16 @@ class TargetParticles:
 
                 # Characteristics for interaction with electrons
                 self.energy_loss                = numpy.zeros(self.types, 'd')
-                self.v_ratio                    = numpy.zeros(self.types, 'd')
+#                self.v_ratio                    = numpy.zeros(self.types, 'd')
                 self.ionization_energy          = numpy.zeros(self.types, 'd')
+                self.excitation_types           = numpy.zeros(self.types, 'b')
+                self.excitation_energy          = numpy.zeros( (self.types, MAX_EXCITATION_TYPES), 'd', order='F' )
                 self.dissociation_types         = numpy.zeros(self.types, 'b')
                 self.dissociation_energy        = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES), 'd', order='F' )
 
                 # Characteristics for interaction with ions
                 self.energy_loss_ions           = numpy.zeros( (self.types, self.types), 'd', order='F' )
-                self.v_ratio_ions               = numpy.zeros( (self.types, self.types), 'd', order='F' )
+#                self.v_ratio_ions               = numpy.zeros( (self.types, self.types), 'd', order='F' )
 
                 # Arrays of velocity values for which cross sections are tabulated
                 self.sigma_velocities           = numpy.zeros(self.n_sigma, 'd')        
@@ -315,6 +329,8 @@ class TargetParticles:
                 # Arrays of cross sections for electron impact processes
                 self.sigma_elastic              = numpy.zeros( (self.types, self.n_sigma), 'd', order = 'F')
                 self.sigma_ionization           = numpy.zeros( (self.types, self.n_sigma), 'd', order = 'F')
+                self.sigma_excitation           = numpy.zeros( (self.types, MAX_EXCITATION_TYPES, self.n_sigma), 
+                                                             'd', order = 'F')
                 self.sigma_dissociation         = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES, self.n_sigma), 
                                                              'd', order = 'F')
 
@@ -327,36 +343,40 @@ class TargetParticles:
                 self.sigma_elastic_ions         = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
                 self.sigma_charge_exchange_ions = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
 
-################# Quantities that will be calculated during simulation
+                # Quantities that will be calculated during the simulation
                 # collision counters for electron/neutral collisions and electron/ion recombinations
                 # and dissociation rate / rate constant counters
                 self.collisions_null            = numpy.zeros(1, 'd') # Must be an array since it will be passed to f2py
                 self.collisions_elastic         = numpy.zeros(self.types, 'd')
                 self.collisions_ionization      = numpy.zeros(self.types, 'd')
+                self.collisions_excitation      = numpy.zeros( (self.types, MAX_EXCITATION_TYPES),   'd', order='F' )
                 self.collisions_dissociation    = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES), 'd', order='F' )
                 self.collisions_recombination   = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES), 'd', order='F' )
                 self.collisions_total_electron  = 0
                 self.dissociation_rate          = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES), 'd', order='F' )
                 self.dissociation_rate_constant = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES), 'd', order='F' )               
-################
+
                
-                # Read neutrals properties from ascii file
+                # Read neutral properties from ascii file
                 (status, message) = read_file_properties(filename, sep, self, debug)
                 if (status != 0): return (status, message)
 
-                # Calculate neutrals properties
+                # Calculate neutral properties
                 self.partial_pressure   = self.gas_flow * self.total_pressure / self.gas_flow.sum()
                 self.number_density     = number_density(self.partial_pressure, self.temperature)
-                # Average electron energy loss in elastic scattering
-                self.energy_loss        = 2 * ELECTRON_MASS / (self.mass * ATOMIC_UNIT_MASS) 
-                self.v_ratio            = numpy.sqrt(numpy.abs(1-self.energy_loss))                     
-                self.mean_v             = numpy.sqrt(8 * K_BOLTZMANN * self.temperature / (math.pi * self.mass))
+                
+                # Average electron energy lost during an elastic scattering
+                self.energy_loss        = 2 * ELECTRON_MASS / (self.mass * ATOMIC_UNIT_MASS)
+                # Average ratio of electron speed measured after and before an elastic scattering
+#                self.v_ratio            = numpy.sqrt(numpy.abs(1-self.energy_loss))                     
+                self.mean_v             = mean_speed_maxwell(self.temperature, self.mass)
 
                 for i in range(self.types):
                         for j in range(self.types):
-                                # Average ion energy loss in elastic scattering
+                                # Average ion energy lost during an elastic scattering
                                 self.energy_loss_ions[i][j] = 2 * self.mass[i] * self.mass[j] / (self.mass[i] + self.mass[j])**2
-                                self.v_ratio_ions[i][j]     = numpy.sqrt(1-self.energy_loss_ions[i][j])
+                                # Average ratio of ion speed measured after and before an elastic scattering
+#                                self.v_ratio_ions[i][j]     = numpy.sqrt(1-self.energy_loss_ions[i][j])
 
                 # Calculate speed values at which cross sections for electrons will be interpolated
                 v_min_sigma = math.sqrt( 2 * e_min_sigma * (-ELECTRON_CHARGE / ELECTRON_MASS) )
@@ -364,6 +384,8 @@ class TargetParticles:
                 self.sigma_velocities = numpy.linspace(v_min_sigma, v_max_sigma, self.n_sigma )
 
                 # Calculate speed values at which cross sections for each ion type will be interpolated
+                # kinetic energy values are stored in eV, so they are multiplied by electron charge
+                # to transform them in joule (ELECTRON_CHARGE is a negative number)
                 for i in range(self.types):
                         v_min_sigma = math.sqrt( 2 * e_min_sigma_ions * (-ELECTRON_CHARGE / (self.mass[i] * ATOMIC_UNIT_MASS)) )
                         v_max_sigma = math.sqrt( 2 * e_max_sigma_ions * (-ELECTRON_CHARGE / (self.mass[i] * ATOMIC_UNIT_MASS)) )
@@ -461,10 +483,12 @@ class TargetParticles:
                 # Calculate a interpolated cross-section table
                 if (ion_index is None): 
                         self.sigma_return = numpy.interp(self.sigma_velocities,
-                                                         sigma.data_array[0], sigma.data_array[1])
+                                                         sigma.data_array[0],
+                                                         sigma.data_array[1])
                 else:
                         self.sigma_return = numpy.interp(self.sigma_velocities_ions[ion_index],
-                                                         sigma.data_array[0], sigma.data_array[1])
+                                                         sigma.data_array[0],
+                                                         sigma.data_array[1])
 
                 # Plot cross-section
                 if (plot and gnuplot_installed): 
@@ -606,8 +630,7 @@ class TargetParticles:
                 # Check that cross section is zero for energies lower than ionization threshold
                 if check:
                         # Calculate speed corresponding to ionization treshold
-                        v_min = math.sqrt( 2.0 * self.ionization_energy[neutral_index] * 
-                                                                   (-ELECTRON_CHARGE / ELECTRON_MASS) )
+                        v_min = math.sqrt( 2.0 * self.ionization_energy[neutral_index] * qm_ratio )
                         i=0
                         while(self.sigma_velocities[i]<=v_min): 
                                 self.sigma_ionization[neutral_index, i]=0
@@ -615,6 +638,66 @@ class TargetParticles:
 
                 return (status, message)
 
+
+        def read_xsec_electrons_excitation(self, filename, sep, neutral_index, exc_type, check=False, plot=False):
+                """Reads the table of excitation cross section values as a function of energy from a ascii file.
+
+                        Parameters
+                        ----------
+
+                        filename:       name of the file containing cross section values at energies in the form
+
+                                                #Comment
+                                                <energy> <separator> <value>    #Comment
+                                                <energy> <separator> <value>    #Comment
+
+                                        where energies are in eV and cross section values are in m**2
+                                                
+
+                        sep:            character used to separate values (usually the tab char)
+
+                        neutral_index:  integer value indentifying the type of neutral for which cross section
+                                                shuld be read
+
+                        exc_type:       integer value identifying the type of excitation process
+
+                        check:          if True, check that all cross section values for energies lower
+                                        than dissociation threshold are zero
+
+                        plot:           if True, plot the cross section values as a function of energy,
+                                                before and after interpolation
+
+                        Returns
+                        -------
+
+                        (status, message)
+                                status:  0 = no error
+                                         1 = negative energy value found
+                                         2 = negative cross-section value found
+                                message: a string containing an error message or 'Ok'
+                """
+
+                status, message  = 0, 'OK'              # This variable is used for error checking      
+
+                title    = 'Cross section for e- impact excitation of '+ self.names[neutral_index]+' process #'+str(exc_type)
+                qm_ratio = - ELECTRON_CHARGE / ELECTRON_MASS
+
+                (status, message) = self._read_xsec(filename, sep, qm_ratio, neutral_index, None, plot, title)
+
+                if (status == 0): self.sigma_excitation[neutral_index, exc_type] = self.sigma_return
+
+                # Check that cross section is zero for energies lower than excitation threshold
+                if check:
+                        # Calculate speed corresponding to excitation treshold
+                        v_min = math.sqrt( 2.0 * self.excitation_energy[neutral_index, exc_type] * qm_ratio )
+                        i=0
+                        while(self.sigma_velocities[i]<=v_min): 
+                                self.sigma_excitation[neutral_index, exc_type, i]=0
+                                i=i+1                   
+
+                return (status, message)
+        
+        
 
         def read_xsec_electrons_dissociation(self, filename, sep, neutral_index, diss_type, check=False, plot=False):
                 """Reads the table of dissociation cross section values as a function of energy from a ascii file.
@@ -666,8 +749,7 @@ class TargetParticles:
                 # Check that cross section is zero for energies lower than dissociation threshold
                 if check:
                         # Calculate speed corresponding to dissociation treshold
-                        v_min = math.sqrt( 2.0 * self.dissociation_energy[neutral_index, diss_type] * 
-                                                                   (-ELECTRON_CHARGE / ELECTRON_MASS) )
+                        v_min = math.sqrt( 2.0 * self.dissociation_energy[neutral_index, diss_type] * qm_ratio )                      
                         i=0
                         while(self.sigma_velocities[i]<=v_min): 
                                 self.sigma_dissociation[neutral_index, diss_type, i]=0
@@ -676,7 +758,7 @@ class TargetParticles:
                 return (status, message)
 
 
-        def calculate_total_xsec_electrons(self):
+        def calculate_total_xsec_electrons(self, debug=False):
                 """Calculates main statistical parameters from cross sections.
 
                         Calculate, for the different processes (elastic scattering, ionization, dissociation types): 
@@ -694,12 +776,15 @@ class TargetParticles:
 
                         self.sigma_total_elastic:       sum of elastic scattering cross sections for all neutral types
                         self.sigma_total_ionization:    sum of ionization cross sections for all neutral types
+                        self.sigma_total_excitation:    sum of excitation cross sections for all neutral types
+                                                                and all excitation processes for each neutral type
                         self.sigma_total_dissociation:  sum of dissociation cross sections for all neutral types
                                                                 and all dissociation processes for each neutral type
                         self.sigma_total_global:        sum of all cross section for all processes
 
                         self.frequency_elastic:         collision frequencies for elastic scattering
                         self.frequency_ionization:      collision frequencies for ionization scattering
+                        self.frequency_excitation:      collision frequencies for excitation scattering
                         self.frequency_dissociation:    collision frequencies for dissociation scattering
                         self.frequency_total_global:    sum of all collision frequencies, for all prossible processes
                         self.frequency_null_collision:  null collision frequency, defined as the difference between
@@ -709,10 +794,16 @@ class TargetParticles:
 
                         self.p_relative_elastic:        relative probability of elastic scattering
                         self.p_relative_ionization:     relative probability of ionization
+                        self.p_relative_excitation:     relative probabilities excitation processes
                         self.p_relative_dissociation:   relative probabilities dissociation processes
                         self.p_relative_null_collision: relative probability of null collision                                  
 
+                        self.nmax_limits:               maximum allowed number of probability limits
+                                                        i.e. max number of processes
                         self.probability_limits:        limits for calculation of scattering type
+                        self.probability_processes:     names of the processed associated to limits
+                        self.probability_index_exc      index of the first probability limit for excitation
+                        self.probability_index_diss     index of the first probability limit for dissociation
 
                         Returns
                         -------
@@ -727,11 +818,14 @@ class TargetParticles:
 
                 self.sigma_total_elastic        = numpy.zeros( self.n_sigma, 'd')
                 self.sigma_total_ionization     = numpy.zeros( self.n_sigma, 'd')
+                self.sigma_total_excitation     = numpy.zeros( self.n_sigma, 'd')
                 self.sigma_total_dissociation   = numpy.zeros( self.n_sigma, 'd')
                 self.sigma_total_global         = numpy.zeros( self.n_sigma, 'd')
 
                 self.frequency_elastic          = numpy.zeros( (self.types, self.n_sigma), 'd', order = 'F')
                 self.frequency_ionization       = numpy.zeros( (self.types, self.n_sigma), 'd', order = 'F')
+                self.frequency_excitation       = numpy.zeros( (self.types, MAX_EXCITATION_TYPES, self.n_sigma), 
+                                                               'd', order = 'F')                
                 self.frequency_dissociation     = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES, self.n_sigma), 
                                                                'd', order = 'F')
 
@@ -740,44 +834,57 @@ class TargetParticles:
 
                 self.p_relative_elastic         = numpy.zeros( (self.types, self.n_sigma), 'd', order='F')
                 self.p_relative_ionization      = numpy.zeros( (self.types, self.n_sigma), 'd', order='F')
+                self.p_relative_excitation      = numpy.zeros( (self.types, MAX_EXCITATION_TYPES, self.n_sigma), 
+                                                                'd', order = 'F')                
                 self.p_relative_dissociation    = numpy.zeros( (self.types, MAX_DISSOCIATION_TYPES, self.n_sigma), 
                                                                 'd', order = 'F')
                 self.p_relative_null_collision  = numpy.zeros( self.n_sigma, 'd')
 
-                self.probability_limits         = numpy.zeros( (self.types*(2+MAX_DISSOCIATION_TYPES), self.n_sigma), 
-                                                                'd', order = 'F')
-
+                self.nmax_limits                = self.types * (2 + MAX_EXCITATION_TYPES + MAX_DISSOCIATION_TYPES)
+                self.probability_limits         = numpy.zeros( (self.nmax_limits, self.n_sigma), 'd', order = 'F')
+                self.probability_processes      = numpy.zeros( self.nmax_limits, 'U24')
 
                 # Calculate total cross sections for all processes
                 for i in range(self.types):
                         self.sigma_total_elastic    = self.sigma_total_elastic    + self.sigma_elastic[i]
                         self.sigma_total_ionization = self.sigma_total_ionization + self.sigma_ionization[i]
+                        for j in range(self.excitation_types[i]):
+                                self.sigma_total_excitation = ( self.sigma_total_excitation
+                                                                + self.sigma_excitation[i,j] )
                         for j in range(self.dissociation_types[i]):
-                                self.sigma_total_dissociation = self.sigma_total_dissociation + \
-                                                                self.sigma_dissociation[i,j]
+                                self.sigma_total_dissociation = ( self.sigma_total_dissociation
+                                                                  + self.sigma_dissociation[i,j] )
 
                 # Calculate total global cross-section
-                self.sigma_total_global = self.sigma_total_elastic + self.sigma_total_ionization + \
-                                          self.sigma_total_dissociation
+                self.sigma_total_global = (self.sigma_total_elastic      + self.sigma_total_ionization
+                                           + self.sigma_total_excitation + self.sigma_total_dissociation  )
 
                 # Calculate collision frequencies for all processes
                 # f_i(v) = n_i * s_i(v) * v
                 for i in range(self.types):
                         self.frequency_elastic[i]    = self.number_density[i] * self.sigma_elastic[i]    * self.sigma_velocities 
-                        self.frequency_ionization[i] = self.number_density[i] * self.sigma_ionization[i] * self.sigma_velocities 
+                        self.frequency_ionization[i] = self.number_density[i] * self.sigma_ionization[i] * self.sigma_velocities
+                        for j in range(self.excitation_types[i]):
+                                self.frequency_excitation[i,j] = ( self.number_density[i]
+                                                                   * self.sigma_excitation[i,j]
+                                                                   * self.sigma_velocities )
                         for j in range(self.dissociation_types[i]):
-                                self.frequency_dissociation[i,j] = self.number_density[i] * self.sigma_dissociation[i,j] * \
-                                                                   self.sigma_velocities 
+                                self.frequency_dissociation[i,j] = ( self.number_density[i]
+                                                                     * self.sigma_dissociation[i,j]
+                                                                     * self.sigma_velocities )
 
                 # Calculate total collision frequency 
                 # f_tot(v) = sum{f_i(v), i};  f_i(v) = n_i * s_i(v) * v
                 for i in range(self.types):
-                        self.frequency_total_global = self.frequency_total_global + \
-                                                      self.frequency_elastic[i]   + \
-                                                      self.frequency_ionization[i]
+                        self.frequency_total_global = ( self.frequency_total_global
+                                                        + self.frequency_elastic[i]
+                                                        + self.frequency_ionization[i] )
+                        for j in range(self.excitation_types[i]):
+                                self.frequency_total_global = ( self.frequency_total_global
+                                                                + self.frequency_excitation[i,j] )                        
                         for j in range(self.dissociation_types[i]):
-                                self.frequency_total_global = self.frequency_total_global + \
-                                                              self.frequency_dissociation[i,j]
+                                self.frequency_total_global = ( self.frequency_total_global
+                                                                + self.frequency_dissociation[i,j] )
 
                 # Calculate the maximum value of the total collision frequency over all velocities
                 #   f_max = max{f_tot(v), v}
@@ -790,34 +897,54 @@ class TargetParticles:
                 # Calculate relative collision probabilities
                 # prel_i(v) = f_i(v) / f_max
                 self.p_relative_null_collision = self.frequency_null_collision / self.frequency_total_global_max
-
                 for i in range(self.types):
                         self.p_relative_elastic[i]    = self.frequency_elastic[i]    / self.frequency_total_global_max
                         self.p_relative_ionization[i] = self.frequency_ionization[i] / self.frequency_total_global_max
+                        for j in range(self.excitation_types[i]):
+                                self.p_relative_excitation[i,j] = ( self.frequency_excitation[i,j]
+                                                                    / self.frequency_total_global_max )
                         for j in range(self.dissociation_types[i]):
-                                self.p_relative_dissociation[i,j]= self.frequency_dissociation[i,j] / self.frequency_total_global_max
-
-                # Calculate probability boundaries
-                self.probability_limits[0] = self.p_relative_elastic[0]
+                                self.p_relative_dissociation[i,j] = ( self.frequency_dissociation[i,j]
+                                                                      / self.frequency_total_global_max )
+                                
+                # Calculate probability boundaries                        
+                self.probability_limits[0]    = self.p_relative_elastic[0]
+                self.probability_processes[0] = 'el->'+ self.names[0] + ': elastic' 
                 for i in range(1, self.types):
-                        self.probability_limits[i] = self.probability_limits[i-1] + \
-                                                     self.p_relative_elastic[i]
-
+                        self.probability_limits[i] = ( self.probability_limits[i-1]
+                                                       + self.p_relative_elastic[i] )
+                        self.probability_processes[i] = 'el->'+ self.names[i] + ': elastic' 
                 for i in range(self.types):
-                        self.probability_limits[self.types+i] = self.probability_limits[self.types+i-1] + \
-                                                                self.p_relative_ionization[i]
-                i = self.types*2
+                        self.probability_limits[self.types+i] = ( self.probability_limits[self.types+i-1]
+                                                                  + self.p_relative_ionization[i] )
+                        self.probability_processes[self.types+i] = 'el->'+ self.names[i] + ': ionization'                       
+                self.probability_index_exc = 2 * self.types
+                i = self.probability_index_exc  # self.types*2
+                
+                for j in range(self.types):
+                        for k in range(self.excitation_types[j]):
+                                self.probability_limits[i] = ( self.probability_limits[i-1]
+                                                               + self.p_relative_excitation[j,k] )
+                                self.probability_processes[i] = 'el->'+ self.names[j] + ': excitation#' + str(k)                               
+                                i = i + 1
+                self.probability_index_diss = i
                 for j in range(self.types):
                         for k in range(self.dissociation_types[j]):
-                                self.probability_limits[i] = self.probability_limits[i-1] + \
-                                                             self.p_relative_dissociation[j,k]
-                                i = i + 1
+                                self.probability_limits[i] = ( self.probability_limits[i-1]
+                                                               + self.p_relative_dissociation[j,k] )
+                                self.probability_processes[i] = 'el->'+ self.names[j] + ': dissociation#' + str(k)
+                                i = i + 1                                
                 self.n_limits = i
+                if debug:
+                        print('Probability boundaries for electron scattering')
+                        for i in range(self.n_limits):
+                                print(i, self.probability_processes[i])
         
                 return (status, message)
 
 
-        def plot_xsec_electrons(self, plot_total=False, plot_frequencies=False, plot_relative=False, plot_boundaries=False,
+        def plot_xsec_electrons(self, plot_single=True, plot_total=False,
+                                plot_frequencies=False, plot_relative=False, plot_boundaries=False,
                                 dot_points=False):
                 """ Plots cross sections for electrons collisions and related main statistical parameters, 
                     as a function of electron energy.
@@ -831,6 +958,7 @@ class TargetParticles:
                         Parameters
                         ----------
 
+                        plot_single:      if True, plot the cross section values of single processes as a function of energy
                         plot_total:       if True, plot the total cross section values as a function of energy
                         plot_frequencies: if True, plot the collision frequency values as a function of energy
                         plot_relative:    if True, plot the relative scattering probabilities
@@ -852,12 +980,59 @@ class TargetParticles:
 
                 if dot_points: plot_style = 'dots'
                 else:          plot_style = 'points'
-               
+
+                # Plot cross-sections for single processes
+                if plot_single:
+                        data_list = []
+                        # Prepare graph
+                        self.cross_section_graph = new_plot(title='Cross sections for electron scattering',
+                                                            xlabel='Energy / eV',
+                                                            ylabel='Cross section / m**2',
+                                                            logx=True,
+                                                            logy=True,
+                                                            format_x='%g',
+                                                            format_y='%g',
+                                                            grid=True,
+                                                            style=plot_style,
+                                                            persistence=XSEC_PLOT_PERSIST,
+                                                            redirect_output=True)
+
+                        # Plot cross sections for each process type and gas type
+                        for i in range(self.types):
+                                data_list.append( [ self.sigma_energies(),
+                                                         self.sigma_elastic[i],
+                                                         'elastic ' + self.names[i],
+                                                         None ] )
+                        for i in range(self.types):
+                                data_list.append( [ self.sigma_energies(),
+                                                         self.sigma_ionization[i],
+                                                         'ionization ' + self.names[i],
+                                                         None ] )
+                        for i in range(self.types):
+                                for j in range(self.excitation_types[i]):
+                                        data_list.append( [ self.sigma_energies(),
+                                                                 self.sigma_excitation[i,j],
+                                                                 'excitation ' + self.names[i] + ' # ' + str(j),
+                                                                 None ] )                        
+                        for i in range(self.types):
+                                for j in range(self.dissociation_types[i]):
+                                        data_list.append( [ self.sigma_energies(),
+                                                                 self.sigma_dissociation[i,j],
+                                                                 'dissociation ' + self.names[i] + ' # ' + str(j),
+                                                                 None ] )
+
+                        plot_curves(self.cross_section_graph, data_list)
+
+                        # Shut down gnuplot process, window remain visible due to persist option
+                        plot_close(self.cross_section_graph, keep_output=True, delay=DEL_DATA_FILES_DELAY)
+                        del(self.cross_section_graph)
+
+                
                 # Plot total cross-sections
                 if plot_total:
                         data_list = []
                         # Prepare graph
-                        self.cross_section_graph = new_plot(title='Cross sections for e- impact',
+                        self.cross_section_graph = new_plot(title='Total cross sections for electron scattering',
                                                             xlabel='Energy / eV',
                                                             ylabel='Cross section / m**2',
                                                             logx=True,
@@ -883,27 +1058,13 @@ class TargetParticles:
                                                  'total ionization',
                                                  None] )
                         data_list.append( [ self.sigma_energies(),
+                                                 self.sigma_total_excitation,
+                                                 'total excitation',
+                                                 None ] )                        
+                        data_list.append( [ self.sigma_energies(),
                                                  self.sigma_total_dissociation,
                                                  'total dissociation',
                                                  None ] )
-
-                        # Plot cross sections for each process type and gas type
-                        for i in range(self.types):
-                                data_list.append( [ self.sigma_energies(),
-                                                         self.sigma_elastic[i],
-                                                         'elastic ' + self.names[i],
-                                                         None ] )
-                        for i in range(self.types):
-                                data_list.append( [ self.sigma_energies(),
-                                                         self.sigma_ionization[i],
-                                                         'ionization ' + self.names[i],
-                                                         None ] )
-                        for i in range(self.types):
-                                for j in range(self.dissociation_types[i]):
-                                        data_list.append( [ self.sigma_energies(),
-                                                                 self.sigma_dissociation[i,j],
-                                                                 'dissociation ' + self.names[i] + ' # ' + str(j),
-                                                                 None ] )
 
                         plot_curves(self.cross_section_graph, data_list)
                         
@@ -914,7 +1075,7 @@ class TargetParticles:
                 # Plot collision frequencies                
                 if plot_frequencies:
                         data_list = []
-                        self.coll_freq_graph = new_plot(title='Collision frequencies',
+                        self.coll_freq_graph = new_plot(title='Collision frequencies for electron scattering',
                                                         xlabel='Energy / eV',
                                                         ylabel='Frequency / Hz',
                                                         format_x='%g',
@@ -932,6 +1093,11 @@ class TargetParticles:
                                                          self.frequency_ionization[i],
                                                          'ionization ' + self.names[i],
                                                          None ] )
+                                for j in range(self.excitation_types[i]):
+                                        data_list.append( [ self.sigma_energies(),
+                                                                 self.frequency_excitation[i,j],
+                                                                 'excitation ' + self.names[i] + ' # ' + str(j),
+                                                                 None ] )                                
                                 for j in range(self.dissociation_types[i]):
                                         data_list.append( [ self.sigma_energies(),
                                                                  self.frequency_dissociation[i,j],
@@ -958,7 +1124,7 @@ class TargetParticles:
                 # Plot relative collision frequencies
                 if plot_relative:
                         data_list = []
-                        self.rel_coll_freq_graph = new_plot(title='Relative collision frequencies',
+                        self.rel_coll_freq_graph = new_plot(title='Relative collision frequencies for electron scattering',
                                                             xlabel='Energy / eV',
                                                             ylabel='Relative probability / %',
                                                             logx=True,
@@ -975,6 +1141,11 @@ class TargetParticles:
                                                          self.p_relative_ionization[i]*100,
                                                          'ionization '+self.names[i],
                                                          None ] )
+                                for j in range(self.excitation_types[i]):
+                                        data_list.append( [ self.sigma_energies(),
+                                                                 self.p_relative_excitation[i,j]*100,
+                                                                 'excitation ' + self.names[i] + ' # ' + str(j),
+                                                                 None ] )                                
                                 for j in range(self.dissociation_types[i]):
                                         data_list.append( [ self.sigma_energies(),
                                                                  self.p_relative_dissociation[i,j]*100,
@@ -993,7 +1164,7 @@ class TargetParticles:
                 # Plot probability boundaries
                 if plot_boundaries:
                         data_list = []
-                        self.boundaries_graph = new_plot(title='Probability boundaries',
+                        self.boundaries_graph = new_plot(title='Probability boundaries for electron scattering',
                                                          xlabel='Energy / eV',
                                                          ylabel='Probability limit',
                                                          logx=True,
@@ -1004,7 +1175,8 @@ class TargetParticles:
                         for i in range(self.n_limits):
                                 data_list.append( [ self.sigma_energies(),
                                                          self.probability_limits[i],
-                                                         'boundary #'+str(i),
+                                                         #'boundary #'+str(i),
+                                                         self.probability_processes[i],
                                                          None ] )
 
                         plot_curves(self.boundaries_graph, data_list)
@@ -1110,7 +1282,7 @@ class TargetParticles:
                 return (status, message)
 
 
-        def calculate_total_xsec_ions(self):
+        def calculate_total_xsec_ions(self, debug=False):
                 """Calculates main statistical parameters from cross sections for ion impact processes.
 
                         Calculate, for the different processes (elastic scattering, ionization, dissociation types): 
@@ -1126,21 +1298,31 @@ class TargetParticles:
                         Initialized data attributes
                         ---------------------------
 
-                        self.sigma_total_global_ions:        sum of all cross section for all processes
+                        Calculated total global cross section for each ion, sum of all targets and all processes
+                        self.sigma_total_global_ions:          sum of all cross section for all processes
 
-                        self.frequency_elastic_ions:         collision frequencies for elastic scattering
-                        self.frequency_charge_exchange_ions: collision frequencies for charge exchange scattering
-                        self.frequency_total_global_ions:    sum of all collision frequencies, for all prossible processes
-                        self.frequency_null_collision_ions:  null collision frequency, defined as the difference between
-                                                                the maximum value (over all velocities) of the 
-                                                                total collision frequency
-                                                                and the collision frequency
+                        Calculated cross sections for each ion/neutral combination, sum of all processes
+                        self.sigma_total_ions:                 sum of all cross sections (elastic + charge exchange)
+                                                                 for each ion/target combinations
 
-                        self.p_relative_elastic_ions:        relative probability of elastic scattering
-                        self.p_relative_exchange_ions:       relative probability of ionization
-                        self.p_relative_null_collision:      relative probability of null collision                                     
+                        Calculated collision frequencies for   each ion/neutral combination
+                        self.frequency_elastic_ions:           collision frequencies for elastic scattering for each 
+                        self.frequency_charge_exchange_ions:   collision frequencies for charge exchange sc
+                        self.frequency_total_ions:             total collision frequency (elastic + charge exchange) 
 
-                        self.probability_limits_ions:        limits for calculation of scattering type
+                        Calculated collision frequencies for   each ion (over all neutral types)
+                        self.frequency_total_global_ions:      sum of all collision frequencies, for all possible processes
+                                                               and all neutral types 
+                        self.frequency_total_global_max_ions:  max value of the total global frequency, over all speeds
+                        self.frequency_null_collision_ions:    null collision frequency, defined as the difference between
+                                                                 the maximum value (over all velocities) of the 
+                                                                 total global collision frequency
+                                                                 and the total global collision frequency at that speed
+
+                        Calculated probabily limits for elastic, charge exchange and null collision
+                        self-p_null_ions:                      probability to have e null collision for that ion (all targets)
+                        self.probability_limits_ions:          once stated which is the target, this are the probability limits
+                                                               for the possible collision types: elastic, charge exchange, null
 
                         Returns
                         -------
@@ -1155,91 +1337,90 @@ class TargetParticles:
 
                 self.sigma_total_global_ions            = numpy.zeros( (self.types, self.n_sigma_ions), 'd', order='F')
 
+                self.sigma_total_ions                   = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
+
                 self.frequency_elastic_ions             = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
                 self.frequency_charge_exchange_ions     = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
+                self.frequency_total_ions               = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
+                
                 self.frequency_total_global_ions        = numpy.zeros( (self.types, self.n_sigma_ions), 'd', order='F')
+                self.frequency_total_global_max_ions    = numpy.zeros( self.types, 'd')                
                 self.frequency_null_collision_ions      = numpy.zeros( (self.types, self.n_sigma_ions), 'd', order='F')
 
-                self.frequency_total_global_max_ions    = numpy.zeros( self.types, 'd')
-
+                self.p_relative_null_ions               = numpy.zeros( (self.types, self.n_sigma_ions), 'd', order='F')
                 self.p_relative_elastic_ions            = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
                 self.p_relative_charge_exchange_ions    = numpy.zeros( (self.types, self.types, self.n_sigma_ions), 'd', order='F')
-                self.p_relative_null_collision_ions     = numpy.zeros( (self.types, self.n_sigma_ions), 'd', order='F')
 
-                self.probability_limits_ions            = numpy.zeros( (self.types, 2*self.types, self.n_sigma_ions), 
-                                                                      'd', order = 'F')
+                self.probability_limits_ions            = numpy.zeros( (self.types, self.types, 2, self.n_sigma_ions), 'd', order='F')
 
-                # Calculate total global cross-section
+                # Calculate total cross section (elastic + charge exchange) for each ion/target combination
                 for ion in range(self.types):
                         for target in range(self.types):
-                                self.sigma_total_global_ions[ion] = self.sigma_total_global_ions[ion] + \
-                                                                    self.sigma_elastic_ions[ion,target] + \
-                                                                    self.sigma_charge_exchange_ions[ion,target]
+                                self.sigma_total_ions[ion,target] = (   self.sigma_elastic_ions[ion,target]
+                                                                      + self.sigma_charge_exchange_ions[ion,target] )
 
-                # Calculate collision frequencies for all processes
-                # f_i(v) = n_i * s_i(v) * v
+                # Calculate collision frequencies for all processes and their sum
+                # f_(i,t)(v) = n_t * s_(i,t)(v) * v_rel
                 for ion in range(self.types):
                         for target in range(self.types):
-                                self.frequency_elastic_ions[ion,target]         = self.number_density[target] * \
-                                                                                  self.sigma_elastic_ions[ion,target] * \
-                                                                                  self.sigma_velocities_ions[ion]
-                                self.frequency_charge_exchange_ions[ion,target] = self.number_density[target] * \
-                                                                                  self.sigma_charge_exchange_ions[ion,target] * \
-                                                                                  self.sigma_velocities_ions[ion] 
-
-                # Calculate total collision frequency 
-                # f_tot(v) = sum{f_i(v), i}
+                                self.frequency_elastic_ions[ion,target]         = (  self.number_density[target]
+                                                                                   * self.sigma_elastic_ions[ion,target]
+                                                                                   * self.sigma_velocities_ions[ion] )
+                                self.frequency_charge_exchange_ions[ion,target] = (  self.number_density[target]
+                                                                                   * self.sigma_charge_exchange_ions[ion,target]
+                                                                                   * self.sigma_velocities_ions[ion] )
+                                self.frequency_total_ions[ion,target] = (   self.frequency_elastic_ions[ion,target]
+                                                                          + self.frequency_charge_exchange_ions[ion,target] )
+                                                               
+                # Calculate total global collision frequency for each ion type, summing over all neutral types
+                # f_tot_i(v) = sum{f_(i,t)(v), t}
                 for ion in range(self.types):
                         for target in range(self.types):
-                                self.frequency_total_global_ions[ion] = self.frequency_total_global_ions[ion] + \
-                                                                        self.frequency_elastic_ions[ion,target] + \
-                                                                        self.frequency_charge_exchange_ions[ion,target]
+                                self.frequency_total_global_ions[ion] = (  self.frequency_total_global_ions[ion]
+                                                                         + self.frequency_total_ions[ion,target] )
 
-                # Calculate the maximum value of the total collision frequency over all velocities
+                # Calculate the maximum value of the total global collision frequency over all velocities
                 #   f_max = max{f_tot(v), v}
                 for ion in range(self.types):
                         self.frequency_total_global_max_ions[ion] = self.frequency_total_global_ions[ion].max()
 
-                # Calculate null collision frequency (required to apply the null collision method)
+                # Calculate the null collision frequency
                 #   f_null(v) = f_max - f_tot(v)
                 for ion in range(self.types):
-                        self.frequency_null_collision_ions[ion] = self.frequency_total_global_max_ions[ion] - \
-                                                                  self.frequency_total_global_ions[ion]
-
-                # Calculate relative collision probabilities
-                # prel_i(v) = f_i(v) / f_max
+                        self.frequency_null_collision_ions[ion] = (  self.frequency_total_global_max_ions[ion] 
+                                                                   - self.frequency_total_global_ions[ion]    )
+                # Calculate relative scattering probabilities
                 for ion in range(self.types):
-                        self.p_relative_null_collision_ions[ion] = self.frequency_null_collision_ions[ion] / \
-                                                                   self.frequency_total_global_max_ions[ion]
+                        # Probability to have a null collision (regardless of the target)
+                        self.p_relative_null_ions[ion] = self.frequency_null_collision_ions[ion] / self.frequency_total_global_max_ions[ion]
                         for target in range(self.types):
-                                self.p_relative_elastic_ions[ion,target]         = self.frequency_elastic_ions[ion,target] / \
-                                                                                   self.frequency_total_global_max_ions[ion]
-                                self.p_relative_charge_exchange_ions[ion,target] = self.frequency_charge_exchange_ions[ion,target] /\
-                                                                                   self.frequency_total_global_max_ions[ion]
-
-                # Calculate probability boundaries #######################################################
+                                # Relative probability to have elastic or charge exchange, for a specific target,
+                                # if the collision is not null
+                                self.p_relative_elastic_ions[ion, target] = (  self.frequency_elastic_ions[ion,target]
+                                                                             / self.frequency_total_ions[ion,target]   )
+                                self.p_relative_charge_exchange_ions[ion, target] = (  self.frequency_charge_exchange_ions[ion,target]
+                                                                                     / self.frequency_total_ions[ion,target]   )
+                
+                # Probability boundaries to have a collision elastic, charge exchange or null
+                # once the target has been identified        
                 for ion in range(self.types):
-                        self.probability_limits_ions[ion][0] = self.p_relative_elastic_ions[ion][0]
-                        for i in range(1, self.types):
-                                self.probability_limits_ions[ion][i] = self.probability_limits_ions[ion][i-1] + \
-                                                                       self.p_relative_elastic_ions[ion][i]
-                        for i in range(self.types):
-                                self.probability_limits_ions[ion][self.types+i] = self.probability_limits_ions[ion][self.types+i-1]+\
-                                                                                  self.p_relative_charge_exchange_ions[ion][i]
-                self.n_limits_ions = 2*self.types
-        
+                        for target in range(self.types):
+                                self.probability_limits_ions[ion, target, 0] = (  (1 - self.p_relative_null_ions[ion])
+                                                                                * self.p_relative_elastic_ions[ion,target]  )
+                                self.probability_limits_ions[ion, target, 1] = (  self.probability_limits_ions[ion, target, 0]
+                                                                                + (1 - self.p_relative_null_ions[ion])
+                                                                                * self.p_relative_charge_exchange_ions[ion,target]  )
                 return (status, message)
 
 
-        def plot_xsec_ions(self, ion_type, plot_total=False, plot_frequencies=False, plot_relative=False, plot_boundaries=False,
+        def plot_xsec_ions(self, ion_type, plot_total=True, plot_frequencies=False, plot_relative=False, plot_boundaries=False,
                            dot_points=False):
                 """Plots cross sections for ion collisions and related main statistical parameters, as a function of electron energy.
 
                         Plots, for the different processes (elastic scattering, ionization, dissociation types): 
                                 - total cross sections
                                 - collision frequencies
-                                - relative scattering probabilities
-                                - probability boundaries
+                                - relative probability of elastic scattering
 
                         Parameters
                         ----------
@@ -1247,8 +1428,8 @@ class TargetParticles:
                         ion_type:         type of ion for which the quantities will be plotted
                         plot_total:       if True, plot the total cross section values as a function of energy
                         plot_frequencies: if True, plot the collision frequency values as a function of energy
-                        plot_relative:    if True, plot the relative scattering probabilities
-                        plot_boundaries:  if True, plot the probability boundaries
+                        plot_relative:    if True, plot the relative probability of elastic scattering
+                        plot_boundaries:  if True, plot the probavility boundaries
 
                         Returns
                         -------
@@ -1266,7 +1447,7 @@ class TargetParticles:
                 if dot_points: plot_style = 'dots'
                 else:          plot_style = 'points'               
 
-                # Plot total cross-sections
+                # Plot total cross-sections                       
                 if plot_total:
                         data_list = []
                         # Prepare graph
@@ -1279,17 +1460,24 @@ class TargetParticles:
                                                             style=plot_style,
                                                             persistence=XSEC_PLOT_PERSIST,
                                                             redirect_output=True)
-                        # Plot total global cross section
+                        # Plot total global cross section (all neutral types and all processes)
                         data_list.append( [ self.sigma_energies_ions(ion_type),
                                                  self.sigma_total_global_ions[ion_type],
-                                                 'total global',
+                                                 'total global' + self.names[ion_type] + '+',
                                                  None ] )
-                        # Plot cross sections for each process type
+                        # Plot cross sections for each neutral and process type
                         for target in range(self.types):
+                                # Toal cross section (all processes)
+                                data_list.append( [ self.sigma_energies_ions(ion_type),
+                                                         self.sigma_total_ions[ion_type,target],
+                                                         'total ' + self.names[ion_type] + '+ on ' + self.names[target],
+                                                         None ] )
+                                # Elastic cross section
                                 data_list.append( [ self.sigma_energies_ions(ion_type),
                                                          self.sigma_elastic_ions[ion_type,target],
                                                          'elastic ' + self.names[ion_type] + '+ on ' + self.names[target],
                                                          None ] )
+                                # Charge exchange cross section
                                 data_list.append( [ self.sigma_energies_ions(ion_type),
                                                          self.sigma_charge_exchange_ions[ion_type,target],
                                                          'charge exchange '+self.names[ion_type]+'+ on '+ self.names[target],
@@ -1317,24 +1505,29 @@ class TargetParticles:
                         
                         for target in range(self.types):
                                 data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                         self.frequency_elastic_ions[ion_type,target],
-                                                         'elastic ' + self.names[ion_type] + '+ on ' + self.names[target],
-                                                         None ] )
+                                                    self.frequency_elastic_ions[ion_type,target],
+                                                    'elastic ' + self.names[ion_type] + '+ on ' + self.names[target],
+                                                    None ] )
                                 data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                         self.frequency_charge_exchange_ions[ion_type,target],
-                                                         'charge exchange ' + self.names[ion_type] + '+ on ' + self.names[target],
-                                                         None ] )
+                                                    self.frequency_charge_exchange_ions[ion_type,target],
+                                                    'charge exchange ' + self.names[ion_type] + '+ on ' + self.names[target],
+                                                    None ] )
+                                data_list.append( [ self.sigma_energies_ions(ion_type),
+                                                    self.frequency_total_ions[ion_type, target],
+                                                    'total ' + self.names[ion_type] + '+ on ' + self.names[target],
+                                                    None ] )
                         data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                 self.frequency_null_collision_ions[ion_type],
-                                                 'null collision ' + self.names[ion_type] + '+', None ] )
+                                            self.frequency_total_global_ions[ion_type],
+                                            'total global ' + self.names[ion_type] + '+',
+                                            None ] )                                
                         data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                 self.frequency_total_global_ions[ion_type],
-                                                 'total ' + self.names[ion_type] + '+', None ] )
+                                            self.frequency_null_collision_ions[ion_type],
+                                            'null collision ' + self.names[ion_type] + '+', None ] )
                         data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                 self.frequency_total_global_max_ions[ion_type]*numpy.ones(self.n_sigma_ions),
-                                                 'max ' + self.names[ion_type] + '+', None ] )
+                                            self.frequency_total_global_max_ions[ion_type]*numpy.ones(self.n_sigma_ions),
+                                            'max ' + self.names[ion_type] + '+', None ] )
 
-                        plot_curves(self.coll_freq_graph, data_list)
+                        plot_curves(self.coll_freq_graph, data_list)                        
 
                         # Shut down gnuplot process, window remain visible due to persist option
                         plot_close(self.coll_freq_graph, keep_output=True, delay=DEL_DATA_FILES_DELAY)
@@ -1343,27 +1536,31 @@ class TargetParticles:
                 # Plot relative collision frequencies
                 if plot_relative:
                         data_list = []
-                        self.cross_sect_rel_graph = new_plot(title='Relative collision frequencies for ' + self.names[ion_type] + '+ impact',
+                        self.cross_sect_rel_graph = new_plot(title='Relative probability of ion scattering for '
+                                                             + self.names[ion_type]
+                                                             + '+ impact',
                                                              xlabel='Energy / eV',
                                                              ylabel='Relative probability / %',
                                                              logx=True,
                                                              grid=True,
+                                                             ymin = 0,
+                                                             ymax = 100,
                                                              style=plot_style,
                                                              persistence=XSEC_PLOT_PERSIST,
                                                              redirect_output=True)
+                        data_list.append( [ self.sigma_energies_ions(ion_type),
+                                            self.p_relative_null_ions[ion_type]*100,
+                                            'null '+self.names[ion_type]+'+',
+                                            None ] )                        
                         for target in range(self.types):
                                 data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                         self.p_relative_elastic_ions[ion_type,target]*100,
-                                                         'elastic '+self.names[ion_type]+'+ on '+self.names[target],
-                                                         None ] )
+                                                    self.p_relative_elastic_ions[ion_type,target]*100,
+                                                    'elastic '+self.names[ion_type]+'+ on '+self.names[target],
+                                                    None ] )
                                 data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                         self.p_relative_charge_exchange_ions[ion_type,target]*100,
-                                                         'charge exchange ' + self.names[ion_type] + '+ on ' + self.names[target],
-                                                         None ] )
-                        data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                 self.p_relative_null_collision_ions[ion_type]*100,
-                                                 'null collision ' + self.names[ion_type] + '+',
-                                                 None ] )
+                                                    self.p_relative_charge_exchange_ions[ion_type,target]*100,
+                                                    'charge exchange '+self.names[ion_type]+'+ on '+self.names[target],
+                                                    None ] )                                
 
                         plot_curves(self.cross_sect_rel_graph, data_list)
                         
@@ -1373,26 +1570,35 @@ class TargetParticles:
 
                 # Plot probability boundaries
                 if plot_boundaries:
-                        data_list = []
-                        self.boundaries_graph = new_plot(title='Probability boundaries for ' + self.names[ion_type] + '+ impact',
-                                                         xlabel='Energy / eV',
-                                                         ylabel='Probability limit',
-                                                         logx=True,
-                                                         grid=True,
-                                                         style=plot_style,
-                                                         persistence=XSEC_PLOT_PERSIST,
-                                                         redirect_output=True)
-                        for i in range(self.n_limits_ions):
+                        for target in range(self.types):                        
+                                data_list = []
+                                self.cross_sect_lim_graph = new_plot(title='Probability boundaries for '
+                                                                     + self.names[ion_type]
+                                                                     + '+ impact on ' + self.names[target],
+                                                                     xlabel='Energy / eV',
+                                                                     ylabel='Probability limit',
+                                                                     logx=True,
+                                                                     grid=True,
+                                                                     ymin = 0,
+                                                                     ymax = 1,
+                                                                     style=plot_style,
+                                                                     persistence=XSEC_PLOT_PERSIST,
+                                                                     redirect_output=True)
+
                                 data_list.append( [ self.sigma_energies_ions(ion_type),
-                                                         self.probability_limits_ions[ion_type][i],
-                                                         'boundary #'+str(i),
-                                                         None ] )
-                                
-                        plot_curves(self.boundaries_graph, data_list)
+                                                    self.probability_limits_ions[ion_type,target,0],
+                                                    'limit 0 (elastic) '+self.names[ion_type]+'+ on '+self.names[target],
+                                                    None ] )
+                                data_list.append( [ self.sigma_energies_ions(ion_type),
+                                                    self.probability_limits_ions[ion_type,target,1],
+                                                    'limit 1 (charge exchange) '+self.names[ion_type]+'+ on '+self.names[target],
+                                                    None ] )                                
+
+                                plot_curves(self.cross_sect_lim_graph, data_list)
                         
-                        # Shut down gnuplot process, window remain visible due to persist option        
-                        plot_close(self.boundaries_graph, keep_output=True, delay=DEL_DATA_FILES_DELAY)
-                        del(self.boundaries_graph)
+                                # Shut down gnuplot process, window remain visible due to persist option
+                                plot_close(self.cross_sect_lim_graph, keep_output=True, delay=DEL_DATA_FILES_DELAY)
+                                del(self.cross_sect_lim_graph)                        
 
                 return status, message
 
@@ -1699,7 +1905,7 @@ class TargetParticles:
 
 
         def save_data_to_files(self, time):
-                """Saves actual data values to files """
+                """Saves actual data values of dissociation rates to files """
 
                 data_file = open(self.filename,'a')
                 data_file.write( str(1E9*time) + self.sep )                

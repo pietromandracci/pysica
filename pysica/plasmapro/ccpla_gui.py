@@ -174,7 +174,7 @@ class CcplaWindow(tk.Frame):
         self.text_output.grid(row=1, column=0, columnspan=50)       
 
         # Add dt output scale
-        self.dt_out_set = tk.Scale(self, from_=MIN_DT_OUTPUT_EXP, to=MAX_DT_OUTPUT_EXP, showvalue=False,
+        self.dt_out_set = tk.Scale(self, from_=MIN_DT_OUTPUT_EXP, to=MAX_DT_OUTPUT_EXP, showvalue=True,#False,
                                    orient=tk.HORIZONTAL, length=300, 
                                    variable=self.dt_exp, command=self.set_dt_output)
         self.dt_out_set.grid(row=2, column=5, columnspan=10)
@@ -378,6 +378,7 @@ class CcplaWindow(tk.Frame):
                         if self.debug: print('[GUI]   -> Saving data')                                        
                         self.charges.save_data_to_files()
                         self.neutrals.save_data_to_files(self.charges.time)
+                        self.ccp.save_data_to_files(self.charges.time)
                         if self.debug: print('[GUI]   -> Data saved')
                         self.save_counter = 0                    
                 # Save actual time to be shown in next iteration
@@ -387,10 +388,10 @@ class CcplaWindow(tk.Frame):
                 if (self.charges.n_active(0) <= 0):
                     self.show_end_simulation(text ='\n\nSimulation interrupted \n (no more electrons)\n\n',
                                              color='red')
-                    self.stop_simulation()
+                    self.stop_simulation(confirm_stop=False)
                 elif ( (self.parameters.sim_duration > 0) and (self.charges.time >= self.parameters.sim_duration) ):
                     self.show_end_simulation(text='\n\nSimulation completed\n\n', color='blue')
-                    self.stop_simulation()
+                    self.stop_simulation(confirm_stop=False)
                 else:
                     self.parent_signal.send('continue')
                     self.parent_time.send(self.parameters.dt_output)                    
@@ -440,14 +441,19 @@ class CcplaWindow(tk.Frame):
         if self.debug: print('[GUI]   -> sim_status = ' + str(self.sim_status))
                 
 
-    def stop_simulation(self):
+    def stop_simulation(self, confirm_stop=True):
         """ End the running simulation """
         
         if self.data_ready:
-            self.stop_kernel()
+            if confirm_stop:
+                self.answer = tkinter.messagebox.askyesno( title='Stop simulation',
+                                                           message=('Stop the simulation ?'),
+                                                           icon='question')
+                if not self.answer: return
+            self.stop_kernel()            
         else:
             self.answer = tkinter.messagebox.askyesno( title='WARNING',
-                                                       message=('Killing the running kernel may produce data loss \n'
+                                                       message=('WARNING! Killing the running kernel may produce data loss \n'
                                                                 + 'Do you want to proceed ?'),
                                                        icon='warning')
             if not self.answer: return
@@ -482,7 +488,8 @@ class CcplaWindow(tk.Frame):
         self.runtime_plots.reset_graphs(self.ccp, self.parameters)
         self.runtime_plots.clear_graphs()
         self.runtime_plots.reset_history()
-        self.after(IDLE_TIME_GRAPHS)
+        self.draw_plots(force_plot=True)                    
+        self.after(IDLE_TIME_GRAPHS)        
         self.runtime_plots.lower_graphs()
         self.plot_counter = 0
 
@@ -503,8 +510,10 @@ class CcplaWindow(tk.Frame):
                                               append=False, sep=SEP, ext=EXT)
             self.neutrals.initialize_savefile(self.parameters.filename_stat_neu,
                                               append=False, sep=SEP, ext=EXT)
+            self.ccp.initialize_savefiles(self.parameters.filename_I, self.parameters.filename_V,
+                                          append=False, sep=SEP, ext=EXT)            
             self.save_counter = 0          
-          
+            
         # Arrange flags, windows and buttons status
         if self.debug: print('[GUI]   -> Initializing status')  
         self.sim_status = False
@@ -527,31 +536,34 @@ class CcplaWindow(tk.Frame):
 
     def edit_parameters(self):
         try:
-            editor_process = run([EDITOR_NAME, FILENAME_CONFIG, FILENAME_NEUTRALS])            
+            #editor_process = run([EDITOR_NAME, FILENAME_CONFIG, FILENAME_NEUTRALS])
+            editor_process = run([EDITOR_NAME, FILENAME_CONFIG])
         except FileNotFoundError:
             string = ('Error while trying to execute command: \"'
                       + EDITOR_NAME + '\" '
                       + FILENAME_CONFIG
-                      + ' '
-                      + FILENAME_NEUTRALS)
+#                      + ' '
+#                      + FILENAME_NEUTRALS
+                      )
             self.show_message(message=string, fore='red', back='light yellow')
             return
         self.reload_parameters()
         
                         
-    def reload_parameters(self):
-        
-        self.error= False
+    def reload_parameters(self): 
+        self.error   = False
+        self.warning = False
         ERRORS = ''
         # Reload parameters from configuration file
         (status, message) = initialize_parameters(self.parameters,
                                                   verbose=False,
                                                   saveonly=False,
                                                   filename_config=FILENAME_CONFIG,
-                                                  filename_defaults=FILENAME_DEFAULTS)
+                                                  filename_defaults=FILENAME_DEFAULTS,
+                                                  restricted=True)
         if (status != 0):
             self.error= True
-            ERRORS += message + '\n'
+            ERRORS += message + '\n' 
         # Recofigure reactor parameters
         self.ccp.__init__(self.parameters.distance,
                           self.parameters.length,
@@ -560,52 +572,52 @@ class CcplaWindow(tk.Frame):
                           self.parameters.phase,
                           self.parameters.N_cells,
                           self.parameters.lateral_loss)
+        
         # Reconfigure neutral particle properties
-        self.neutrals.__init__(self.parameters.N_sigma,
-                               self.parameters.N_sigma_ions,
-                               self.parameters.T_neutrals,
-                               self.parameters.p_neutrals,
-                               self.parameters.min_scattered,
-                               self.parameters.isactive_recomb,
-                               filename=FILENAME_NEUTRALS)
-        (status, message) = self.neutrals.read_error
-        if (status !=0):
-            self.error= True
-            ERRORS += message + '\n'
-        # Read neutral properties from file
-        (status, message) = self.neutrals.read_properties(FILENAME_NEUTRALS,
-                                                          SEP, 
-                                                          self.parameters.e_min_sigma,
-                                                          self.parameters.e_max_sigma,
-                                                          self.parameters.e_min_sigma_ions,
-                                                          self.parameters.e_max_sigma_ions)
-        if (status !=0):
-            self.error= True
-            ERRORS += message + '\n'
-        if not self.error:
-            # Reload cross sections and calculate other impact parameters
-            (status, message) = initialize_cross_sections(self.neutrals, self.options, self.parameters.isactive_recomb)
-            if (status !=0):
-                self.error= True
-                ERRORS += message + '\n'
-        if not self.error:
-            # Reconfigure electron and ion properties
-            #self.charges.__init__(self.neutrals.types+1, self.parameters.Nmax_particles, START_WEIGHT,
-            #                      self.parameters.rescale_factor)
-            initialize_ensambles(self.charges, self.neutrals, self.parameters, self.options)
+#        self.neutrals.__init__(self.parameters.N_sigma,
+#                               self.parameters.N_sigma_ions,
+#                               self.parameters.T_neutrals,
+#                               self.parameters.p_neutrals,
+#                               self.parameters.min_scattered,
+#                               self.parameters.isactive_recomb,
+#                               filename=FILENAME_NEUTRALS)
+#        (status, message) = self.neutrals.read_error
+#        if (status !=0):
+#            self.error= True
+#            ERRORS += 'Error in file \"' + FILENAME_NEUTRALS + '\": ' + message + '\n'
+#        # Read neutral properties from file
+#        (status, message) = self.neutrals.read_properties(FILENAME_NEUTRALS,
+#                                                          SEP, 
+#                                                          self.parameters.e_min_sigma,
+#                                                          self.parameters.e_max_sigma,
+#                                                          self.parameters.e_min_sigma_ions,
+#                                                          self.parameters.e_max_sigma_ions)
+#        if (status !=0):
+#            self.error= True
+#            ERRORS += 'Error in file \"' + FILENAME_NEUTRALS + '\": ' + message + '\n'
 
+#        if not self.error:
+#            # Reload cross sections and calculate other impact parameters
+#            (status, message) = initialize_cross_sections(self.neutrals, self.options, self.parameters.isactive_recomb)
+#            if (status !=0):
+#                self.error= True
+#                ERRORS += message + '\n'
         if self.error:
             self.button_reset["state"] = tk.DISABLED
             self.button_start["state"] = tk.DISABLED
-            self.show_message('Errors encountered while loading parameters: \n\n' + ERRORS,
+            self.show_message('Errors encountered while loading parameters \n\n' + ERRORS,
                               fore='red', back='light yellow')
-            self.show_status_label(text='Errors: check configuration files', color='red')                        
+            self.show_status_label(text='Errors: check configuration files', color='red')
         else:
+            # Reconfigure electron and ion properties
+            #self.charges.__init__(self.neutrals.types+1, self.parameters.Nmax_particles, START_WEIGHT,
+            #                      self.parameters.rescale_factor)            
+            initialize_ensambles(self.charges, self.neutrals, self.parameters, self.options)            
+            self.show_message('Parameters reloaded successfully', fore='blue')            
             self.button_reset["state"] = tk.NORMAL
             self.button_start["state"] = tk.DISABLED
             self.set_menu()
             self.set_dt_output()
-            self.show_message('Parameters reloaded successfully', fore='blue')
             self.show_status_label(text='Press RESET to start over', color='blue')
                         
     def set_dt_output(self, set_value=None):

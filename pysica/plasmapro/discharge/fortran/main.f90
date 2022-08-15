@@ -13,7 +13,6 @@
 !	You should have received a copy of the GNU General Public License
 !	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 module f_main
 
    use f_precision
@@ -34,30 +33,42 @@ module f_main
 
 contains
 
-   subroutine simccp(x, y, z, vx, vy, vz, v,&                           ! particles positions and velocities (inout)
-                   &isactive, restart, &                                ! arrays to identify active particles (inout) 
+   subroutine simccp(x, y, z, &                                         ! particles positions (inout)
+                   &vx, vy, vz, v,&                                     ! particles velocity components and modulus (inout)
+                   &isactive, &                                         ! array used to identify active particles (inout) 
+                   &restart, &                                          ! array used to restart LP scheme (inout) 
                    &cm_ratio, &                                         ! charge/mass ratio (signed) of each particle type (in)
-                   &weight, rescale_factor, &                           ! computational weights (inout), factor for rescaling (in)
-                   &v_values, coll_freq, &                              ! speeds for which e- coll xsec are known, coll frequencies (in)
-                   &v_values_ions, coll_freq_ions, &                    ! speeds for which ion coll xsec are known,coll frequencies (in) 
-                   &p_limits, p_limits_ions, &                          ! probability limits for electron and ion collisions (in)
-                   &n_limits, n_limits_ions, &                          ! number of probability limits for electron and ion collisions (in)
+                   &weight, &                                           ! computational weights (inout)
+                   &rescale_factor, &                                   ! factor used for weight rescaling (in)                   
+                   &v_values, &                                         ! speeds for which e- coll xsec are known (in)
+                   &coll_freq, &                                        ! max value of e- collision frequencies over all speeds (in)
+                   &p_limits, &                                         ! probability limits for electron collisions (in)
+                   &n_limits, &                                         ! number of probability limits for electron collisions (in)
+                   &limit1_exc, &                                       ! index of first probability limit for excitation (in)
+                   &limit1_diss, &                                      ! index of first probability limit for dissociation (in)                 
+                   &v_values_ions, &                                    ! speeds for which ion coll xsec are known (in) 
+                   &coll_freq_ions, &                                   ! max value of ion coll frequencies (in)
+                   &coll_f_tot_ions, &                                  ! toal collision frequency for each neutral type (all processes) (in)
+                   &p_limits_ions, &                                    ! probability limits for ion scattering (in)      
                    &k_recomb, &                                         ! coll rate coeff for e-/ion dissociative recombination (in)
                    &isactive_recomb, &                                  ! set if electron/ion recombination processes are activated
-                   &min_scattered, &                                    ! min mumber of scattering needed to apply many particles method
-                   &v_ratio, v_ratio_ions, &                            ! spped ratio after/before elastic e-/ions coll with neutrals (in)
-                   &en_ion, en_diss, n_disspro, mean_speed, &           ! neutrals prop: ion/dis energies, n diss proc, mean speed (in)
+                   &min_scattered, &                                    ! min mumber of scattering needed to apply many particles method (in)
+                   &e_loss, e_loss_ions, &                              ! mean energy loss of e-, ions during e- scattering (in)
+                   &en_ion, en_exc, en_diss, &                          ! ionization, excitation, dissociation energies (in)
+                   &n_excpro, n_disspro, &                              ! number of excitation, dissociation processes (in)
+                   &mean_speed, &                                       ! mean speed (in)                   
                    &se_coefficient, &                                   ! secondary emission coefficients for each neutral type (in)
                    &distance, length, Vmax, omega, phi, &               ! reactor and electric potential characteristics (in)
                    &lateral_loss, &                                     ! if true, electons and ions are lost atthe borded (in)
                    &rho, psi, &                                         ! electric charge density and electric potential (out) 
                    &average_current, &                                  ! average electric current measured at the electrodes (out)
                    &dt, duration, &                                     ! timestep (in), required duration of simulation (in)
-                   &coll_null,coll_ela, coll_ion, coll_dis, coll_rec, & ! collisions (inout)
-                   &n_particles, n_v_values, n_totpro, &                ! arrays dimensions (in)
-                   &n_v_values_ions, n_totpro_ions, &                   ! arrays dimensions (in)
-                   &n_types, nmax_disspro, &                            ! arrays dimensions (in)
-                   &n_cells, &                                          ! arrays dimensions (in)
+                   &coll_null,coll_ela, coll_ion, &
+                   &coll_exc, coll_dis, coll_rec, &                     ! collisions (inout)
+                   &n_particles, n_v_values, n_totpro, &                ! arrays dimensions (hide)
+                   &n_v_values_ions, &                                  ! arrays dimensions (hide)
+                   &n_types, nmax_excpro, nmax_disspro, &               ! arrays dimensions (hide)
+                   &n_cells, &                                          ! arrays dimensions (hide)
                    &debug_level)                                        ! used for debug purposes (in)
 
       !  Simulates evolution of the velocities of charged particles 
@@ -68,16 +79,20 @@ contains
       !  from particle velocity must be given to the function.
       !  The densities of particles and collision centers are considered fixed in time.
 
-      !f2py intent(hide)      :: n_particles, n_v_values, n_v_values_ions, n_totpro, n_totpro_ions, n_types, nmax_disspro, n_cells
-      !f2py intent(in)        :: cm_ratio, v_ratio, v_ratio_ions, debug_level, dt, duration, phi
-      !f2py intent(inout)     :: x, y, z, v, vx, vy, vz, weight
-      !f2py intent(inout)     :: isactive, restart, coll_null, coll_ela, coll_ion, coll_dis, diss_deg
+
+      !f2py intent(in)        :: cm_ratio, rescale-factor, v_values, coll_freq, p_limits, n_limits, limit1_exc, limit1_diss
+      !f2py intent(in)        :: v_values_ions, coll_freq_ions, coll_f_tot_ions, p_limists_ions
+      !f2py intent(in)        :: k_recomb, isactive_recomb, min_scattered, e_loss, e_loss_ions, en_ion, en_exc, en_diss, n_excpro, n_disspro
+      !f2py intent(in)        :: mean_speed, se_coefficient, distance, length, vmax, omega, phi, lateral_loss, dt, duration, debug_level
+      !f2py intent(inout)     :: x, y, z, vx, vy, vz, v, weight
+      !f2py intent(inout)     :: isactive, restart, coll_null, coll_ela, coll_ion, coll_exc, coll_dis, coll_rec
       !f2py intent(inout)     :: rho, psi
       !f2py intent(overwrite) :: average_current
+      !f2py intent(hide)      :: n_particles, n_v_values, n_v_values_ions, n_totpro, n_types, nmax_excpro, nmax_disspro, n_cells      
 
       !  Parameters
       real(dp), dimension(0:n_types,1:n_particles),     intent(inout) :: x, y, z         ! Particles positions components
-      real(dp), dimension(0:n_types,1:n_particles),     intent(inout) :: vx, vy, vz, v   ! Particles velocities: components and intensit
+      real(dp), dimension(0:n_types,1:n_particles),     intent(inout) :: vx, vy, vz, v   ! Particles velocities: components and modulus
       logical,  dimension(0:n_types,1:n_particles),     intent(inout) :: isactive        ! Selects which particlesa are active
       logical,  dimension(0:n_types,1:n_particles),     intent(inout) :: restart         ! Selects which particles must restart 
                                                                                          !    leap-frog scheme at the next iteration
@@ -89,31 +104,41 @@ contains
                                                                                          !    the max allowed number
       real(dp), dimension(1:n_v_values),                intent(in)    :: v_values        ! Velocities for which electron collision frequencies
                                                                                          !    are given
-      real(dp), dimension(1:n_types,1:n_v_values_ions), intent(in)    :: v_values_ions   ! Velocities for which ion collision frequencies
-                                                                                         !    are given
       real(dp),                                         intent(in)    :: coll_freq       ! Total global collision frequency for electrons
                                                                                          !    (maximum value over all speeds)
+      real(dp), dimension(1:n_totpro,1:n_v_values),     intent(in)    :: p_limits        ! Values used to select collision type for electrons
+      integer,                                          intent(in)    :: n_limits        ! Number of probability limits for electron collisions
+      integer,                                          intent(in)    :: limit1_exc      ! Index of prob limit for e- impact excitation
+      integer,                                          intent(in)    :: limit1_diss     ! Index of prob limit for e- impact dissociation
+      real(dp), dimension(1:n_types,1:n_v_values_ions), intent(in)    :: v_values_ions   ! Velocities for which ion collision frequencies
+                                                                                         !    are given
       real(dp), dimension(1:n_types),                   intent(in)    :: coll_freq_ions  ! Total global collision frequency
                                                                                          !    for ions (maximum value over all speeds)
-      real(dp), dimension(1:n_totpro,1:n_v_values),     intent(in)    :: p_limits        ! Values used to select collision type for electrons
-      real(dp), dimension(1:n_types,&
-                         &1:n_totpro_ions, &
-                         &1:n_v_values_ions),           intent(in)    :: p_limits_ions   ! Values used to select collisiont type for ions
-      integer,                                          intent(in)    :: n_limits        ! Number of probability limits for electron collisions
-      integer,                                          intent(in)    :: n_limits_ions   ! Number of probability limits for ion collisions
+      real(dp), dimension(1:n_types, &
+                         &1:n_types, &
+                         &1:n_v_values_ions),           intent(in)    :: coll_f_tot_ions ! Total collision frequency (all processes) for 
+                                                                                         !    collision of an ion on a specific neutral   
+      real(dp), dimension(1:n_types, &
+                         &1:n_types, &
+                         &1:2, &
+                         &1:n_v_values_ions),           intent(in)    :: p_limits_ions   ! Probability limits for ion scattering
+                                                                                         !    (elastic/charge exchange/neutral)
+                                                                                         !    for ech ion/neutral combination
       real(dp), dimension(1:n_types, &
                          &1:nmax_disspro, &
                          &1:n_v_values),                intent(in)    :: k_recomb        ! Collision rate. coeff for e-/ion recomb. / m**3*s**-1
       logical,                                          intent(in)    :: isactive_recomb ! Set if electron/ion recombiantion is active
       integer,                                          intent(in)    :: min_scattered   ! Minimum number of scatteredparticles needed
                                                                                          !    to apply the many particles method
-      real(dp), dimension(1:n_types),                   intent(in)    :: v_ratio         ! Ratio between electron velocity values measured 
-                                                                                         !    before and after an elastic scattering event
-      real(dp), dimension(1:n_types,1:n_types),         intent(in)    :: v_ratio_ions    ! Ratio between ion velocity values measured 
-                                                                                         !    before and after an elastic scattering event
+      real(dp), dimension(1:n_types),                   intent(in)    :: e_loss          ! Mean loss of e- energy in elastic scattering
+      real(dp), dimension(1:n_types,1:n_types),         intent(in)    :: e_loss_ions     ! Mean loss of ion energy in elastic scattering      
       real(dp), dimension(1:n_types),                   intent(in)    :: en_ion          ! Ionization energy of each neutral type
+      real(dp), dimension(1:n_types,1:nmax_excpro),     intent(in)    :: en_exc          ! Excitation energy for each neutral type and 
+                                                                                         !    each excitation process      
       real(dp), dimension(1:n_types,1:nmax_disspro),    intent(in)    :: en_diss         ! Dissociation energy for each neutral type and 
                                                                                          !    each dissociation process
+      integer,  dimension(1:n_types),                   intent(in)    :: n_excpro        ! Number of available excitation processes 
+                                                                                         !    for each neutral type      
       integer,  dimension(1:n_types),                   intent(in)    :: n_disspro       ! Number of available dissociation processes 
                                                                                          !    for each neutral type
       real(dp), dimension(1:n_types),                   intent(in)    :: mean_speed      ! Mean speed of neutral molecules / m*s**-1
@@ -135,6 +160,8 @@ contains
                                                                                          !    for each neutral type
       real(dp), dimension(1:n_types),                   intent(inout) :: coll_ion        ! Number of observed ionization collisions 
                                                                                          !    for each neutral gas type
+      real(dp), dimension(1:n_types,1:nmax_excpro),     intent(inout) :: coll_exc        ! Number of observed excitation collisions
+                                                                                         !    for each neutral type and excitation proc. 
       real(dp), dimension(1:n_types,1:nmax_disspro),    intent(inout) :: coll_dis        ! Number of observed dissociation collisions
                                                                                          !    for each neutral type and dissociation proc. 
       real(dp), dimension(1:n_types,1:nmax_disspro),    intent(inout) :: coll_rec        ! Number of observed electron-ion recombinations 
@@ -146,9 +173,8 @@ contains
       integer,                                          intent(in)    :: n_v_values_ions ! Number of tabulated values of ion collision frequency
       integer,                                          intent(in)    :: n_totpro        ! Total maximum possible number of scattering processes 
                                                                                          !    for electrons: elastic + ionization + dissociation
-      integer,                                          intent(in)    :: n_totpro_ions   ! Total maximum possible number of scattering processes 
-                                                                                         !    for ions: elastic + charge exchange
       integer,                                          intent(in)    :: n_types         ! Number of neutral types (and number of ion types)
+      integer,                                          intent(in)    :: nmax_excpro     ! Maximum number of excitation types      
       integer,                                          intent(in)    :: nmax_disspro    ! Maximum number of dissociation types
       integer,                                          intent(in)    :: n_cells         ! Number of cells used in the PIC scheme
       integer,                                          intent(in)    :: debug_level     ! Amount of output given for debugging purposes
@@ -178,11 +204,12 @@ contains
       integer,  dimension(0:n_types)               :: n_part_added       ! Number of particles of each type (electrons and each ion type)
                                                                          !    added during an iteration due to ionization or SE processes
       integer,  dimension(0:n_types,1:n_particles) :: w_part_added       ! Number of computational particles to add for each real one
-      real(dp), dimension(0:n_types,1:n_particles) :: x_part_added       ! Positions at which the particles of each type must be added
-      real(dp), dimension(0:n_types,1:n_particles) :: y_part_added       ! Positions (y-components) at which the particles of each type
-                                                                         !    must be added
-      real(dp), dimension(0:n_types,1:n_particles) :: z_part_added       ! Positions (z-components) at which the particles of each type
-                                                                         !    must be added
+      real(dp), dimension(0:n_types,1:n_particles) :: x_part_added       ! Positions of the particles of each type to be added (x-component)
+      real(dp), dimension(0:n_types,1:n_particles) :: y_part_added       ! Positions of the particles of each type to be added (y-component)
+      real(dp), dimension(0:n_types,1:n_particles) :: z_part_added       ! Positions of the particles of each type to be added (z-component)
+      real(dp), dimension(0:n_types,1:n_particles) :: vx_part_added      ! Velocities of the particles of each type to be added (x-component)
+      real(dp), dimension(0:n_types,1:n_particles) :: vy_part_added      ! Velocities of the particles of each type to be added (y-component)
+      real(dp), dimension(0:n_types,1:n_particles) :: vz_part_added      ! Velocities of the particles of each type to be added (z-component)      
       integer                                      :: i
 
       ! Variables used for performance checking
@@ -234,7 +261,7 @@ contains
       ! Calculate, for each  ion type,  the probability that a single ion has
       ! at least 1 scattering event of any type (including null ones)
       ! during time dt
-      ! dt  -> time interval; coll_freq -> collision frequencies for each ion type (maximum value over all ions speeds)
+      ! dt  -> time interval; coll_freq -> collision frequencies for each ion type (maximum value over all ion speeds)
       do i = 1, n_types
          p_collision_ions(i) = 1.D0 - exp(- coll_freq_ions(i) * dt )
       enddo 
@@ -394,19 +421,22 @@ contains
          ! Check which particles experienced collisions and act properly depending on collision type
          call check_collisions(x, y, z, vx, vy, vz, v, v2, &
                               &isactive, restart, &
-                              &cm_ratio, weight,  &         
-                              &v_ratio, v_ratio_ions, &    
+                              &cm_ratio, weight,  &
+                              &e_loss, e_loss_ions, &
                               &p_collision, p_collision_ions, &
-                              &p_limits, p_limits_ions, &
-                              &n_limits, n_limits_ions, &
+                              &p_limits, n_limits, &
+                              &limit1_exc, limit1_diss, &
+                              &coll_f_tot_ions, p_limits_ions, &
                               &kdt_recomb, ion_density, isactive_recomb, &
                               &min_scattered, &
-                              &n_totpro, n_totpro_ions, &
-                              &en_ion, en_diss, n_disspro, mean_speed, &    
-                              &coll_null, coll_ela, coll_ion, coll_dis, coll_rec, &              
+                              &n_totpro, &
+                              &en_ion, en_exc, en_diss, n_excpro, n_disspro, mean_speed, &    
+                              &coll_null, coll_ela, coll_ion, coll_exc, coll_dis, coll_rec, &              
                               &v_values, v_values_ions, n_v_values, n_v_values_ions, &
-                              &x_part_added, y_part_added, z_part_added, w_part_added, n_part_added, &
-                              &n_types, n_particles, nmax_disspro, &
+                              & x_part_added,  y_part_added,  z_part_added, &
+                              &vx_part_added, vy_part_added, vz_part_added, &
+                              &w_part_added, n_part_added, &
+                              &n_types, n_particles, nmax_excpro, nmax_disspro, &
                               &debug_level)
          
          if (debug_level > 0) then
@@ -431,7 +461,9 @@ contains
                            &isactive, restart, &
                            &weight, &
                            &rescale_factor, &
-                           &x_part_added, y_part_added, z_part_added, w_part_added, n_part_added, &
+                           & x_part_added,  y_part_added,  z_part_added, &
+                           &vx_part_added, vy_part_added, vz_part_added, &
+                           &w_part_added, n_part_added, &
                            &n_types, n_particles, &
                            &debug_level)
          if (debug_level > 0) then
@@ -464,9 +496,10 @@ contains
       ! Calculate the average electric current that was flowing between the electrodes during the simulated time
       average_current = (n_ele_abs_d - n_ion_abs_d - n_ele_abs_0 + n_ion_abs_0) * E_CHARGE / time
 
+      if (debug_level > 1) call collision_report
       if (debug_level > 0) then
          call cpu_time_report         
-         call print_end_signature
+         call print_end_signature      
       endif
 
     contains
@@ -480,7 +513,7 @@ contains
          if (omega > 0) then
             print *, "Electric field phase [rad]              = ", phi
             print *, "Max electric potential [V]              = ", Vmax
-            print *, "Start electric potential       [V/m]    = ", Vmax*sin(phi)
+            print *, "Start electric potential [V/m]          = ", Vmax*sin(phi)
          else
             print *, "Electric field intensity (static) [V/m] = ", Vmax
          endif
@@ -506,7 +539,31 @@ contains
          if (debug_level > 1) call pause
       end subroutine print_header_iteration
 
+      subroutine collision_report
 
+         integer :: i,j 
+         
+         print *, " "
+         print *, "ELECTRON COLLISION REPORT"
+         print *, "Elastic:      ", coll_ela
+         print *, "Ionization:   ", coll_ion
+         print *, "Excitation:   ", sum(coll_exc)
+         do i = 1, n_types
+            do j = 1, nmax_excpro
+               print *, i, j, coll_exc(i,j)
+            enddo
+         enddo         
+         print *, "Dissociation: ", sum(coll_dis)
+         do i = 1, n_types
+            do j = 1, nmax_disspro
+               print *, i, j, coll_dis(i,j)
+            enddo
+         enddo
+         print *, "Null:         ", coll_null
+         if (debug_level > 1) call pause         
+         
+      end subroutine collision_report
+      
       subroutine print_end_signature
 
          if (debug_level > 1) then
@@ -522,18 +579,18 @@ contains
          endif
          
          print *, " "
-         print *, "Time                                = ", time
-         print *, "Phase                               = ", phi
+         print *, "Time                                    = ", time
+         print *, "Phase                                   = ", phi
 !        print *, "isactive", isactive
 !        print *, "restart ", restart
          print *, ""
          print *, "*** END OF FORTRAN FUNCTION SIMCCP ***"
          print *, ""         
-         if (debug_level > 0) call pause
+         if (debug_level > 1) call pause
 
       end subroutine print_end_signature
-      
 
+      
       subroutine cpu_time_report
        
          ! Local variables
@@ -541,10 +598,11 @@ contains
 
          tcpu_mean =  tcpu_sum / n_iterations
          clock_mean = real(clock_sum) / real(n_iterations)
-         
-         print *, ''
+
+         print *, ''         
+         print *, 'CPU TIME REPORT'
          print *, 'Iterations       ->', n_iterations
-         print *, ''
+!         print *, ''
          print *, 'CPU TIME (s)       ', char(9), char(9),'Mean', char(9), char(9), 'delta', char(9), char(9),'%'         
          print *, 'All steps        ->', tcpu_mean(0), tcpu_max(0)-tcpu_min(0)  
          print *, 'Particle in cell ->', tcpu_mean(1), tcpu_max(1)-tcpu_min(1), tcpu_sum(1)/tcpu_sum(0)*100
@@ -553,7 +611,7 @@ contains
          print *, 'Remove particles ->', tcpu_mean(4), tcpu_max(4)-tcpu_min(4), tcpu_sum(4)/tcpu_sum(0)*100
          print *, 'Check collisions ->', tcpu_mean(5), tcpu_max(5)-tcpu_min(5), tcpu_sum(5)/tcpu_sum(0)*100
          print *, 'Add particles    ->', tcpu_mean(6), tcpu_max(6)-tcpu_min(6), tcpu_sum(6)/tcpu_sum(0)*100
-         print *, ''
+!         print *, ''
          print *, 'CLOCK TIME (s)     ', char(9), char(9),'Mean', char(9), char(9), 'delta', char(9), char(9),'%' 
          print *, 'All steps        ->', clock_mean(0)*1.0E-9, (clock_max(0)-clock_min(0))*1.0E-9  
          print *, 'Particle in cell ->', clock_mean(1)*1.0E-9, (clock_max(1)-clock_min(1))*1.0E-9, &
@@ -567,10 +625,11 @@ contains
          print *, 'Check collisions ->', clock_mean(5)*1.0E-9, (clock_max(5)-clock_min(5))*1.0E-9, &
                                          real(clock_sum(5))/real(clock_sum(0))*100.0
          print *, 'Add particles    ->', clock_mean(6)*1.0E-9, (clock_max(6)-clock_min(6))*1.0E-9, &
-                                         real(clock_sum(6))/real(clock_sum(0))*100.0         
-
-      end subroutine cpu_time_report           
-
+                                         real(clock_sum(6))/real(clock_sum(0))*100.0
+         if (debug_level > 1) call pause
+         
+      end subroutine cpu_time_report
+      
    end subroutine simccp
 
 end module f_main
