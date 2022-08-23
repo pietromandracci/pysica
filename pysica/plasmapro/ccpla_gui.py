@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
 """ Simulation of a capacitively coupled plasma discharge: GUI """
 
@@ -174,7 +173,7 @@ class CcplaWindow(tk.Frame):
         self.text_output.grid(row=1, column=0, columnspan=50)       
 
         # Add dt output scale
-        self.dt_out_set = tk.Scale(self, from_=MIN_DT_OUTPUT_EXP, to=MAX_DT_OUTPUT_EXP, showvalue=True,#False,
+        self.dt_out_set = tk.Scale(self, from_=MIN_DT_OUTPUT_EXP, to=MAX_DT_OUTPUT_EXP, showvalue=False,
                                    orient=tk.HORIZONTAL, length=300, 
                                    variable=self.dt_exp, command=self.set_dt_output)
         self.dt_out_set.grid(row=2, column=5, columnspan=10)
@@ -507,6 +506,8 @@ class CcplaWindow(tk.Frame):
             self.charges.initialize_savefiles(self.parameters.filename_stat_ele,
                                               self.parameters.filename_distrib_ele,
                                               self.parameters.filename_distrib_ion,
+                                              self.parameters.filename_epos_z,
+                                              self.parameters.filename_ipos_z,                                              
                                               append=False, sep=SEP, ext=EXT)
             self.neutrals.initialize_savefile(self.parameters.filename_stat_neu,
                                               append=False, sep=SEP, ext=EXT)

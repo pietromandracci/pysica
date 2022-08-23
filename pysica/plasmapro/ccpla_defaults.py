@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -102,14 +102,16 @@ SAVE_DIRECTORY_NAME       = SCRIPTNAME + '.out'           # Directory into which
 FILENAME_DEFAULTS         = SCRIPTNAME + '.defaults'      # Name of the file to which default parameters are saved with -s option
 FILENAME_CONFIG           = SCRIPTNAME + '.conf'          # Configuration file 
 FILENAME_NEUTRALS         = SCRIPTNAME + '.neutrals'      # Filename for neutrals properties
-FILENAME_I                = SCRIPTNAME + '.I'             # Filename for electric current
-FILENAME_V                = SCRIPTNAME + '.V'             # Filename for electric potential spatial distribution
 FILENAME_OUTPUT_LOG       = SCRIPTNAME + '_output.log'    # File to which output will be saved
 FILENAME_ERROR_LOG        = SCRIPTNAME + '_errors.log'    # File to which python error messages will be saved
 NAME_STAT_ELE             = '_means_ele'                  # Name of output file: time evolution of several parameters
 NAME_STAT_NEU             = '_means_neu'                  # Name of output file: time evolution of several parameters
 NAME_DISTRIB_ELE          = '_eedf'                       # Name of output file: electrons energy distribution
-NAME_DISTRIB_ION          = '_iedf'                       # First part of name of output files: ions energy distribution
+NAME_I                    = '_current'                    # Name of output file: electric current
+NAME_V                    = '_potential'                  # Name of output file: electric potential spatial distribution
+NAME_DISTRIB_ION          = '_iedf'                       # First part of name of output files: ion energy distribution
+NAME_Z_ELECTRONS          = '_zpos_ele'                   # Name of output file: electron positions, y component
+NAME_Z_IONS               = '_zpos_ion'                   # First part of name of output files: ion positions, z component 
 NAME_ION_ELASTIC          = '_sigma4ions_Ar_elastic'
 NAME_ION_CHARGE_EX        = '_sigma4ions_Ar_charge-exchange'
 

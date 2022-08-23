@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 """ Tools to import/export numerical data from/to data files in ASCII format
 
-In this module some classes and methods are provided to deal with 
+    In this module some classes and methods are provided to deal with 
     ASCII data files of different types.
 
     * Configuration files, containing the values to assign 
@@ -60,7 +60,6 @@ In this module some classes and methods are provided to deal with
 
     Documentation is also available in the docstrings.
 """
-
 
 import numpy
 

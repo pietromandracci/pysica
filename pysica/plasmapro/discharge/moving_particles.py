@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -592,6 +592,7 @@ class MovingParticles:
 
         def initialize_savefiles(self,
                                  filename_stat, filename_distrib_ele, filename_distrib_ion,
+                                 filename_zpos_ele, filename_zpos_ion,
                                  append=False, sep=SEP, ext='.csv'):
                 """Initializes the data files to which simulation data about moving particles will be saved
 
@@ -601,9 +602,11 @@ class MovingParticles:
                                           electron enenergy, electron number,...
                    filename_distrib_ele:  name of the file to which the electron energy distrobution function
                                           will be saved
-
+                   filename_zpos_ele:     name of the file to which the electron z coordinates will be saved
                    filename_distrib_ion:  root used to form the names of the files to which the ion energy 
                                           distribution functions will be saved.
+                   filename_zpos_ion:     root used to form the names of the files to which the z coordinates 
+                                          of the ions will be saved.
                    append:                if True, open the file for appendig new data to the end;
                                           the header will not be re-written
                    sep:                   character or sequence to separate data columns
@@ -645,7 +648,8 @@ class MovingParticles:
                         data_file.write(EOL)                        
                 data_file.close()
 
-                self.f_distrib_ele_name = str(filename_distrib_ele) + (ext)
+                # Open data file where to save evolution of eedf
+                self.f_distrib_ele_name = str(filename_distrib_ele) + ext
                 # Open data file where to save evolution of eedf
                 if (append):
                         data_file = open(self.f_distrib_ele_name,'a')
@@ -664,7 +668,26 @@ class MovingParticles:
                                 data_file = open(filename,'w')
                         data_file.close()
 
+                # Open data file where to save evolution of electron z coordinates
+                self.f_zpos_ele_name = str(filename_zpos_ele) + ext
+                if (append):
+                        data_file = open(self.f_zpos_ele_name,'a')
+                else:
+                        data_file = open(self.f_zpos_ele_name,'w')
+                data_file.close()
 
+                # Open data files where to save evolution of ion z coordinates
+                self.f_zpos_ion_names = []
+                for i in range(1, self.types):
+                        filename = str(filename_zpos_ion) + '_' + self.names[i] + ext
+                        self.f_zpos_ion_names.append(filename)                        
+                        if append:                                
+                                data_file = open(filename,'a')
+                        else:
+                                data_file = open(filename,'w')
+                        data_file.close()                
+                
+                        
         def save_data_to_files(self):
                 """Saves actual data values to files """
 
@@ -706,3 +729,19 @@ class MovingParticles:
                         data_file.write( EOL )
                         data_file.close()
 
+                # Save actual elecron z coordinates
+                data_file = open(self.f_zpos_ele_name,'a')
+                for j in range(self.n_active(0)):
+                        data_file.write( str(self.z[0][self.active[0]][j]) + self.sep )
+                data_file.write( EOL )
+                data_file.close()
+
+                # Save actual ion z coordinates for all ion types
+                for i in range(1, self.types):
+                        i_file = i-1
+                        data_file = open(self.f_zpos_ion_names[i_file], 'a')
+                        #self.e_distr = self.energies(i)
+                        for j in range(self.n_active(i)):
+                                data_file.write( str(self.z[i][self.active[i]][j]) + self.sep )
+                        data_file.write( EOL )
+                        data_file.close()                

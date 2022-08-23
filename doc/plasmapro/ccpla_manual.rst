@@ -58,7 +58,7 @@ otherwise it will give an error message.
 
 Two plain ASCII files are needed for configuration:
 
-*ccpla_conf* file
+*ccpla.conf* file
   contains the main physical and simulation parameters;
 
 *ccpla.neutrals*

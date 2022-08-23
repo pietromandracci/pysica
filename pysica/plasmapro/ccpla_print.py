@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -124,6 +124,8 @@ def print_simulation_information(neutrals, ccp, parameters, options,
             string += 'Filename ion mean data:              ' + '\"' + parameters.filename_stat_neu    + EXT + '\"\n'
             string += 'Filename eedf:                       ' + '\"' + parameters.filename_distrib_ele + EXT + '\"\n'
             string += 'Filename iedf:                       ' + '\"' + parameters.filename_distrib_ion + EXT + '\"\n'
+            string += 'Filename z positions of electrons:   ' + '\"' + parameters.filename_epos_z      + EXT + '\"\n'
+            string += 'Filename z positions of ions         ' + '\"' + parameters.filename_ipos_z      + EXT + '\"\n'            
             string += 'Filename electric current:           ' + '\"' + parameters.filename_I           + EXT + '\"\n'
             string += 'Filename electric potential:         ' + '\"' + parameters.filename_V           + EXT + '\"\n'
             

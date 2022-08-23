@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ SEP		= '\t'	   # Separator character for data input/output files
 ZERO		= 1.0E-9
 
 GPL_MESSAGE     = ( '\n'
-                    + 'COPYRIGHT 2008 Pietro Mandracci\n'
+                    + 'COPYRIGHT (c) 2020-2022 Pietro Mandracci\n'
                     + '\n'
                     + 'This program is free software: you can redistribute it and/or modify\n'
                     + 'it under the terms of the GNU General Public License as published by\n'

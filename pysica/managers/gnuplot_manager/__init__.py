@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT 2020-2022 by Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

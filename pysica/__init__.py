@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,32 +14,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-PYSICA - PYthon tools for SImulation and CAlculus
-=================================================
+    PYSICA - PYthon tools for SImulation and CAlculus
+    =================================================
 
-Modules in the main package
----------------------------
+    Modules in the main package
+    ---------------------------
 
-*constants*
-    some physical constant sused in various modules and packages
-*parameters*
-    some parameters used in various modules and packages
-    
-Sub-packages in the main package
--------------------------------
+    *constants*
+        some physical constant sused in various modules and packages
+    *parameters*
+        some parameters used in various modules and packages
 
-*functions*
-    some general purpose functions
-*fortran*
-    modules compiled from Fortran using f2py
-*managers*
-    modules which can be used to manage the input/output of data from/to ascii files
-    and to print physical quantities managing the unit prefixes
-*analysis*
-    modules which can be helpful to manage distribution functions and data histograms
-*plasmapro*
-    package of tools for simulatio of plasma discharges.
+    Sub-packages in the main package
+    -------------------------------
 
-Documentation is also available in the docstrings.
+    *functions*
+        some general purpose functions
+    *fortran*
+        modules compiled from Fortran using f2py
+    *managers*
+        modules which can be used to manage the input/output of data from/to ascii files
+        and to print physical quantities managing the unit prefixes
+    *analysis*
+        modules which can be helpful to manage distribution functions and data histograms
+    *plasmapro*
+        package of tools for simulatio of plasma discharges.
+
+    Documentation is also available in the docstrings.
 """
 

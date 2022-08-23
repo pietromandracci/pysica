@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,22 +13,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-PYthon tools for SImulation and CAlculus: tools for data analysis
+""" PYthon tools for SImulation and CAlculus: tools for data analysis
 
-This sub-package contains some modules which can be helpful to manage 
-various types of data, 
-such as spectra, distribution functions, data histograms
+    This sub-package contains some modules which can be helpful to manage 
+    various types of data, 
+    such as spectra, distribution functions, data histograms
 
-Modules
--------
+    Modules
+    -------
 
-*univariate*
-    analysis of univariate data 
-*bivariate*
-    analysis of bivariate data               
-*spectra*
-    manage a set of bivariate data sets and make 
-    some calculations on them
+    *univariate*
+        analysis of univariate data 
+    *bivariate*
+        analysis of bivariate data               
+    *spectra*
+        manage a set of bivariate data sets and make 
+        some calculations on them
 """
 

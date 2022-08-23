@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +15,12 @@
 
 """ Tools for statistical analysis on univariate experimental data.
 
-This module contains some classes, methods and functions, which 
-may be useful to perform some basic statistical analysis on a 
-univariate set of experimental data, such as some kind of data 
-plots and comparison of datasets to theoretical distributions.        
+    This module contains some classes, methods and functions, which 
+    may be useful to perform some basic statistical analysis on a 
+    univariate set of experimental data, such as some kind of data 
+    plots and comparison of datasets to theoretical distributions.        
 
-Documentation is also available in the docstrings.
+    Documentation is also available in the docstrings.
 """
 
 # +-------------------------+

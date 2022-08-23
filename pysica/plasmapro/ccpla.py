@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -393,6 +393,8 @@ if (parameters.save_delay > 0):
     charges.initialize_savefiles(parameters.filename_stat_ele,
                                  parameters.filename_distrib_ele,
                                  parameters.filename_distrib_ion,
+                                 parameters.filename_epos_z,
+                                 parameters.filename_ipos_z,
                                  append=False, sep='\t', ext=EXT)
     neutrals.initialize_savefile(parameters.filename_stat_neu, append=False, sep='\t', ext=EXT)
     ccp.initialize_savefiles(parameters.filename_I, parameters.filename_V, append=False, sep='\t', ext=EXT)    

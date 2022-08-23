@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -12,7 +12,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
 """ Simulation of a capacitively coupled plasma discharge: data initialization """
 
@@ -599,10 +598,12 @@ def generate_save_file_names(parameters):
     parameters.filename_stat_neu    = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_STAT_NEU)
     parameters.filename_distrib_ele = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_DISTRIB_ELE)
     parameters.filename_distrib_ion = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_DISTRIB_ION)
+    parameters.filename_I           = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_I)
+    parameters.filename_V           = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_V)
+    parameters.filename_epos_z      = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_Z_ELECTRONS)
+    parameters.filename_ipos_z      = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_Z_IONS)
     parameters.filename_config      = os.path.join(parameters.save_directory, FILENAME_CONFIG)
     parameters.filename_neutrals    = os.path.join(parameters.save_directory, FILENAME_NEUTRALS)
-    parameters.filename_I           = os.path.join(parameters.save_directory, FILENAME_I)
-    parameters.filename_V           = os.path.join(parameters.save_directory, FILENAME_V)
         
 
 def create_save_dir(parameters):

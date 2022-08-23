@@ -1,4 +1,4 @@
-# COPYRIGHT 2020 by Pietro Mandracci
+# COPYRIGHT (c) 2020-2022 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,20 +15,19 @@
 
 """ Utility functions
 
- This subpackage contains some modules which provide several utility functions.
+    This subpackage contains some modules which provide several utility functions.
 
-Modules
--------
+    Modules
+    -------
 
-*physics*
-    functions used to calculate or convert some physical quantities
-*optical*
-    functions for analysis of the optical properties of thin films (absorption, reflection)
-*mathematics*
-    functions used to calculate averages, derivatives and other calculations
-*pdf*
-    collection of probability distribution functions used in the package
-*statistics*
-    some statistical tools
-   
+    *physics*
+        functions used to calculate or convert some physical quantities
+    *optical*
+        functions for analysis of the optical properties of thin films (absorption, reflection)
+    *mathematics*
+        functions used to calculate averages, derivatives and other calculations
+    *pdf*
+        collection of probability distribution functions used in the package
+    *statistics*
+        some statistical tools   
 """
