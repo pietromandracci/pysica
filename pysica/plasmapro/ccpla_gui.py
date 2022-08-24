@@ -143,13 +143,13 @@ class CcplaWindow(tk.Frame):
         self.menubutton_runtime_plot.menu_runtime_plot.add_separator()
         self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='Mean el energy and number vs time',
                                                                        variable=self.plot_history)
-        self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='Phase space plot',
+        self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='Phase space plots',
                                                                        variable=self.plot_phase_space)
-        self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='Eletric field and charge',
+        self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='Eletric potential and charge',
                                                                        variable=self.plot_field)
         self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='EEDF and IEDF',
                                                                        variable=self.plot_distributions)
-        self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='3D e- and ions positions',
+        self.menubutton_runtime_plot.menu_runtime_plot.add_checkbutton(label='3D e- and ion positions',
                                                                        variable=self.plot_3D_positions)
         self.menubutton_runtime_plot.menu_runtime_plot.add_separator()        
         self.menubutton_runtime_plot.menu_runtime_plot.add_command(label='Plot list', command=self.show_plot_info)

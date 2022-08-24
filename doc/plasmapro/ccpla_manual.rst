@@ -155,50 +155,136 @@ The GUI is run by using the *-g* options when callig the script
 
 $ python3 -m pysica.plasmapro.ccpla -g
 
+Main window
+-----------
+
 When the GUI starts, a main window is rised, together with a small window with licencing information,
 which can be closed by pressing the "Dismiss" button.
 
 .. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main+splash.png
+   :width:  809
+   :height: 436
 
-The main window has a menu on the top part and some buttons on the bottom
-
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main.png
-
-
-The file menu
--------------
-
-The file menu shows the following options
-
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-menu-file.png
+The main window has a menu on the top part and some buttons on the bottom.
 
 
-The parameters menu
+The *File* menu
+---------------
+
+The *File* menu shows the following options:
+
+*Reload configuration files*
+    reload the content of the *ccpla.conf*
+    
+*Edit configuration files*
+    open the *ccpla.conf* file in an external editor
+
+*Quit*
+    exit the program
+
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-file.png
+
+
+The *Parameters* menu
+---------------------
+
+The *Parameters* menu shows the following options:
+
+*Show physical parameters*
+    open a window with the physical parameters of the discharge
+    
+*Show simulation parameters*
+    opne a window with the parameters used in the simulation
+
+*Show output parameters*
+    open a window with the parameters used for the data output 
+
+*Show gas properties*
+    open a window with the gas properties
+
+*Show e-/neutral impact cross sections*
+    open some gnuplot windows with the cross section plots for electron impact
+
+*Show ion/neutral impact cross sections*
+    open some gnuplot windows with the cross sections plots for ion impace
+
+*Show e-/neutral impact parameters*
+    open some gnuplot windows with other impact parameters (e.g. collision frequency) for electron collisions
+
+*Show ion/neutral impact parameters*
+    open some gnuplot windows with other impact parameters (e.g. collision frequency) for ion collisions 
+
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-parameters.png
+         
+
+The *Runtime Plots* menu
+------------------------
+
+The *Runtime plots* menu allows to select which plots are shown during the simulation:
+
+*Select all*
+    select all plots for run-time plotting
+
+*Unselect all*
+    unselect all plots for run-time plotting
+
+*Mean el energy and number vs time*
+    energy and electron number as a function of simulation time (2 plots)
+
+*Phase space plots*
+    electron and ion energy vs angle and vs position along the z-axis (4 plots)
+    
+*Electric potential and charge*
+    electric charge and electric potential as a function of the z-position (2plots)
+
+*EEDF and IEDF*
+    electron/ion energy distribution functions
+
+*3D e- and ion positions*
+    three dimensional plots of electron and ion positions
+    
+    
+
+
+
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-plots.png
+
+The *Help* menu
+---------------
+
+The *Help* menu shows the following options.
+
+*Online documentation (open in browser)*
+    opens the online documentation (this file) inside a web browser
+
+*About*
+    shows a window with licencing information
+
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-help.png
+
+
+Buttons and sliders
 -------------------
 
-The file menu shows the following options
+The following buttons are positioned at the botton of the main window, each one of them may be inactive (and appear in grey) in some
+situations:
 
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-menu-parameters.png
+*RESET*
+    pushing the button loads prepares the program for the simulation to start, it is inactive while the simulation is running
+
+*START*
+    starts the simulation, it is activated after *RESET* has been pressed and becomes inactive after the simulation has started
+
+*Pause / Continue*
+    pauses the simulation or continues it after it has been paused, the button label changes properly
+
+*STOP / KILL*
+    it is active only while the simulation is paused, if the label is *KILL* than the program is waiting for the kernel
+    to finish the calculations for a simulatiom cycle (which is performed by the Fortran-compiled module) and can be
+    interrupted by killing the kernel process only
+
+In the bottom part of the main window there are two sliders also, by which it is possibile to change how often the otput
+data are shown on the text window and on the runtime plots.    
 
 
-The file menu
--------------
-
-The file menu shows the following options
-
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-menu-file.png
-           
-
-The Runtime Plots menu
-----------------------
-
-The file menu shows the following options
-
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-menu-plots.png
-
-The help menu
--------------
-
-The file menu shows the following options
-
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-menu-help.png
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-buttons.png
