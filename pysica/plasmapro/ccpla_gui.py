@@ -158,10 +158,10 @@ class CcplaWindow(tk.Frame):
         # Add menu item "Help"
         self.menubutton_help           = tk.Menubutton(self, text='Help', justify=tk.LEFT)
         self.menubutton_help.grid(row=0, column=10, columnspan=1, sticky=tk.NW)
-
         self.menubutton_help.menu_help = tk.Menu(self.menubutton_help, tearoff=0)
         self.menubutton_help['menu']   = self.menubutton_help.menu_help
-        self.menubutton_help.menu_help.add_command(label='About', command=self.show_about)
+        self.menubutton_help.menu_help.add_command(label='Online documentation (open in browser)', command=self.show_doc)
+        self.menubutton_help.menu_help.add_command(label='About',         command=self.show_about)
 
         # Add text region
         self.text_output = tk.Text(self,
@@ -541,11 +541,12 @@ class CcplaWindow(tk.Frame):
             editor_process = run([EDITOR_NAME, FILENAME_CONFIG])
         except FileNotFoundError:
             string = ('Error while trying to execute command: \"'
-                      + EDITOR_NAME + '\" '
+                      + EDITOR_NAME
+                      + ' ' 
                       + FILENAME_CONFIG
 #                      + ' '
 #                      + FILENAME_NEUTRALS
-                      )
+                      + '\" ')
             self.show_message(message=string, fore='red', back='light yellow')
             return
         self.reload_parameters()
@@ -687,7 +688,18 @@ class CcplaWindow(tk.Frame):
         self.status_label["text"]       = text
         self.status_label["foreground"] = color
         self.status_label.grid(row=2, column=22, columnspan=12)
-                
+
+    def show_doc(self):
+        try:
+            editor_process = run([BROWSER_NAME, DOC_URL])
+        except FileNotFoundError:
+            string = ('Error while trying to execute command: \"'
+                      + BROWSER_NAME
+                      + ' '
+                      + DOC_URL
+                      + '\"')
+            self.show_message(message=string, fore='red', back='light yellow')
+        
     def show_about(self):
         self.about_window = tk.Toplevel(self)
         self.about_window.title('Copyright Info')
@@ -696,10 +708,7 @@ class CcplaWindow(tk.Frame):
         self.about_window.message.grid()
         self.about_window.button  = tk.Button(self.about_window, text="Dismiss", command=self.about_window.destroy)
         self.about_window.button.grid()
-        self.about_window.attributes("-topmost", True)
-        #self.text_output.delete('0.0',tk.END)
-        #self.text_output.insert('0.0', GPL_MESSAGE)
-        #self.text_output.grid(row=1, column=0, columnspan=50)         
+        self.about_window.attributes("-topmost", True)         
                         
     def show_gases(self):
         self.gases_window = tk.Toplevel(self)

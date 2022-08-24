@@ -9,13 +9,14 @@ Introduction
 ============
 
 This package contains a collection of tools developed for some specific simulation and calculus tasks
-in the fields of cold plasma processes and thin-film characterization.
+in the fields of cold plasma processes, as well as thin-film and surface characterization.
 
 
 Package structure
 =================
 
-In the following, the modules and subpackages are listed.  Additional documentation is available in the docstrings.
+In the following, the modules and subpackages are listed.
+Additional documentation is available in the docstrings of each module and subpackage.
 
 
 constants (module)
@@ -133,8 +134,8 @@ How to install
 
 $ pip install pysica
 
-In Debian-related linux distributions you will have to install the package inside a python virtual environment, since the operative
-system doesn't allow *pip* to install software in the main file hierarchy.  You can find instructions on how to create
+In some linux distributions (e.g. Debian-related ones) you will have to install the package inside a python virtual environment,
+since the operative system doesn't allow *pip* to install software in the main file hierarchy.  You can find instructions on how to create
 a virtual environment `here <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_.
 
 .. note:: The package has been developed and tested for use in linux. Some subpackages could probably be used under other systems also,

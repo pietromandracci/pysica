@@ -2,6 +2,13 @@
 Version 0.2.1
 =============
 
+* Update of the file headers with copyright info
+
+
+=============
+Version 0.2.0
+=============
+
 * Major changes in the script ccpla
   - ion-neutral scattering is now calculated in the center of mass frame of reference
   - more data are saved to file during the simulation, including potential distribution and electric current
