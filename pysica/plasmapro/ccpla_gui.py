@@ -679,9 +679,9 @@ class CcplaWindow(tk.Frame):
         # This is necessay since scale widget with resolution > 1  and minimum 1 will give zero (not 1) as minimum value
         if (self.plot_delay.get() == 0): self.dt_plot = self.parameters.dt_output
         else:                            self.dt_plot = self.plot_delay.get() * self.parameters.dt_output                
-        self.dt_out_label["text"] = 'Output every: ' + unit_manager.print_unit(self.parameters.dt_output,'s', 1) + '\n' +\
-                                    'Plot every:   ' + unit_manager.print_unit(self.dt_plot, 's', 1) + '\n' +\
-                                    'Timestep:     ' + self.dt_print
+        self.dt_out_label["text"] = (  'Output every: ' + unit_manager.print_unit(self.parameters.dt_output,'s', 1) + '\n'
+                                     + 'Plot every:   ' + unit_manager.print_unit(self.dt_plot, 's', 1) + '\n'
+                                     + 'Timestep:     ' + self.dt_print )
         self.dt_out_label.grid(row=2, column=15, columnspan=8) 
               
     def show_status_label(self, text, color):

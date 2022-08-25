@@ -368,7 +368,7 @@ ul.auto-toc {
 <ul class="simple">
 <li><a class="reference internal" href="#introduction" id="id1">Introduction</a></li>
 <li><a class="reference internal" href="#installing" id="id2">Installing</a><ul>
-<li><a class="reference internal" href="#dependancies" id="id3">Dependancies</a></li>
+<li><a class="reference internal" href="#dependencies" id="id3">Dependencies</a></li>
 <li><a class="reference internal" href="#how-to-install" id="id4">How to install</a></li>
 </ul>
 </li>
@@ -380,30 +380,32 @@ ul.auto-toc {
 </li>
 <li><a class="reference internal" href="#graphical-user-interface" id="id9">Graphical User Interface</a><ul>
 <li><a class="reference internal" href="#main-window" id="id10">Main window</a></li>
-<li><a class="reference internal" href="#the-file-menu" id="id11">The <em>File</em> menu</a></li>
-<li><a class="reference internal" href="#the-parameters-menu" id="id12">The <em>Parameters</em> menu</a></li>
-<li><a class="reference internal" href="#the-runtime-plots-menu" id="id13">The <em>Runtime Plots</em> menu</a></li>
-<li><a class="reference internal" href="#the-help-menu" id="id14">The <em>Help</em> menu</a></li>
-<li><a class="reference internal" href="#buttons-and-sliders" id="id15">Buttons and sliders</a></li>
+<li><a class="reference internal" href="#menu-bar" id="id11">Menu bar</a><ul>
+<li><a class="reference internal" href="#file" id="id12"><em>File</em></a></li>
+<li><a class="reference internal" href="#parameters" id="id13"><em>Parameters</em></a></li>
+<li><a class="reference internal" href="#runtime-plots" id="id14"><em>Runtime Plots</em></a></li>
+<li><a class="reference internal" href="#help" id="id15"><em>Help</em></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#buttons-and-sliders" id="id16">Buttons and sliders</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="introduction">
 <h1><a class="toc-backref" href="#id1">Introduction</a></h1>
-<p>This script allows the simulation of <em>capacitively coupled</em> plasma discharges at low pressure
+<p>The <em>ccpla</em> script allows the simulation of <em>capacitively coupled</em> plasma discharges at low pressure
 in a simple geometric configuration (square parallel electrodes).  It makes use of the PIC-MC (<em>particle in cell</em> plus <em>montecarlo</em>)
 technique in the <em>1d3v</em> mode (one dimension for the electric field and 3 dimensions for the particle movement).</p>
 </div>
 <div class="section" id="installing">
 <h1><a class="toc-backref" href="#id2">Installing</a></h1>
-<div class="section" id="dependancies">
-<h2><a class="toc-backref" href="#id3">Dependancies</a></h2>
+<div class="section" id="dependencies">
+<h2><a class="toc-backref" href="#id3">Dependencies</a></h2>
 <p>The ccpla script depends heavily on <a class="reference external" href="https://numpy.org/">numpy</a>.
 The GUI depends on <a class="reference external" href="https://docs.python.org/3/library/tkinter.html">tkinter</a> also,
-and makes use of the the <a class="reference external" href="http://www.gnuplot.info/">gnuplot</a>
-progam to plot data 'on the fly' during simulation when using the GUI.</p>
-<p>The script should work without <em>tkinter</em> and <em>gnuplot</em> installed, but without using the GIU (i.e. without the <em>-g</em> option).</p>
+and makes use of the the <a class="reference external" href="http://www.gnuplot.info/">gnuplot</a> progam to plot data 'on the fly' during the simulation.</p>
+<p>The script should work without <em>tkinter</em> and <em>gnuplot</em> installed, but without using the GUI (i.e. without the <em>-g</em> option).</p>
 </div>
 <div class="section" id="how-to-install">
 <h2><a class="toc-backref" href="#id4">How to install</a></h2>
@@ -419,15 +421,16 @@ You can find instructions on how to create
 a virtual environment <a class="reference external" href="https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments">here</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The package has been developed and tested for use in linux. Some subpackages could probably be used under other systems also,
-but <em>they have not been tested on them</em> and there is no guarantee that they would work.</p>
+<p class="last">The script has been developed and tested for use in a linux environment. It is possible that it may work in other systems also,
+but <em>it has not been tested on them</em> and there is no guarantee that it would work.</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The modules compiled from Fortran are linux libraries ('<em>.so</em>' files): if you want to use them in another operating system you need to
-recompile them using the <em>f2py</em> program and a Fortran compiler. The directories named <em>fortran</em> contain the Fortran source files,
-the compiled modules and the scripts used for the compilation (the name of which always start with 'f2py'), but the options
-used in the scripts to call <em>f2py</em> are specific for linux and the <a class="reference external" href="https://gcc.gnu.org/fortran/">gnu95</a> fortran compiler.</p>
+<p class="last">The module compiled from Fortran is a linux library ('<em>.so</em>' file): if you want to use <em>ccpla</em> in another operating system,
+you need to recompile it using the <em>f2py</em> program and a Fortran compiler.
+The directory <em>pysica/plasmapro/discharge/fortran</em> of the <em>pysica</em> package contains the Fortran source files,
+the compiled module and the script used for the compilation (named 'f2py-fmodule'), but the options
+used in the script to call <em>f2py</em> are specific for linux and the <a class="reference external" href="https://gcc.gnu.org/fortran/">gnu95</a> fortran compiler.</p>
 </div>
 </div>
 </div>
@@ -446,18 +449,23 @@ otherwise it will give an error message.</p>
 <dd>contains the data about the gas mixture to simulate.</dd>
 </dl>
 <p>Additionaly, a set of <em>.csv</em> (comma separated value) files are needed, which contain cross-section data about the gases.</p>
-<p>A set of files for the simulation of He, Ar and O2 plasmas (or their mixtures) can be downloded from the
+<p>A set of examples files for the simulation of He, Ar and O2 plasmas (or their mixtures) can be downloded from the
 <a class="reference external" href="https://github.com/pietromandracci/pysica/tree/master/data/ccpla">data/ccpla</a> directory of the <em>pysica</em> <em>GitHub</em> repository.
 You can copy them in the directory from which you want to run the script and then modify them at your will,
 as explained in the comments inside each file.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">the cross sections tabulated in these files have been taken from some publications or public databases,
+and are given as example only.  There is no guarantee that they are suited for a specific task.</p>
+</div>
 </div>
 <div class="section" id="how-to-run-the-script">
 <h2><a class="toc-backref" href="#id7">How to run the script</a></h2>
-<p>Once installed, you can run the <em>ccpla</em> script using the following command:</p>
+<p>Once installed, you can run the <em>ccpla</em> script from the console using the following command:</p>
 <pre class="literal-block">
 $ python3 -m pysica.plasmapro.ccpla [options]
 </pre>
-<p>where <em>[options]</em> states for a list of options you can give to the script.  A list of the available options can be obtained by:</p>
+<p>where <em>[options]</em> states for a list of options you can give to the script.  A list of the available options can be obtained by typing:</p>
 <pre class="literal-block">
 $ python3 -m pysica.plasmapro.ccpla -h
 </pre>
@@ -473,8 +481,8 @@ $ python3 -m pysica.plasmapro.ccpla -g
 <dt><em>-h, --help</em></dt>
 <dd>show a list of the available options</dd>
 <dt><em>-p, --print-only</em></dt>
-<dd>prints the simulation parameters on the screen, but does not start the simulation,
-this option will rise an error when calling the GUI (-g option)</dd>
+<dd>print the simulation parameters on the screen, but do not start the simulation,
+this option rises an error when calling the GUI (-g option)</dd>
 <dt><em>-s, --save-defaults</em></dt>
 <dd>write the default parameters to a file named &quot;ccpla.defaults&quot; and then exit the program</dd>
 <dt><em>-b, --batch-mode</em></dt>
@@ -483,13 +491,13 @@ this option has no effect when calling the GUI (-g option)</dd>
 <dt><em>-g, --gui-mode</em></dt>
 <dd>start the GUI</dd>
 <dt><em>-W TEXT_WINDOW_WIDTH, --text-window-width=TEXT_WINDOW_WIDTH</em></dt>
-<dd>set the width of the GUI window expressed in characters [120..200] (default=160),
+<dd>set the width of the GUI window expressed in characters, accepted values are in the range [120..200] (default=160),
 this option has an effect only while calling the GUI (-g option)</dd>
 <dt><em>-H TEXT_WINDOW_HEIGHT, --text-window-height=TEXT_WINDOW_HEIGHT</em></dt>
-<dd>set the height of GUI window expressed in characters GUI [20..80] (default=39),
+<dd>set the height of GUI window expressed in characters, accepted values are in the range [20..80] (default=39),
 this option has an effect only while calling the GUI (-g option)</dd>
 <dt><em>-F TEXT_WINDOW_FONT_SIZE, --text-window-font=TEXT_WINDOW_FONT_SIZE</em></dt>
-<dd>set the font size in the GUI window [6..18] (default=12),
+<dd>set the font size in the GUI window, accepted values are in the range [6..18] (default=12),
 this option has an effect only while calling the GUI (-g option)</dd>
 <dt><em>-o, --redirect-output</em></dt>
 <dd>redirect the screen output to a file named 'ccpla_output.log'</dd>
@@ -498,13 +506,13 @@ this option has an effect only while calling the GUI (-g option)</dd>
 <dt><em>-v VERBOSITY, --verbosity=VERBOSITY</em></dt>
 <dd>set the verbosity level of the text output [0..3] (default=1),
 this option has no effect when calling the GUI (-g option)</dd>
-<dt><em>-d DEBUG_LEV, --debug-level-python=DEBUG_LEV</em></dt>
-<dd>Python debug level [0..2] (default=0)</dd>
-<dt><em>-D DEBUG_LEV_FOR, --debug-level-fortran=DEBUG_LEV_FOR</em></dt>
-<dd>Fortran debug level [0..3] (default=0)</dd>
 <dt><em>-x, --graph-xsec</em></dt>
-<dd>plot cross sections graphs before starting the program,
-this option will rise an error when calling the GUI (-g option)</dd>
+<dd>plot cross sections graphs before starting the text-based script,
+this option rises an error when calling the GUI (-g option)</dd>
+<dt><em>-d DEBUG_LEV, --debug-level-python=DEBUG_LEV</em></dt>
+<dd>Python debug level [0..2] (default=0), this is used for debugging purposes only</dd>
+<dt><em>-D DEBUG_LEV_FOR, --debug-level-fortran=DEBUG_LEV_FOR</em></dt>
+<dd>Fortran debug level [0..3] (default=0), this is used for debugging purposes only</dd>
 </dl>
 </div>
 </div>
@@ -512,34 +520,49 @@ this option will rise an error when calling the GUI (-g option)</dd>
 <h1><a class="toc-backref" href="#id9">Graphical User Interface</a></h1>
 <p>The GUI is run by using the <em>-g</em> options when callig the script</p>
 <p>$ python3 -m pysica.plasmapro.ccpla -g</p>
+<p>When the GUI is started, it activates a main graphic window and a numerical kernel. The latter is an independent process,
+which runs parallell to the GUI and is responsible for calling the Fortran-compiled module when a simulation cycle is requested.
+The simulation data are transferred between the GUI and the kernel by means of pipes.</p>
 <div class="section" id="main-window">
 <h2><a class="toc-backref" href="#id10">Main window</a></h2>
 <p>When the GUI starts, a main window is rised, together with a small window with licencing information,
 which can be closed by pressing the &quot;Dismiss&quot; button.</p>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main+splash.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main+splash.png" style="width: 809px; height: 436px;" />
-<p>The main window has a menu on the top part and some buttons on the bottom.</p>
+<p>The main window has a menu bar at the top and some buttons and sliders at the bottom.</p>
 </div>
-<div class="section" id="the-file-menu">
-<h2><a class="toc-backref" href="#id11">The <em>File</em> menu</a></h2>
+<div class="section" id="menu-bar">
+<h2><a class="toc-backref" href="#id11">Menu bar</a></h2>
+<p>The menu bar includes the following drop-down menus: <em>File</em>, <em>Parameters</em>, <em>Runtime Plots</em>, and <em>Help</em>.</p>
+<div class="section" id="file">
+<h3><a class="toc-backref" href="#id12"><em>File</em></a></h3>
 <p>The <em>File</em> menu shows the following options:</p>
 <dl class="docutils">
 <dt><em>Reload configuration files</em></dt>
-<dd>reload the content of the <em>ccpla.conf</em></dd>
+<dd>reload the content of the <em>ccpla.conf</em>. Note that some changes in the file may take effect only after the program is restarted,
+as explained in the comments inside the file itself.  The file <em>ccpla.neutrals</em> is <em>not</em> reloaded by this command,
+since any change to it becomes effective after the program is restarted only</dd>
 <dt><em>Edit configuration files</em></dt>
-<dd>open the <em>ccpla.conf</em> file in an external editor</dd>
+<dd>open the <em>ccpla.conf</em> file in an external editor. The file is reloaded after closing the editor.  The name of the editor to use is
+registered in the variable <em>EDITOR_NAME</em> in the file <em>pysica/plasmapro/ccpla_defaults.py</em>, presently is <em>mousepad</em>.
+If the editor is not installed, an error window is opened</dd>
 <dt><em>Quit</em></dt>
-<dd>exit the program</dd>
+<dd>exit the program.</dd>
 </dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <em>File</em> menu is not active while the simulation is running: in that case you have to press the <em>Pause</em> button,
+then the <em>STOP/KILL</em> button, in order to stop the simulation and have the menu active again.</p>
+</div>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-file.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-file.png" />
 </div>
-<div class="section" id="the-parameters-menu">
-<h2><a class="toc-backref" href="#id12">The <em>Parameters</em> menu</a></h2>
+<div class="section" id="parameters">
+<h3><a class="toc-backref" href="#id13"><em>Parameters</em></a></h3>
 <p>The <em>Parameters</em> menu shows the following options:</p>
 <dl class="docutils">
 <dt><em>Show physical parameters</em></dt>
 <dd>open a window with the physical parameters of the discharge</dd>
 <dt><em>Show simulation parameters</em></dt>
-<dd>opne a window with the parameters used in the simulation</dd>
+<dd>open a window with the parameters used in the simulation</dd>
 <dt><em>Show output parameters</em></dt>
 <dd>open a window with the parameters used for the data output</dd>
 <dt><em>Show gas properties</em></dt>
@@ -547,16 +570,16 @@ which can be closed by pressing the &quot;Dismiss&quot; button.</p>
 <dt><em>Show e-/neutral impact cross sections</em></dt>
 <dd>open some gnuplot windows with the cross section plots for electron impact</dd>
 <dt><em>Show ion/neutral impact cross sections</em></dt>
-<dd>open some gnuplot windows with the cross sections plots for ion impace</dd>
+<dd>open some gnuplot windows with the cross section plots for ion impact</dd>
 <dt><em>Show e-/neutral impact parameters</em></dt>
-<dd>open some gnuplot windows with other impact parameters (e.g. collision frequency) for electron collisions</dd>
+<dd>open some gnuplot windows with other impact parameters (e.g. collision frequencies) for electron collisions</dd>
 <dt><em>Show ion/neutral impact parameters</em></dt>
-<dd>open some gnuplot windows with other impact parameters (e.g. collision frequency) for ion collisions</dd>
+<dd>open some gnuplot windows with other impact parameters (e.g. collision frequencies) for ion collisions</dd>
 </dl>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-parameters.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-parameters.png" />
 </div>
-<div class="section" id="the-runtime-plots-menu">
-<h2><a class="toc-backref" href="#id13">The <em>Runtime Plots</em> menu</a></h2>
+<div class="section" id="runtime-plots">
+<h3><a class="toc-backref" href="#id14"><em>Runtime Plots</em></a></h3>
 <p>The <em>Runtime plots</em> menu allows to select which plots are shown during the simulation:</p>
 <dl class="docutils">
 <dt><em>Select all</em></dt>
@@ -564,47 +587,58 @@ which can be closed by pressing the &quot;Dismiss&quot; button.</p>
 <dt><em>Unselect all</em></dt>
 <dd>unselect all plots for run-time plotting</dd>
 <dt><em>Mean el energy and number vs time</em></dt>
-<dd>energy and electron number as a function of simulation time (2 plots)</dd>
+<dd>number of electrons (real and computational) and mean electron energy vs simulation time (2 plots)</dd>
 <dt><em>Phase space plots</em></dt>
-<dd>electron and ion energy vs angle and vs position along the z-axis (4 plots)</dd>
+<dd>electron and ion energy vs angle and vs z-coordinate (4 plots)</dd>
 <dt><em>Electric potential and charge</em></dt>
-<dd>electric charge and electric potential as a function of the z-position (2plots)</dd>
+<dd>electric charge and electric potential vs z-coordinate (2 plots)</dd>
 <dt><em>EEDF and IEDF</em></dt>
-<dd>electron/ion energy distribution functions</dd>
+<dd>electron/ion energy distribution functions (2 plots)</dd>
 <dt><em>3D e- and ion positions</em></dt>
-<dd>three dimensional plots of electron and ion positions</dd>
+<dd>three dimensional plots of electron and ion positions (2 plots)</dd>
 </dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">if some active plots are deactivated while the simulation is running, they are not removed from the screen,
+but they are no longer refreshed until they are re-activated</p>
+</div>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-plots.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-plots.png" />
 </div>
-<div class="section" id="the-help-menu">
-<h2><a class="toc-backref" href="#id14">The <em>Help</em> menu</a></h2>
+<div class="section" id="help">
+<h3><a class="toc-backref" href="#id15"><em>Help</em></a></h3>
 <p>The <em>Help</em> menu shows the following options.</p>
 <dl class="docutils">
 <dt><em>Online documentation (open in browser)</em></dt>
-<dd>opens the online documentation (this file) inside a web browser</dd>
+<dd>opens the online documentation (this file) inside a web browser. The name of the browser to use is
+registered in the variable <em>BROWSER_NAME</em> in the file <em>pysica/plasmapro/ccpla_defaults.py</em>, presently <em>firefox</em>.
+If the browser is not installed, an error window is opened.</dd>
 <dt><em>About</em></dt>
 <dd>shows a window with licencing information</dd>
 </dl>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-help.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-help.png" />
 </div>
+</div>
 <div class="section" id="buttons-and-sliders">
-<h2><a class="toc-backref" href="#id15">Buttons and sliders</a></h2>
+<h2><a class="toc-backref" href="#id16">Buttons and sliders</a></h2>
 <p>The following buttons are positioned at the botton of the main window, each one of them may be inactive (and appear in grey) in some
 situations:</p>
 <dl class="docutils">
 <dt><em>RESET</em></dt>
-<dd>pushing the button loads prepares the program for the simulation to start, it is inactive while the simulation is running</dd>
+<dd>initializes the simulation data and plots, it is inactive while the simulation is running</dd>
 <dt><em>START</em></dt>
 <dd>starts the simulation, it is activated after <em>RESET</em> has been pressed and becomes inactive after the simulation has started</dd>
 <dt><em>Pause / Continue</em></dt>
 <dd>pauses the simulation or continues it after it has been paused, the button label changes properly</dd>
 <dt><em>STOP / KILL</em></dt>
-<dd>it is active only while the simulation is paused, if the label is <em>KILL</em> than the program is waiting for the kernel
-to finish the calculations for a simulatiom cycle (which is performed by the Fortran-compiled module) and can be
-interrupted by killing the kernel process only</dd>
+<dd>stops the simulation. It is active only while the simulation is paused. If the button label changes froom <em>STOP</em> to <em>KILL</em>,
+the program is waiting for the kernel to finish the calculations for a simulation cycle
+(which is performed by the Fortran-compiled module) and can be interrupted by killing the kernel process only.
+A confirmation window is opened before killing the kernel.</dd>
 </dl>
-<p>In the bottom part of the main window there are two sliders also, by which it is possibile to change how often the otput
-data are shown on the text window and on the runtime plots.</p>
+<p>In the bottom part of the main window there are two sliders also, by which it is possibile to change how often the output
+data are shown on the text window and on the runtime plots. Beside them, there is a small text area in which the values
+of these parameters are written, together with the timestep.  The latter can not be changed during the simulation,
+but is determined by the <em>dt</em> entry in the <em>ccpla.conf</em> file.</p>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-buttons.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-buttons.png" />
 </div>
 </div>
