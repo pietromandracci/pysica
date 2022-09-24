@@ -366,49 +366,49 @@ ul.auto-toc {
 <div class="contents topic" id="contents">
 <p class="topic-title">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#introduction" id="id1">Introduction</a></li>
-<li><a class="reference internal" href="#installing" id="id2">Installing</a><ul>
-<li><a class="reference internal" href="#dependencies" id="id3">Dependencies</a></li>
-<li><a class="reference internal" href="#how-to-install" id="id4">How to install</a></li>
+<li><a class="reference internal" href="#introduction" id="id4">Introduction</a></li>
+<li><a class="reference internal" href="#installing" id="id5">Installing</a><ul>
+<li><a class="reference internal" href="#dependencies" id="id6">Dependencies</a></li>
+<li><a class="reference internal" href="#how-to-install" id="id7">How to install</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#running" id="id5">Running</a><ul>
-<li><a class="reference internal" href="#data-files" id="id6">Data files</a></li>
-<li><a class="reference internal" href="#how-to-run-the-script" id="id7">How to run the script</a></li>
-<li><a class="reference internal" href="#command-line-options" id="id8">Command line options</a></li>
+<li><a class="reference internal" href="#running" id="id8">Running</a><ul>
+<li><a class="reference internal" href="#data-files" id="id9">Data files</a></li>
+<li><a class="reference internal" href="#how-to-run-the-script" id="id10">How to run the script</a></li>
+<li><a class="reference internal" href="#command-line-options" id="id11">Command line options</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#graphical-user-interface" id="id9">Graphical User Interface</a><ul>
-<li><a class="reference internal" href="#main-window" id="id10">Main window</a></li>
-<li><a class="reference internal" href="#menu-bar" id="id11">Menu bar</a><ul>
-<li><a class="reference internal" href="#file" id="id12"><em>File</em></a></li>
-<li><a class="reference internal" href="#parameters" id="id13"><em>Parameters</em></a></li>
-<li><a class="reference internal" href="#runtime-plots" id="id14"><em>Runtime Plots</em></a></li>
-<li><a class="reference internal" href="#help" id="id15"><em>Help</em></a></li>
+<li><a class="reference internal" href="#graphical-user-interface" id="id12">Graphical User Interface</a><ul>
+<li><a class="reference internal" href="#main-window" id="id13">Main window</a></li>
+<li><a class="reference internal" href="#menu-bar" id="id14">Menu bar</a><ul>
+<li><a class="reference internal" href="#file" id="id15"><em>File</em></a></li>
+<li><a class="reference internal" href="#parameters" id="id16"><em>Parameters</em></a></li>
+<li><a class="reference internal" href="#runtime-plots" id="id17"><em>Runtime Plots</em></a></li>
+<li><a class="reference internal" href="#help" id="id18"><em>Help</em></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#buttons-and-sliders" id="id16">Buttons and sliders</a></li>
+<li><a class="reference internal" href="#buttons-and-sliders" id="id19">Buttons and sliders</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="introduction">
-<h1><a class="toc-backref" href="#id1">Introduction</a></h1>
+<h1><a class="toc-backref" href="#id4">Introduction</a></h1>
 <p>The <em>ccpla</em> script allows the simulation of <em>capacitively coupled</em> plasma discharges at low pressure
 in a simple geometric configuration (square parallel electrodes).  It makes use of the PIC-MC (<em>particle in cell</em> plus <em>montecarlo</em>)
 technique in the <em>1d3v</em> mode (one dimension for the electric field and 3 dimensions for the particle movement).</p>
 </div>
 <div class="section" id="installing">
-<h1><a class="toc-backref" href="#id2">Installing</a></h1>
+<h1><a class="toc-backref" href="#id5">Installing</a></h1>
 <div class="section" id="dependencies">
-<h2><a class="toc-backref" href="#id3">Dependencies</a></h2>
+<h2><a class="toc-backref" href="#id6">Dependencies</a></h2>
 <p>The ccpla script depends heavily on <a class="reference external" href="https://numpy.org/">numpy</a>.
 The GUI depends on <a class="reference external" href="https://docs.python.org/3/library/tkinter.html">tkinter</a> also,
 and makes use of the the <a class="reference external" href="http://www.gnuplot.info/">gnuplot</a> progam to plot data 'on the fly' during the simulation.</p>
 <p>The script should work without <em>tkinter</em> and <em>gnuplot</em> installed, but without using the GUI (i.e. without the <em>-g</em> option).</p>
 </div>
 <div class="section" id="how-to-install">
-<h2><a class="toc-backref" href="#id4">How to install</a></h2>
+<h2><a class="toc-backref" href="#id7">How to install</a></h2>
 <p>The <em>ccpla</em> script is part of the <em>pysica</em> package, which is distribuited as a pypi wheel so,
 if you have <em>pip</em> installed on your system, you can simply type at the console:</p>
 <pre class="literal-block">
@@ -435,9 +435,9 @@ used in the script to call <em>f2py</em> are specific for linux and the <a class
 </div>
 </div>
 <div class="section" id="running">
-<h1><a class="toc-backref" href="#id5">Running</a></h1>
+<h1><a class="toc-backref" href="#id8">Running</a></h1>
 <div class="section" id="data-files">
-<h2><a class="toc-backref" href="#id6">Data files</a></h2>
+<h2><a class="toc-backref" href="#id9">Data files</a></h2>
 <p>The <em>ccpla</em> script requires to read some data (configuration data and cross-section data) from external files
 in order to perform the simulation: these files must be present in the directory from which the script is run,
 otherwise it will give an error message.</p>
@@ -460,7 +460,7 @@ and are given as example only.  There is no guarantee that they are suited for a
 </div>
 </div>
 <div class="section" id="how-to-run-the-script">
-<h2><a class="toc-backref" href="#id7">How to run the script</a></h2>
+<h2><a class="toc-backref" href="#id10">How to run the script</a></h2>
 <p>Once installed, you can run the <em>ccpla</em> script from the console using the following command:</p>
 <pre class="literal-block">
 $ python3 -m pysica.plasmapro.ccpla [options]
@@ -475,7 +475,7 @@ $ python3 -m pysica.plasmapro.ccpla -g
 </pre>
 </div>
 <div class="section" id="command-line-options">
-<h2><a class="toc-backref" href="#id8">Command line options</a></h2>
+<h2><a class="toc-backref" href="#id11">Command line options</a></h2>
 <p>Here's a list of the available command line options and their meaning</p>
 <dl class="docutils">
 <dt><em>-h, --help</em></dt>
@@ -517,24 +517,24 @@ this option rises an error when calling the GUI (-g option)</dd>
 </div>
 </div>
 <div class="section" id="graphical-user-interface">
-<h1><a class="toc-backref" href="#id9">Graphical User Interface</a></h1>
+<h1><a class="toc-backref" href="#id12">Graphical User Interface</a></h1>
 <p>The GUI is run by using the <em>-g</em> options when callig the script</p>
 <p>$ python3 -m pysica.plasmapro.ccpla -g</p>
 <p>When the GUI is started, it activates a main graphic window and a numerical kernel. The latter is an independent process,
 which runs parallell to the GUI and is responsible for calling the Fortran-compiled module when a simulation cycle is requested.
 The simulation data are transferred between the GUI and the kernel by means of pipes.</p>
 <div class="section" id="main-window">
-<h2><a class="toc-backref" href="#id10">Main window</a></h2>
+<h2><a class="toc-backref" href="#id13">Main window</a></h2>
 <p>When the GUI starts, a main window is rised, together with a small window with licencing information,
 which can be closed by pressing the &quot;Dismiss&quot; button.</p>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main+splash.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main+splash.png" style="width: 809px; height: 436px;" />
 <p>The main window has a menu bar at the top and some buttons and sliders at the bottom.</p>
 </div>
 <div class="section" id="menu-bar">
-<h2><a class="toc-backref" href="#id11">Menu bar</a></h2>
+<h2><a class="toc-backref" href="#id14">Menu bar</a></h2>
 <p>The menu bar includes the following drop-down menus: <em>File</em>, <em>Parameters</em>, <em>Runtime Plots</em>, and <em>Help</em>.</p>
 <div class="section" id="file">
-<h3><a class="toc-backref" href="#id12"><em>File</em></a></h3>
+<h3><a class="toc-backref" href="#id15"><em>File</em></a></h3>
 <p>The <em>File</em> menu shows the following options:</p>
 <dl class="docutils">
 <dt><em>Reload configuration files</em></dt>
@@ -556,7 +556,7 @@ then the <em>STOP/KILL</em> button, in order to stop the simulation and have the
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-file.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-file.png" />
 </div>
 <div class="section" id="parameters">
-<h3><a class="toc-backref" href="#id13"><em>Parameters</em></a></h3>
+<h3><a class="toc-backref" href="#id16"><em>Parameters</em></a></h3>
 <p>The <em>Parameters</em> menu shows the following options:</p>
 <dl class="docutils">
 <dt><em>Show physical parameters</em></dt>
@@ -565,21 +565,46 @@ then the <em>STOP/KILL</em> button, in order to stop the simulation and have the
 <dd>open a window with the parameters used in the simulation</dd>
 <dt><em>Show output parameters</em></dt>
 <dd>open a window with the parameters used for the data output</dd>
+<dt><em>Show output filenames</em></dt>
+<dd>open a window with the names of the files where similation data are saved <a class="footnote-reference" href="#a" id="id1">[1]</a></dd>
 <dt><em>Show gas properties</em></dt>
 <dd>open a window with the gas properties</dd>
 <dt><em>Show e-/neutral impact cross sections</em></dt>
 <dd>open some gnuplot windows with the cross section plots for electron impact</dd>
+<dt><em>Show e-/ion recomb cross sections</em></dt>
+<dd>open some gnuplot windows with the cross section plots for electron/ion recombination <a class="footnote-reference" href="#b" id="id2">[2]</a></dd>
 <dt><em>Show ion/neutral impact cross sections</em></dt>
 <dd>open some gnuplot windows with the cross section plots for ion impact</dd>
 <dt><em>Show e-/neutral impact parameters</em></dt>
 <dd>open some gnuplot windows with other impact parameters (e.g. collision frequencies) for electron collisions</dd>
 <dt><em>Show ion/neutral impact parameters</em></dt>
 <dd>open some gnuplot windows with other impact parameters (e.g. collision frequencies) for ion collisions</dd>
+<dt><em>Show e-/ion recomb cross parameters</em></dt>
+<dd>open some gnuplot windows with other parameters (e.g. collision frequencies) for electron/ion recombination <a class="footnote-reference" href="#c" id="id3">[3]</a></dd>
 </dl>
+<table class="docutils footnote" frame="void" id="a" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>This option is activated after the <em>RESET</em> button has been pressed, and only if the simulation
+parameter <em>save_delay</em> in the file <em>ccpla.conf</em> is not zero.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="b" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>This option is activated only if the simulation parameter <em>isactive_recomb</em> in the file <em>ccpla.conf</em> is not zero.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="c" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>This option is activated only if the simulation parameter <em>isactive_recomb</em> in the file <em>ccpla.conf</em> is not zero.</td></tr>
+</tbody>
+</table>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-parameters.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-parameters.png" />
 </div>
 <div class="section" id="runtime-plots">
-<h3><a class="toc-backref" href="#id14"><em>Runtime Plots</em></a></h3>
+<h3><a class="toc-backref" href="#id17"><em>Runtime Plots</em></a></h3>
 <p>The <em>Runtime plots</em> menu allows to select which plots are shown during the simulation:</p>
 <dl class="docutils">
 <dt><em>Select all</em></dt>
@@ -605,7 +630,7 @@ but they are no longer refreshed until they are re-activated</p>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-plots.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-plots.png" />
 </div>
 <div class="section" id="help">
-<h3><a class="toc-backref" href="#id15"><em>Help</em></a></h3>
+<h3><a class="toc-backref" href="#id18"><em>Help</em></a></h3>
 <p>The <em>Help</em> menu shows the following options.</p>
 <dl class="docutils">
 <dt><em>Online documentation (open in browser)</em></dt>
@@ -619,7 +644,7 @@ If the browser is not installed, an error window is opened.</dd>
 </div>
 </div>
 <div class="section" id="buttons-and-sliders">
-<h2><a class="toc-backref" href="#id16">Buttons and sliders</a></h2>
+<h2><a class="toc-backref" href="#id19">Buttons and sliders</a></h2>
 <p>The following buttons are positioned at the botton of the main window, each one of them may be inactive (and appear in grey) in some
 situations:</p>
 <dl class="docutils">

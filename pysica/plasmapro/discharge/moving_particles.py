@@ -591,18 +591,21 @@ class MovingParticles:
 
 
         def initialize_savefiles(self,
-                                 filename_stat, filename_distrib_ele, filename_distrib_ion,
+                                 filename_mean_ele, filename_mean_ion,
+                                 filename_distrib_ele, filename_distrib_ion,
                                  filename_zpos_ele, filename_zpos_ion,
                                  append=False, sep=SEP, ext='.csv'):
                 """Initializes the data files to which simulation data about moving particles will be saved
 
                    Parameters
                    ----------
-                   filename_stat:         name of the file to which the simulation quantities will be saved:
-                                          electron enenergy, electron number,...
+                   filename_mean_ele:     name of the file to which the mean electron quantities will be saved:
+                                          energy, number density, etc.
                    filename_distrib_ele:  name of the file to which the electron energy distrobution function
                                           will be saved
                    filename_zpos_ele:     name of the file to which the electron z coordinates will be saved
+                   filename_mean_ion:     root used to form the names of the files to which the mean ion quantities will be saved:
+                                          energy, number density, etc.
                    filename_distrib_ion:  root used to form the names of the files to which the ion energy 
                                           distribution functions will be saved.
                    filename_zpos_ion:     root used to form the names of the files to which the z coordinates 
@@ -617,18 +620,19 @@ class MovingParticles:
                    ---------------------------
 
                    self.sep:                   character or sequence to separate data columns
-                   self.f_stat_name:           name of the file to which values of several quantities will be saved
+                   self.f_mean_ele_name:       name of the file to which values of mean electron quantities will be saved
+                   self.f_mean_ion_names:      list of the names of the files to which values of mean ion quantities will be saved
                    self.f_distrib_ele_name:    name of the file to which eedf will be saved
                    self.f_distrib_ion_names:   list of the names of the files to which iedf of each ion type will be saved
                 """
                 self.sep         = sep
-                self.f_stat_name = str(filename_stat) + ext
+                self.f_mean_ele_name = str(filename_mean_ele) + ext
                 
-                # Open data file where to save time evolution of mean values
+                # Open data file where to save time evolution of mean electron quantities
                 if  append:
-                        data_file = open(self.f_stat_name,'a')
+                        data_file = open(self.f_mean_ele_name,'a')
                 else:
-                        data_file = open(self.f_stat_name,'w')                        
+                        data_file = open(self.f_mean_ele_name,'w')                        
                         # Write header
                         data_file.write('\"t[ns]\"'         + self.sep )
                         data_file.write('\"N electrons\"'   + self.sep ) # number of active electrons
@@ -647,6 +651,31 @@ class MovingParticles:
                         data_file.write('\"n_e[m**-3]\"'    + self.sep )
                         data_file.write(EOL)                        
                 data_file.close()
+
+                # Open data files where to save time evolution of mean ion quantities for each ion type
+                self.f_mean_ion_names = []
+                for i in range(1, self.types):
+                        filename = str(filename_mean_ion) + '_' + self.names[i] + ext
+                        self.f_mean_ion_names.append(filename)
+                        if  append:
+                                data_file = open(filename,'a')
+                        else:
+                                data_file = open(filename,'w')                        
+                                # Write header
+                                data_file.write( '\"t[ns]\"'         + self.sep )
+                                data_file.write( '\"N \"'            + self.sep ) # number of active ions
+                                data_file.write( '\"w\"'             + self.sep ) # weight
+                                data_file.write( '\"En[eV]\"'        + self.sep )
+                                data_file.write( '\"sEn[eV]\"'       + self.sep )
+                                data_file.write( '\"MinEn[eV]\"'     + self.sep )
+                                data_file.write( '\"MaxEn[eV]\"'     + self.sep )
+                                data_file.write( '\"theta[deg]\"'    + self.sep )
+                                data_file.write( '\"stheta[deg]\"'   + self.sep )
+                                data_file.write( '\"Mintheta[deg]\"' + self.sep )
+                                data_file.write( '\"Maxtheta[deg]\"' + self.sep )
+                                data_file.write( '\"n [m**-3]\"'     + self.sep )
+                                data_file.write(EOL)                        
+                        data_file.close()                
 
                 # Open data file where to save evolution of eedf
                 self.f_distrib_ele_name = str(filename_distrib_ele) + ext
@@ -691,8 +720,8 @@ class MovingParticles:
         def save_data_to_files(self):
                 """Saves actual data values to files """
 
-                data_file = open(self.f_stat_name, 'a')                             
-                # Save data on mean values 
+                # Save data on electron mean quantities
+                data_file = open(self.f_mean_ele_name, 'a')                             
                 data_file.write( str( 1E9*self.time                      ) + self.sep )
                 data_file.write( str( self.n_active(0)                   ) + self.sep ) # number of active electrons
                 data_file.write( str( self.weight[0]                     ) + self.sep ) # weight
@@ -711,6 +740,25 @@ class MovingParticles:
                 data_file.write(EOL)
                 data_file.close()
 
+                # Save data on ion mean quantities
+                for i in range(1, self.types):
+                        i_file = i-1
+                        data_file = open(self.f_mean_ion_names[i_file], 'a')                             
+                        data_file.write( str( 1E9*self.time                      ) + self.sep )
+                        data_file.write( str( self.n_active(i)                   ) + self.sep ) # number of active electrons
+                        data_file.write( str( self.weight[i]                     ) + self.sep ) # weight
+                        data_file.write( str( self.e_average(i)                  ) + self.sep )
+                        data_file.write( str( self.e_sigma(i)                    ) + self.sep )
+                        data_file.write( str( self.e_min(i)                      ) + self.sep )
+                        data_file.write( str( self.e_max(i)                      ) + self.sep )
+                        data_file.write( str( math.degrees(self.theta_average(i))) + self.sep )       
+                        data_file.write( str( math.degrees(self.theta_sigma(i))  ) + self.sep )
+                        data_file.write( str( math.degrees(self.theta_min(i))    ) + self.sep )
+                        data_file.write( str( math.degrees(self.theta_max(i))    ) + self.sep )
+                        data_file.write( str( self.number_density[i]             ) + self.sep )                 
+                        data_file.write(EOL)
+                        data_file.close()
+                
                 # Save actual eedf
                 data_file = open(self.f_distrib_ele_name,'a')
                 self.e_distr = self.energies(0)

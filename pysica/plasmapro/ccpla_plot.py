@@ -520,8 +520,8 @@ class CcplaPlots:
         # Calculate the number of bins for electron distribution, as the square root of the number of electrons
         self.nbins_ele = int( math.sqrt( charges.n_active(0) ) )
         if (self.nbins_ele == 0): self.nbins_ele = 1
-        if (self.nbins_ele > N_BINS_LOG): plot_set(self.eedf_graph, logx=True)
-        else:                             plot_set(self.eedf_graph, logx=False) 
+#        if (self.nbins_ele > N_BINS_LOG): plot_set(self.eedf_graph, logx=True)
+#        else:                             plot_set(self.eedf_graph, logx=False) 
 
         # Plot EEDF
         if (charges.n_active(0) > 0):
@@ -546,8 +546,8 @@ class CcplaPlots:
             if (charges.n_active(i) < self.n): self.n = charges.n_active(i)
         self.nbins_ion = int(math.sqrt(self.n))
         if (self.nbins_ion == 0): self.nbins_ion = 1
-        if (self.nbins_ion > N_BINS_LOG): plot_set(self.iedf_graph, logx=True)
-        else:                             plot_set(self.iedf_graph, logx=False)
+#        if (self.nbins_ion > N_BINS_LOG): plot_set(self.iedf_graph, logx=True)
+#        else:                             plot_set(self.iedf_graph, logx=False)
         
         # Set x-axis limit for ion graphs to max ion energy (all ion types)
         self.ion_emax = 0.0

@@ -391,13 +391,17 @@ if cl_options.print_only: exit_ccpla()
 
 if (parameters.save_delay > 0):
     charges.initialize_savefiles(parameters.filename_stat_ele,
+                                 parameters.filename_stat_ion,
                                  parameters.filename_distrib_ele,
                                  parameters.filename_distrib_ion,
                                  parameters.filename_epos_z,
                                  parameters.filename_ipos_z,
                                  append=False, sep='\t', ext=EXT)
     neutrals.initialize_savefile(parameters.filename_stat_neu, append=False, sep='\t', ext=EXT)
-    ccp.initialize_savefiles(parameters.filename_I, parameters.filename_V, append=False, sep='\t', ext=EXT)    
+    ccp.initialize_savefiles(parameters.filename_I, parameters.filename_V, append=False, sep='\t', ext=EXT)
+    print(print_filenames(charges, neutrals, ccp))
+    print() 
+    if (not cl_options.batch_mode): wait_input()
 
         
 # +----------------+

@@ -49,12 +49,22 @@ plt.rcParams["font.size"]        = 20
 class CcplaSavedData:
     """Class of data saved by ccpla program"""
 
-    def __init__(self, name=None, verbose=False, read_edf=False, read_potential=False):
+    def __init__(self, name=None, verbose=False, read_potential=False, read_edf=False, read_position=False,
+                 size_default=26, size_title=30, size_axes=26, size_legend=26):
         """Initialize the collection of data to be analyzed"""
 
+        plt.rc('font',   size      = size_default) #controls default text size
+        plt.rc('axes',   titlesize = size_title)   #fontsize of the title
+        plt.rc('axes',   labelsize = size_axes)    #fontsize of the x and y labels
+        plt.rc('xtick',  labelsize = size_axes)    #fontsize of the x tick labels 
+        plt.rc('ytick',  labelsize = size_axes)    #fontsize of the y tick labels
+        plt.rc('legend', fontsize  = size_legend)  #fontsize of the legend
+
+
         # Reading EEDF and IEDF as well as potential distribution can be suppressed to save memory and execution time
-        self.read_edf = read_edf
         self.read_V   = read_potential
+        self.read_edf = read_edf
+        self.read_z   = read_position
 
         # Define some constants
         self.DEBYE_CONST_A = 1.51E13                                # (J m)**(-1/2)
@@ -95,13 +105,14 @@ class CcplaSavedData:
         generate_save_dir_name(self.parameters, abs_path=False)
         generate_save_file_names(self.parameters)
 
-        self.parameters.filename_stat_ele +=  EXT
-        self.parameters.filename_stat_neu +=  EXT
-        self.parameters.filename_I        +=  EXT
+        self.parameters.filename_stat_ele += EXT
+        self.parameters.filename_stat_neu += EXT
+        self.parameters.filename_epos_z   += EXT
+        self.parameters.filename_I        += EXT
         if self.read_edf:
-            self.parameters.filename_distrib_ele +=  EXT
+            self.parameters.filename_distrib_ele += EXT
         if self.read_V:
-            self.parameters.filename_V +=  EXT                        
+            self.parameters.filename_V += EXT                        
 
         if verbose: print('Reading electron mean data from file \''+ self.parameters.filename_stat_ele +'\'\n')
         self.means_ele = data_manager.DataGrid()
@@ -110,7 +121,17 @@ class CcplaSavedData:
             string = 'Error reading file \"' + self.parameters.filename_stat_ele + '\": '+message
             self.error =  (status, string)
             return
-
+        self.means_ion = []
+        for i in range(self.neutrals.types):
+            filename = self.parameters.filename_stat_ion + '_' + self.neutrals.names[i] + '+' + EXT
+            if verbose: print('Reading ' + self.neutrals.names[i] + '+  mean data from file \''+ filename +'\'\n')
+            self.means_ion.append(data_manager.DataGrid())
+            (status, message) = self.means_ion[i].read_file(filename, sep=SEP, transpose=True, skip=1)
+            if (status != 0):
+                string = 'Error reading file \"' + filename + '\": '+message
+                self.error =  (status, string)
+                return
+        
         if verbose: print('Reading electron neutrals data from file \''+ self.parameters.filename_stat_neu +'\'\n')
         self.means_neu = data_manager.DataGrid()
         (status, message) = self.means_neu.read_file(self.parameters.filename_stat_neu, sep=SEP, transpose=True, skip=1)
@@ -118,14 +139,22 @@ class CcplaSavedData:
             string = 'Error reading file \"' + self.parameters.filename_stat_neu + '\": '+message
             self.error =  (status, string)
             return
-
-        if verbose: print('Reading electric current data from file \''+ self.parameters.filename_I +'\'\n')
-        self.means_I = data_manager.DataGrid()
-        (status, message) = self.means_I.read_file(self.parameters.filename_I, sep=SEP, transpose=True, skip=1)
-        if (status != 0):
-            string = 'Error reading file \"' + self.parameters.filename_I + '\": '+message
-            self.error =  (status, string)
-            return   
+        
+        if self.read_V:
+            if verbose: print('Reading electric current data from file \''+ self.parameters.filename_I +'\'\n')
+            self.means_I = data_manager.DataGrid()
+            (status, message) = self.means_I.read_file(self.parameters.filename_I, sep=SEP, transpose=True, skip=1)
+            if (status != 0):
+                string = 'Error reading file \"' + self.parameters.filename_I + '\": '+message
+                self.error =  (status, string)
+                return               
+            if verbose: print('Reading electric potential data from file \''+ self.parameters.filename_V +'\'\n')
+            self.V = data_manager.DataGrid()
+            (status, message) = self.V.read_file(self.parameters.filename_V, sep=SEP)
+            if (status != 0):
+                string = 'Error reading file \"' + self.parameters.filename_V + '\": '+message
+                self.error =  (status, string)
+                return
 
         if self.read_edf:
             if verbose: print('Reading EEDF data from file \''+ self.parameters.filename_distrib_ele +'\'\n')
@@ -147,16 +176,25 @@ class CcplaSavedData:
                     self.error =  (status, string)
                     return
 
-        if self.read_V:
-            if verbose: print('Reading electric potential data from file \''+ self.parameters.filename_V +'\'\n')
-            self.V = data_manager.DataGrid()
-            (status, message) = self.V.read_file(self.parameters.filename_V, sep=SEP)
+        if self.read_z:
+            if verbose: print('Reading electron z positions from file \''+ self.parameters.filename_epos_z +'\'\n')
+            self.epos_z = data_manager.DataGrid()
+            (status, message) = self.epos_z.read_file(self.parameters.filename_epos_z, sep=SEP, pad_value=numpy.nan)
             if (status != 0):
-                string = 'Error reading file \"' + self.parameters.filename_V + '\": '+message
+                string = 'Error reading file \"' + self.parameters.filename_epos_z + '\": '+message
                 self.error =  (status, string)
                 return
+            self.ipos_z = []
+            for i in range(self.neutrals.types):
+                filename = self.parameters.filename_ipos_z + '_' + self.neutrals.names[i] + '+' + EXT
+                if verbose: print('Reading ion z positions file \''+ filename +'\'\n')
+                self.ipos_z.append( data_manager.DataGrid() )
+                (status, message) = self.ipos_z[i].read_file(filename, sep=SEP, pad_value=numpy.nan)
+                if (status != 0):
+                    string = 'Error reading file \"' + filename + '\": '+message
+                    self.error =  (status, string)
+                    return
                 
-
         self.n_rows           = len(self.means_ele.data_array[0])
         self.sim_duration     = self.means_ele.data_array[0, self.n_rows-1] * 1E-9
         self.output_timestep  = self.means_ele.data_array[0, self.n_rows-1] * 1E-9 / self.n_rows
@@ -208,9 +246,9 @@ class CcplaSavedData:
             if (self.means_ele.data_array[0][row] >= time): break
         return row
     
-    # +----------------------------------------+
-    # | Plasma parameters time evolution plots |
-    # +----------------------------------------+
+    # +------------------------------------------+
+    # | Electron parameters time evolution plots |
+    # +------------------------------------------+
         
     def plot_electron_number(self, real=True, computational=True, line='None', symbol='.',
                              color_real='red', color_comp='blue'):
@@ -240,6 +278,7 @@ class CcplaSavedData:
         plt.show()     
 
     def plot_electron_density(self, line='None', symbol='.', color='red'):
+        plt.ioff()        
         plt.title('Electron density')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$n_e$ / $m^{-3}$')
@@ -250,6 +289,7 @@ class CcplaSavedData:
         plt.show()
 
     def plot_plasma_frequency(self,line='None', symbol='.', color='red'):
+        plt.ioff()        
         plt.title('Plasma frequency')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$\nu_P$ / $s^{-1}$')
@@ -260,6 +300,7 @@ class CcplaSavedData:
         plt.show()        
 
     def plot_debye_length(self,line='None', symbol='.', color='red'):
+        plt.ioff()        
         plt.title('Debye length')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$\lambda_D$ / m')
@@ -270,6 +311,7 @@ class CcplaSavedData:
         plt.show()
         
     def plot_debye_number(self,line='None', symbol='.', color='red'):
+        plt.ioff()        
         plt.title('Debye number')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$N_D$')
@@ -353,6 +395,124 @@ class CcplaSavedData:
         plt.legend()
         plt.grid()
         plt.show()
+
+    # +-------------------------------------+
+    # | Ion parameters time evolution plots |
+    # +-------------------------------------+
+
+    def plot_ion_number(self, ion_type, ion_string=None, real=True, computational=True, line='None', symbol='.',
+                              color_real='red', color_comp='blue'):
+        if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'
+        plt.ioff()
+        plt.title('Number of ' + ion_string +' ions')
+        plt.xlabel('Time / ns')
+        plt.ylabel('Number of ions')
+        if computational:
+            plt.semilogy(self.means_ion[ion_type].data_array[0],
+                         self.means_ion[ion_type].data_array[1], 
+                         marker=symbol, linestyle=line, color=color_comp,
+                         label='Computational ' + ion_string)
+        if real:
+            plt.semilogy( self.means_ion[ion_type].data_array[0],
+                          self.means_ion[ion_type].data_array[1]
+                        * self.means_ion[ion_type].data_array[2], 
+                         marker=symbol, linestyle=line, color=color_real,
+                         label='Real ' + ion_string)
+        plt.legend()
+        plt.grid()
+        plt.show()
+
+    def plot_ion_weight(self, ion_type, ion_string=None, line='None', symbol='.', color='red'):
+        if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'
+        plt.ioff()
+        plt.title(ion_string + ' weight')
+        plt.xlabel('Time / ns')
+        plt.ylabel('Weight')
+        plt.semilogy(self.means_ion[ion_type].data_array[0],
+                     self.means_ion[ion_type].data_array[2], 
+                     marker=symbol, linestyle=line, color=color,
+                     label = 'Weight ' + ion_string)
+        plt.legend()
+        plt.grid()
+        plt.show()             
+
+    def plot_ion_density(self, ion_type, ion_string=None, line='None', symbol='.', color='red'):
+        if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'        
+        plt.ioff()        
+        plt.title(ion_string + ' density')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'$n_i / m^{-3}$')
+        plt.semilogy(self.means_ion[ion_type].data_array[0],
+                     self.means_ion[ion_type].data_array[11], 
+                     marker=symbol, linestyle=line, color=color, label=ion_string)
+        plt.grid()
+        plt.legend()
+        plt.show()
+
+    def plot_ion_mean_energy(self, ion_type, ion_string=None,
+                             plot_sigma=False, plot_min=False, plot_max=False, semilog=False,
+                             line='None', symbol='.', color='red', ecolor='orange',
+                             maxcolor='cyan', mincolor='blue'):
+        if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'        
+        plt.ioff()
+        plt.title(ion_string + ' mean energy')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'<$E_i$> / eV')
+        if semilog:
+                plt.semilogy(self.means_ion[ion_type].data_array[0],
+                             self.means_ion[ion_type].data_array[3],
+                             marker=symbol, linestyle=line, color=color, label=r'<$E_i$>')
+        else:
+            if plot_sigma:
+                plt.errorbar(self.means_ion[ion_type].data_array[0],
+                             self.means_ion[ion_type].data_array[3],
+                             self.means_ion[ion_type].data_array[4], 
+                             marker=symbol, linestyle=line, color=color, ecolor=ecolor, label = r'<$E_i$>')
+            else:
+                plt.plot(self.means_ion[ion_type].data_array[0],
+                         self.means_ion[ion_type].data_array[3], 
+                         marker=symbol, linestyle=line, color=color, label = r'<$E_i$>')
+
+            if plot_min: plt.plot(self.means_ion[ion_type].data_array[0],
+                                  self.means_ion[ion_type].data_array[5], 
+                                  marker=symbol, linestyle=line, color=mincolor, label = r'$E_i^{min}$')
+            if plot_max: plt.plot(self.means_ion[ion_type].data_array[0],
+                                  self.means_ion[ion_type].data_array[6], 
+                                  marker=symbol, linestyle=line, color=maxcolor, label = r'$E_i^{max}$')
+        plt.legend()
+        plt.grid()
+        plt.show()
+        
+
+    def plot_ion_angle(self, ion_type, ion_string=None,
+                       plot_sigma=True, plot_min=True, plot_max=True,
+                       line='None', symbol='.', color='red', ecolor='orange',
+                       maxcolor='cyan', mincolor='blue'):
+        if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'                
+        plt.ioff()
+        plt.title('Mean angle between ' + ion_string + ' velocity and electric field')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'<$\theta$> / °')
+        if plot_sigma:                        
+            plt.errorbar(self.means_ion[ion_type].data_array[0],
+                         self.means_ion[ion_type].data_array[7],
+                         self.means_ion[ion_type].data_array[8], 
+                         marker=symbol, linestyle=line, color=color, ecolor=ecolor, label=r'<$\theta$>')
+        else:
+            plt.plot(self.means_ion[ion_type].data_array[0],
+                     self.means_ion[ion_type].data_array[7], 
+                     marker=symbol, linestyle=line, color=color, label = r'<$\theta$>')
+
+        if plot_min: plt.plot(self.means_ion[ion_type].data_array[0],
+                              self.means_ion[ion_type].data_array[9], 
+                              marker=symbol, linestyle=line, color=mincolor, label = r'$\theta_{min}$')
+        if plot_max: plt.plot(self.means_ion[ion_type].data_array[0],
+                              self.means_ion[ion_type].data_array[10], 
+                              marker=symbol, linestyle=line, color=maxcolor, label = r'$\theta_{max}$')
+        plt.legend()
+        plt.grid()                
+        plt.show()
+
         
     # +---------------------------+
     # | Electric properties plots |
@@ -433,6 +593,44 @@ class CcplaSavedData:
         plt.legend()
         plt.show()
 
+    # +------------------+
+    # | Z position plots |
+    # +------------------+
+                
+    def plot_position(self, index, name_string=None, time=None, row=None, log=False, color='red', symbol='.'):
+        if not self.read_z:
+            print('Positions are not available')
+            return
+        if (time is None):
+            if (row is None):
+                print('Give either simulation time or data row number !')
+                return
+        else:
+            row = self.get_row(time)
+
+        time = self.means_ele.data_array[0][row]
+        name = name_string
+        string = ': row = ' + str(row) + "; time = " + str(time) + ' ns'        
+        if (index == 0):
+            if (name_string is None): name = r'$e^{-}$'
+            ensamble = self.epos_z.data_array[row] * 1.0e3
+        else:
+            if (name_string is None): name = self.neutrals.names[index-1] + r'$^{+}$ '
+            ensamble = self.ipos_z[index-1].data_array[row] * 1.0e3
+        plt.ioff()
+        plt.title('Ensamble of ' + name)
+        plt.xlabel('Particle index')
+        plt.ylabel('z / mm')
+        if log:
+            plt.semilogy(ensamble, marker=symbol, linestyle='None', color=color, label=name+string)
+        else:    
+            plt.plot(ensamble, marker=symbol, linestyle='None', color=color, label=name+string)
+        plt.legend()
+        plt.grid()
+        plt.show()
+        
+
+        
     # +---------------------------+
     # | Energy distribution plots |
     # +---------------------------+

@@ -215,13 +215,19 @@ The *Parameters* menu shows the following options:
     open a window with the parameters used in the simulation
 
 *Show output parameters*
-    open a window with the parameters used for the data output 
+    open a window with the parameters used for the data output
+
+*Show output filenames*
+    open a window with the names of the files where similation data are saved [#a]_
 
 *Show gas properties*
     open a window with the gas properties
 
 *Show e-/neutral impact cross sections*
     open some gnuplot windows with the cross section plots for electron impact
+
+*Show e-/ion recomb cross sections*
+    open some gnuplot windows with the cross section plots for electron/ion recombination [#b]_
 
 *Show ion/neutral impact cross sections*
     open some gnuplot windows with the cross section plots for ion impact
@@ -230,8 +236,19 @@ The *Parameters* menu shows the following options:
     open some gnuplot windows with other impact parameters (e.g. collision frequencies) for electron collisions
 
 *Show ion/neutral impact parameters*
-    open some gnuplot windows with other impact parameters (e.g. collision frequencies) for ion collisions 
+    open some gnuplot windows with other impact parameters (e.g. collision frequencies) for ion collisions
 
+*Show e-/ion recomb cross parameters*
+    open some gnuplot windows with other parameters (e.g. collision frequencies) for electron/ion recombination [#c]_
+    
+
+.. [#a] This option is activated after the *RESET* button has been pressed, and only if the simulation
+        parameter *save_delay* in the file *ccpla.conf* is not zero.       
+
+.. [#b] This option is activated only if the simulation parameter *isactive_recomb* in the file *ccpla.conf* is not zero.
+
+.. [#c] This option is activated only if the simulation parameter *isactive_recomb* in the file *ccpla.conf* is not zero.
+               
 .. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-parameters.png
          
 

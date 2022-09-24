@@ -109,11 +109,12 @@ contains
       do grid_index = 0, N_cells
          z_grid = real(grid_index) * delta
          rho(grid_index) = 0.0
-         do type_index = 0, N_types              
+         do type_index = 0, N_types
+            ! Multiplier for the particle weight, note that E_CHARGE is negative
             if (type_index == 0) then
-               multiplier =   weight(type_index)
+               multiplier =   weight(type_index)  ! type_index = 0 => electron
             else
-               multiplier = - weight(type_index)
+               multiplier = - weight(type_index)  ! type_index > 0 => ion
             endif
             do particle_index = 1, N_particles
                if (isactive(type_index, particle_index)) then

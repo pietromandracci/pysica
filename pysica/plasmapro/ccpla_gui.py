@@ -60,11 +60,12 @@ class CcplaWindow(tk.Frame):
                                         self.screen_height)
 
         # Normal variables
-        self.sim_status         = False #True=running; False=stopped; None=paused
-        self.error              = False
-        #self.plot_counter       = 0
-        #self.save_counter       = 0
-
+        self.sim_status            = False #True=running; False=stopped; None=paused
+        self.error                 = False
+        self.savefiles_initialized = False
+        #self.plot_counter          = 0
+        #self.save_counter          = 0        
+        
         # Tk control variables
         self.dt_exp             = tk.IntVar()
         self.plot_delay         = tk.IntVar()
@@ -111,7 +112,8 @@ class CcplaWindow(tk.Frame):
         self.menubutton_parameters.menu_parameters.add_command(label='Show simulation parameters',
                                                                command=lambda: self.show_parameters(simulation=True))
         self.menubutton_parameters.menu_parameters.add_command(label='Show output parameters',
-                                                               command=lambda: self.show_parameters(output=True))                
+                                                               command=lambda: self.show_parameters(output=True))
+        self.menubutton_parameters.menu_parameters.add_command(label='Show output filenames', command=self.show_filenames)        
         self.menubutton_parameters.menu_parameters.add_command(label='Show gas properties', command=self.show_gases)
         self.menubutton_parameters.menu_parameters.add_separator()
         self.menubutton_parameters.menu_parameters.add_command(label='Show e-/neutral impact cross sections',
@@ -232,25 +234,39 @@ class CcplaWindow(tk.Frame):
         
     # +--------------------------------------+
     # | Methods to set the window properties |
-    # +--------------------------------------+  
+    # +--------------------------------------+
+    
+    def set_menu(self, reload_parameters=True, edit_parameters=True, let_quit=True):
+        """ Set the active/inactive state of some entries in the main menu """
+            
+        # Parameters / Show filenames
+        if self.savefiles_initialized: self.state = tk.NORMAL
+        else:                          self.state = tk.DISABLED
+        self.menubutton_parameters.menu_parameters.entryconfigure(3, state=self.state)
         
-    def set_menu(self, change_names=True, edit_parameters=True, reload_parameters=True):
+        # Parameters / Show recombination cross sections | impact parameters
         index = self.menubutton_parameters.menu_parameters.index(tk.END)
         if self.parameters.isactive_recomb: self.state = tk.NORMAL
         else:                               self.state = tk.DISABLED
         self.menubutton_parameters.menu_parameters.entryconfigure(index,   state=self.state)
         self.menubutton_parameters.menu_parameters.entryconfigure(index-4, state=self.state)
-        if change_names:      self.state = tk.NORMAL
-        else:                 self.state = tk.DISABLED
-        self.menubutton_file.menu_file.entryconfigure(0, state=self.state)         
-        if edit_parameters:   self.state = tk.NORMAL
-        else:                 self.state = tk.DISABLED
-        self.menubutton_file.menu_file.entryconfigure(1, state=self.state)
+
+        # File / Reload configuration files
         if reload_parameters: self.state = tk.NORMAL
         else:                 self.state = tk.DISABLED
-        self.menubutton_file.menu_file.entryconfigure(2, state=self.state)
+        self.menubutton_file.menu_file.entryconfigure(0, state=self.state)
         
+        # File / Edit configuration files
+        if edit_parameters: self.state = tk.NORMAL
+        else:               self.state = tk.DISABLED
+        self.menubutton_file.menu_file.entryconfigure(1, state=self.state)
 
+        # File / Quit
+        if let_quit: self.state = tk.NORMAL
+        else:        self.state = tk.DISABLED
+        self.menubutton_file.menu_file.entryconfigure(2, state=self.state)        
+
+        
     # +-------------------------------------------+
     # | Methods to interact with kernel and pipes | 
     # +-------------------------------------------+    
@@ -411,7 +427,7 @@ class CcplaWindow(tk.Frame):
         
         self.draw_plots(force_plot=True)       
 
-        self.set_menu(change_names=False, edit_parameters=False, reload_parameters=False)
+        self.set_menu(reload_parameters=False, edit_parameters=False, let_quit=False )
         self.button_start["state"] = tk.DISABLED
         self.button_pause["state"] = tk.NORMAL
         self.button_stop["state"]  = tk.DISABLED         
@@ -504,6 +520,7 @@ class CcplaWindow(tk.Frame):
             create_save_dir(self.parameters)
             if self.debug: print('[GUI]   -> Initializing savefiles')
             self.charges.initialize_savefiles(self.parameters.filename_stat_ele,
+                                              self.parameters.filename_stat_ion,
                                               self.parameters.filename_distrib_ele,
                                               self.parameters.filename_distrib_ion,
                                               self.parameters.filename_epos_z,
@@ -512,7 +529,8 @@ class CcplaWindow(tk.Frame):
             self.neutrals.initialize_savefile(self.parameters.filename_stat_neu,
                                               append=False, sep=SEP, ext=EXT)
             self.ccp.initialize_savefiles(self.parameters.filename_I, self.parameters.filename_V,
-                                          append=False, sep=SEP, ext=EXT)            
+                                          append=False, sep=SEP, ext=EXT)
+            self.savefiles_initialized = True
             self.save_counter = 0          
             
         # Arrange flags, windows and buttons status
@@ -526,6 +544,7 @@ class CcplaWindow(tk.Frame):
         self.button_stop["text"]   = 'STOP'
         self.button_stop["state"]  = tk.DISABLED
         self.button_start["state"] = tk.NORMAL
+        self.set_menu()
 
         self.update_idletasks()
         
@@ -721,7 +740,7 @@ class CcplaWindow(tk.Frame):
         self.gases_window.button  = tk.Button(self.gases_window, text="Dismiss", command=self.gases_window.destroy)
         self.gases_window.button.grid()
                 
-    def show_parameters(self, physical=False, simulation=False, output=False, filenames=False):
+    def show_parameters(self, physical=False, simulation=False, output=False):
         self.parameters_window = tk.Toplevel(self)
         self.parameters_window.title('Parameters')
         self.parameters_window.resizable(False,False)
@@ -730,14 +749,27 @@ class CcplaWindow(tk.Frame):
                                                                                       self.parameters, self.options,
                                                                                       print_physical=physical,
                                                                                       print_simulation=simulation,
-                                                                                      print_output=output,
-                                                                                      print_filenames=filenames),
+                                                                                      print_output=output),
                                                     font=FONT_MESSAGE_SMALL, foreground='blue', width=1500,
                                                     justify=tk.LEFT, relief=tk.RIDGE)
         self.parameters_window.message.grid()
         self.parameters_window.button  = tk.Button(self.parameters_window, text="Dismiss",
                                                    command=self.parameters_window.destroy)
         self.parameters_window.button.grid()
+
+    def show_filenames(self):
+        self.filenames_window = tk.Toplevel(self)
+        self.filenames_window.title('Filenames')
+        self.filenames_window.resizable(False,False)
+        self.filenames_window.message = tk.Message(self.filenames_window,
+                                                   text=print_filenames(self.charges, self.neutrals, self.ccp),
+                                                   font=FONT_MESSAGE_SMALL, foreground='blue', width=1500,
+                                                   justify=tk.LEFT, relief=tk.RIDGE)
+        self.filenames_window.message.grid()
+        self.filenames_window.button  = tk.Button(self.filenames_window, text="Dismiss",
+                                                   command=self.filenames_window.destroy)
+        self.filenames_window.button.grid()
+        
         
     def show_plot_info(self):
         try:

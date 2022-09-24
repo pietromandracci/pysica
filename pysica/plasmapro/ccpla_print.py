@@ -29,7 +29,7 @@ from pysica.plasmapro.ccpla_defaults import *
 
 def print_simulation_information(neutrals, ccp, parameters, options,
                                  print_physical=True, print_simulation=True,
-                                 print_output=True, print_filenames=True):
+                                 print_output=True):
     string = ''
     # Print information about physical parameters
     if print_physical:
@@ -117,22 +117,47 @@ def print_simulation_information(neutrals, ccp, parameters, options,
         elif (parameters.save_delay == 1):
             string += 'every cycle' + '\n'
         else:
-            string += 'every ' + str(parameters.save_delay) + ' cycles' + '\n'
-        if (print_filenames and (parameters.save_delay > 0) ):
-            string += '\n'
-            string += 'Filename electron mean data:         ' + '\"' + parameters.filename_stat_ele    + EXT +'\"\n'
-            string += 'Filename ion mean data:              ' + '\"' + parameters.filename_stat_neu    + EXT + '\"\n'
-            string += 'Filename eedf:                       ' + '\"' + parameters.filename_distrib_ele + EXT + '\"\n'
-            string += 'Filename iedf:                       ' + '\"' + parameters.filename_distrib_ion + EXT + '\"\n'
-            string += 'Filename z positions of electrons:   ' + '\"' + parameters.filename_epos_z      + EXT + '\"\n'
-            string += 'Filename z positions of ions         ' + '\"' + parameters.filename_ipos_z      + EXT + '\"\n'            
-            string += 'Filename electric current:           ' + '\"' + parameters.filename_I           + EXT + '\"\n'
-            string += 'Filename electric potential:         ' + '\"' + parameters.filename_V           + EXT + '\"\n'
-            
+            string += 'every ' + str(parameters.save_delay) + ' cycles' + '\n'            
         if options.gui_mode:
             string += 'Max number of points in plots:       ' + str(parameters.n_max_points) + '\n'
             string += 'Decimation factor:                   ' + str(parameters.decimation_factor) + '\n'
-                        
+    return string
+
+
+def print_filenames(charges, neutrals, ccp):
+    str_length = 11
+    string  = 'NAMES OF OUTPUT FILES\n'
+    string += 'Particles mean data\n'
+    for i in range(charges.types):        
+        if (i==0):
+            string += (charges.names[i] + ':').ljust(str_length)
+            string += '\"' + charges.f_mean_ele_name + '\"\n'
+        else:
+            string +=  (charges.names[i] + ':').ljust(str_length)
+            string += '\"' + charges.f_mean_ion_names[i-1] + '\"\n'
+    string += 'neutrals:'.ljust(str_length) + '\"' + neutrals.filename + '\"\n'
+
+    string += 'EEDF/IEDF\n'
+    for i in range(charges.types):
+        if (i==0):
+            string += (charges.names[i] + ':').ljust(str_length)
+            string += '\"' + charges.f_distrib_ele_name + '\"\n'
+        else:
+            string += (charges.names[i] + ':').ljust(str_length)
+            string += '\"' + charges.f_distrib_ion_names[i-1] + '\"\n'
+
+    string += 'Positions along z axis\n'
+    for i in range(charges.types):
+        if (i==0):
+            string += (charges.names[i] + ':').ljust(str_length)
+            string += '\"' + charges.f_zpos_ele_name + '\"\n'
+        else:
+            string += (charges.names[i] + ':').ljust(str_length)
+            string += '\"' + charges.f_zpos_ion_names[i-1] + '\"\n'
+    string += 'Electric quantities\n'
+    string += 'Current:   ' + '\"' + ccp.filename_I + '\"\n'
+    string += 'Potential: ' + '\"' + ccp.filename_V + '\"\n'
+
     return string
 
 

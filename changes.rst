@@ -1,9 +1,14 @@
 =============
+Version 0.2.2
+=============
+
+* Minor changes in the documantation
+
+=============
 Version 0.2.1
 =============
 
 * Update of the file headers with copyright info
-
 
 =============
 Version 0.2.0

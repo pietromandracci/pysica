@@ -595,6 +595,7 @@ def generate_save_file_names(parameters):
     
     # Add save directory path to filenames
     parameters.filename_stat_ele    = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_STAT_ELE)
+    parameters.filename_stat_ion    = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_STAT_ION)    
     parameters.filename_stat_neu    = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_STAT_NEU)
     parameters.filename_distrib_ele = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_DISTRIB_ELE)
     parameters.filename_distrib_ion = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_DISTRIB_ION)
