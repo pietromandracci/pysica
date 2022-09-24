@@ -218,7 +218,7 @@ The *Parameters* menu shows the following options:
     open a window with the parameters used for the data output
 
 *Show output filenames*
-    open a window with the names of the files where similation data are saved [#a]_
+    open a window with the names of the files where simulation data are saved [#a]_
 
 *Show gas properties*
     open a window with the gas properties
