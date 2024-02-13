@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,9 @@ class ConfigurationOptions:
         self.Nmax_particles   = 3000        # Max number of electrons allowed during simulation
         self.rescale_factor   = 10.0        # Factor for rescaling of particle numbers and weights
         self.sim_duration     = 1.0E-6      # Requested total simulation duration [s]
-        self.save_delay       = 1           # Data save periodicity (0 = never, 1 = every cycle, 2 = every 2 cycles, etc..) 
+        self.save_delay       = 1           # Data save periodicity for mean values (0 = never, 1 = every cycle, 2 = every 2 cycles, etc..)
+        self.save_delay_dist  = 1           # Data save periodicity for the distributions of electron/ion energy and position
+                                            # (1 = every time means values are saved, 2 = every 2 times, etc...)
         self.dt_output        = 1.0E-9      # Time between data outptut [s]
         self.dt               = 0.0         # Timestep for simulation [s] (must be lower than dt_output):
                                             #        if zero, dt is variable and calculated by the program
@@ -70,6 +72,7 @@ class ConfigurationOptions:
 # +---------------------------------+
 
 # Default values of parameters that can be modified via command-line options
+cpu_multicore           = False  # If True, use parallel multicore module
 verbosity               = 1      # How much should the program bore with text-based output
 plot_xsec               = False  # Plot cross sections at start
 debug_level_python      = 0      # For debugging purposes
@@ -81,7 +84,7 @@ batch_mode              = False  # Suppress any input from user
 redirect_output         = False  # Save output to a log file instead of on showing it stdout
 redirect_error_messages = False  # Save python error messages to a log file instead of showing them on stderr
 text_window_width       = 160    # Width of the output text window in GUI
-text_window_height      = 39     # Hight of the output text window in GUI
+text_window_height      = 38     # Hight of the output text window in GUI
 text_window_font_size   = 12     # Size of font used in the output text window in GUI
 
 

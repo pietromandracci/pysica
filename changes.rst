@@ -1,8 +1,21 @@
 =============
+Version 0.3.0
+=============
+
+* The fortran module of the plasmapro.discharge subpackage was modified to allow multithread execution
+  of the most cpu-intensive part:
+  it can be activated running the ccpla script with the -m comman line argument
+
+* A bug was fixed in the fortran module of the plasmapro.discharge subpackage (missing array initialization)
+
+* The ccpla.py and ccpla_gui.py scripts have been modified to allow that distribution data are saved only a reduced
+  number of times to reduce space consumption on disk
+
+=============
 Version 0.2.2
 =============
 
-* Minor changes in the documantation
+* Minor changes in the documentation
 
 =============
 Version 0.2.1

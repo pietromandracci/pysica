@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2022 Pietro Mandracci
+! COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ contains
                                                                      &vz_part_added        ! Velocities of particles that need to be added
       integer,  dimension(0:n_types),                intent(inout) :: n_part_added         ! Number of events (e.g. ionizations) leading to
                                                                                            !    particle addition      
-      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: w_part_added         ! Number of comp. particles to add for each  event
+      integer,  dimension(0:n_types, 1:n_particles), intent(inout) :: w_part_added         ! Number of comp. particles to add for each event
 
       integer,                                       intent(in)    :: n_types, n_particles
       integer,                                       intent(in)    :: debug_level
@@ -70,14 +70,17 @@ contains
          ! Calculate the active number of particles of this type
          ! n_active = n_state_elements(isactive, n_types+1, n_particles, t+1, .true.)
          n_active = count(isactive(t,:))
+!         print *, 'Type, n_active:',t, n_active,n_state_elements(isactive, n_types+1, n_particles, t+1, .true.)
          ! If there have been events that added particles of this type, manage particle addition
          if (n_part_added(t) > 0) then
+!            print *, 'Type, events:  ',t, n_part_added(t)
             ! Calculate the total number of computational particles to be added for this type
 !            ntot_part_added = 0
 !            do n = 1, n_part_added(t)
 !               ntot_part_added = ntot_part_added + w_part_added(t, n)
 !            enddo
             ntot_part_added = sum(w_part_added(t,:))
+!            print *, 'Type, added particles:',t, ntot_part_added
             ! Check that, adding the required number of particles, the max allowed number is not exceeded
             ! otherwise rescale the number of particles and their weight
             rescaled = .false.

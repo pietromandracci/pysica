@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 # | Import required Python modules |
 # +--------------------------------+
 
-# Mudules from the standard Python library
+# Modules from the standard Python library
 import sys
 import math
 from random import random
@@ -85,7 +85,8 @@ def create_message_window(message, error):
 
     root.mainloop()
 
-def exit_ccpla(message="Exiting program", gui=False, error=False):
+def exit_ccpla(message=None, gui=False, error=False):
+    if (message is None): message = "Exiting program " + SCRIPTNAME
     if not gui:
         sys.exit(EOL + message + EOL)
     else:
@@ -105,6 +106,11 @@ def print_message(message, gui=False, error=False):
 
 usage = "usage: %prog [options]"        # String to be given as program usage description
 parser = OptionParser(usage)
+
+# Use parallel Fortran module
+help_string = "use multicore parallel Fortran module"
+parser.add_option("-m", "--multicore", action="store_true",  dest="cpu_multicore", default=False, 
+                  help=help_string)
 
 # Do not start simulation, only print parameters values and exit
 help_string = "show parameters values and exit"
@@ -188,6 +194,10 @@ if cl_options.redirect_output:
 # +-----------------------------+   
 # | Error checking and warnings |
 # +-----------------------------+
+
+# This option must change an import directive in the discharge.particle_mover module
+# so it cannot be passed as a variable to a function inside the module
+# in this way it can be imported from this  module
 
 if (cl_options.verbosity not in list(range(4))):
     exit_ccpla('ERROR: verbosity must be in range 0..3' + EOL,
@@ -414,8 +424,10 @@ if (cl_options.verbosity > 0): print('\nSTARTING SIMULATION')
 #charges.time = 0
 #charges.dt   = parameters.dt
 
-# Data save counter
-i_save_data   = 1
+# Data save counters and flag
+i_save_data = 1
+i_save_dist = 1
+save_dist   = True
 
 while (charges.n_active(0) > 0):
 
@@ -447,10 +459,21 @@ while (charges.n_active(0) > 0):
                                  electric_bias_before,
                                  n_active_el_before))
         
-    # Save data to files
+    # Save data to files, if required
     if (parameters.save_delay > 0):
+        # Data are seved every n cycles, where n = parameters.save_delay (if not zero)
         if ( (i_save_data >= parameters.save_delay) and (charges.n_active(0) > 0) ):
-            charges.save_data_to_files()
+            # If required, energy and z distributions are not saved always,
+            # but every n data saves only, to preserve disk space
+            # where n = parameters.save_delay_dist
+            if (parameters.save_delay_dist > 1):
+                if (i_save_dist >= parameters.save_delay_dist):
+                    save_dist = True
+                    i_save_dist = 0
+                else:
+                    save_dist = False
+                i_save_dist += 1
+            charges.save_data_to_files(save_edf=save_dist, save_z=save_dist)
             neutrals.save_data_to_files(charges.time)
             ccp.save_data_to_files(charges.time)
             i_save_data = 0

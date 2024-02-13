@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,6 +79,7 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
     configuration_data.d['dt_output']         = [ parameters.dt_output, 'time between data outputs', 'checkminstrict', 0 ]
     configuration_data.d['dt']                = [ parameters.dt, 'simulation timestep', 'checkmin', 0 ]
     configuration_data.d['save_delay']        = [ parameters.save_delay, 'data save periodicity', 'checkmin', 0 ]
+    configuration_data.d['save_delay_dist']   = [ parameters.save_delay_dist, 'data save periodicity for distributions', 'checkmin', 1 ]
     configuration_data.d['maxcollfreq']       = [ parameters.maxcollfreq, 'maximum allowed collision frequency for variable dt',
                                                   'checkminstrict', 0 ]
     configuration_data.d['min_scattered']     = [ parameters.min_scattered,
@@ -226,9 +227,12 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
         return (status, message)
     parameters.sim_duration = configuration_data.d['duration'][0]
 
-    # Save to file periodicity
+    # Save data to file periodicity
     parameters.save_delay = int(configuration_data.d['save_delay'][0])
-        
+
+    # Save distributions to file periodicity
+    parameters.save_delay_dist = int(configuration_data.d['save_delay_dist'][0])
+    
     # Maximum collision frequency allowed in calcolus of dt (for variable dt)
     parameters.maxcollfreq = configuration_data.d['maxcollfreq'][0]
 
@@ -625,7 +629,7 @@ def create_save_dir(parameters):
 
     generate_save_file_names(parameters)
 
-    # Copy configuration and neutrals file to the save directory
+    # Copy configuration and neutrals files to the save directory
     shutil.copy(FILENAME_CONFIG,   parameters.filename_config)
     shutil.copy(FILENAME_NEUTRALS, parameters.filename_neutrals)
  

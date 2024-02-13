@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Read and show data saved by ccpla script """
+""" Read and show data saved by the ccpla script during a simulation run """
 
 # +--------------------------------+
 # | Import required Python modules |
@@ -25,13 +25,13 @@ import math
 # Modules provided by the Python community
 import numpy
 import matplotlib.pyplot as plt
+import mpl_toolkits.axes_grid1.inset_locator as inset_locator
 import Gnuplot
 
 # Import required constants and parameters
 from pysica.parameters import *
 from pysica.constants import *
 from pysica.plasmapro.ccpla_defaults import *
-#from pysica.plasmapro.plot.plot_parameters import *
 
 # Modules provided by plasmapro package
 from pysica.managers import data_manager
@@ -42,17 +42,20 @@ from pysica.plasmapro.discharge.reactors import CcpProperties
 from pysica.plasmapro.discharge.target_particles import TargetParticles
 from pysica.plasmapro.ccpla_init import *
 
-plt.rcParams["mathtext.default"] = 'regular'
-plt.rcParams["font.size"]        = 20
-
 
 class CcplaSavedData:
     """Class of data saved by ccpla program"""
 
-    def __init__(self, name=None, verbose=False, read_potential=False, read_edf=False, read_position=False,
+    def __init__(self, verbose=False, read_potential=False, read_edf=False, read_position=False,
                  size_default=26, size_title=30, size_axes=26, size_legend=26):
         """Initialize the collection of data to be analyzed"""
 
+        self.tick_length_major = 10
+        self.tick_length_minor = 5
+
+        # Set the font dimensions
+        plt.rcParams["mathtext.default"] = 'regular'
+        plt.rcParams["font.size"]        = 20
         plt.rc('font',   size      = size_default) #controls default text size
         plt.rc('axes',   titlesize = size_title)   #fontsize of the title
         plt.rc('axes',   labelsize = size_axes)    #fontsize of the x and y labels
@@ -60,11 +63,10 @@ class CcplaSavedData:
         plt.rc('ytick',  labelsize = size_axes)    #fontsize of the y tick labels
         plt.rc('legend', fontsize  = size_legend)  #fontsize of the legend
 
-
         # Reading EEDF and IEDF as well as potential distribution can be suppressed to save memory and execution time
-        self.read_V   = read_potential
-        self.read_edf = read_edf
-        self.read_z   = read_position
+        self.read_V        = read_potential
+        self.read_edf      = read_edf
+        self.read_z        = read_position
 
         # Define some constants
         self.DEBYE_CONST_A = 1.51E13                                # (J m)**(-1/2)
@@ -101,6 +103,13 @@ class CcplaSavedData:
                 self.error = (status, message)
                 return
 
+        # If there are not molecular gases, data about dissociation have not been saved and cannot be read
+        if (self.neutrals.types_molecules > 0):
+            self.read_neu_stat = True
+        else:
+            self.read_neu_stat = False
+
+            
         # Read data saved during simulation
         generate_save_dir_name(self.parameters, abs_path=False)
         generate_save_file_names(self.parameters)
@@ -131,14 +140,15 @@ class CcplaSavedData:
                 string = 'Error reading file \"' + filename + '\": '+message
                 self.error =  (status, string)
                 return
-        
-        if verbose: print('Reading electron neutrals data from file \''+ self.parameters.filename_stat_neu +'\'\n')
-        self.means_neu = data_manager.DataGrid()
-        (status, message) = self.means_neu.read_file(self.parameters.filename_stat_neu, sep=SEP, transpose=True, skip=1)
-        if (status != 0):
-            string = 'Error reading file \"' + self.parameters.filename_stat_neu + '\": '+message
-            self.error =  (status, string)
-            return
+            
+        if self.read_neu_stat:
+            if verbose: print('Reading neutrals data from file \''+ self.parameters.filename_stat_neu +'\'\n')
+            self.means_neu = data_manager.DataGrid()
+            (status, message) = self.means_neu.read_file(self.parameters.filename_stat_neu, sep=SEP, transpose=True, skip=1)
+            if (status != 0):
+                string = 'Error reading file \"' + self.parameters.filename_stat_neu + '\": '+message
+                self.error =  (status, string)
+                return
         
         if self.read_V:
             if verbose: print('Reading electric current data from file \''+ self.parameters.filename_I +'\'\n')
@@ -196,10 +206,13 @@ class CcplaSavedData:
                     return
                 
         self.n_rows           = len(self.means_ele.data_array[0])
+        self.n_rows_dist      = int( self.n_rows / self.parameters.save_delay_dist ) 
+        self.max_time         = self.means_ele.data_array[0, self.n_rows-1]
         self.sim_duration     = self.means_ele.data_array[0, self.n_rows-1] * 1E-9
         self.output_timestep  = self.means_ele.data_array[0, self.n_rows-1] * 1E-9 / self.n_rows
-        self.n_cols           = len(self.means_neu.data_array)
-        self.mol_types        = int((self.n_cols - 1) / 2)
+        if self.read_neu_stat:
+            self.n_cols           = len(self.means_neu.data_array)
+            self.mol_types        = int((self.n_cols - 1) / 2)
 
         # lambda_D = A * sqrt(<E_e>**3 / n_e)
         # NOTE: ELECTRON_CHARGE is negative, multiplying by it is necessary to convert energy from eV to J
@@ -217,6 +230,63 @@ class CcplaSavedData:
 
         self.error = (status, message)
 
+        
+    # +----------------------------------------------+
+    # | Functions that return information about data |
+    # +----------------------------------------------+
+                
+    def get_row(self, time):
+        for row in range(self.n_rows):
+            if (self.means_ele.data_array[0][row] >= time): break
+        return row
+
+    def get_row_dist(self, time):
+        if (time < self.means_ele.data_array[0][0] * self.parameters.save_delay_dist):
+            return None
+        else:
+            row = self.get_row(time)
+            return round( (row+1) / self.parameters.save_delay_dist - 1 ) 
+
+    def get_time(self, row):
+        if ( (row < 0) or (row > self.n_rows-1) ):
+            return None
+        else:
+            return self.means_ele.data_array[0][row]
+
+    def get_time_dist(self, row_dist):
+        if ( (row_dist < 0) or (row_dist > self.n_rows_dist-1) ):
+            return None
+        else:
+            row_means = (row_dist+1) * self.parameters.save_delay_dist - 1 
+            return self.get_time(row_means)
+   
+    def is_molecule(self, neutral_index):
+        neutral_index = int(neutral_index)
+        if ( (neutral_index < 0) or (neutral_index > self.neutrals.types) ):
+            return None            
+        if (self.neutrals.molecule_type[neutral_index] == 'a'):
+            return False
+        else:
+            return True
+    
+    def get_molecule_index(self, neutral_index):
+        if ( self.is_molecule(neutral_index) is True ):
+            molecule_index = 0
+            for i in range(neutral_index):
+                if (self.neutrals.molecule_type[i] != 'a'):
+                    molecule_index += 1
+            return molecule_index
+        elif ( self.is_molecule(neutral_index) is False):
+            print(self.neutrals.names[neutral_index] + ' is not a molecule')
+            return None
+        else:
+            print('Invalid index')
+            return None            
+
+    # +---------------------------------------------+
+    # | Functions that print information about data |
+    # +---------------------------------------------+
+        
     def print_parameters(self):
         print('')
         print('Electrodes distance                 : ' + print_unit(self.ccp.distance,'m'))
@@ -239,35 +309,67 @@ class CcplaSavedData:
         print('Timestep [0=automatic]              : ' + print_unit(self.parameters.dt, 's'))
         print('Mean time between data acquisitions : ' + print_unit(self.output_timestep, 's'))
         print('Number of data acquisitions         : ' + str(self.n_rows-1))
-        print('Overall simulated time              : ' + print_unit(self.sim_duration, 's'))        
+        print('Overall simulated time              : ' + print_unit(self.sim_duration, 's'))
+        print('Data saved every                    : ' + str(self.parameters.save_delay) + ' data acquisitions')
+        print('Distributions saved every           : ' + str(self.parameters.save_delay_dist) + ' data saves')
 
-    def get_row(self, time):
-        for row in range(self.n_rows):
-            if (self.means_ele.data_array[0][row] >= time): break
-        return row
+        return (0, OK)
+
+    def print_ions(self):
+        for i in range(self.neutrals.types):
+            print('neutral index: ' + str(i))
+            print('ion index:     ' + str(i+1))
+            print('name:          ' + self.neutrals.names[i])
+            print('type:          ' + self.neutrals.molecule_type[i] + '\n')
+                
+        return (0, OK)   
+        
+    def print_molecules(self):
+        for i in range(self.neutrals.types):            
+            if self.is_molecule(i):
+                print('neutral  index: ' + str(i))
+                print('molecule index: ' + str( self.get_molecule_index(i)))
+                print('name:           ' + self.neutrals.names[i] + '\n')
+                
+        return (0, OK)
+
     
     # +------------------------------------------+
     # | Electron parameters time evolution plots |
     # +------------------------------------------+
         
-    def plot_electron_number(self, real=True, computational=True, line='None', symbol='.',
+    def plot_electron_number(self, real=True, computational=True, line='None',
+                             symbol_real='x', symbol_comp='+',
                              color_real='red', color_comp='blue'):
+        """Plot the number of electrons as a function of the simulation time"""
+        
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)        
         plt.title('Number of electrons')
         plt.xlabel('Time / ns')
         plt.ylabel('Number of electrons')
         if computational:
             plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[1], 
-                         marker=symbol, linestyle=line, color=color_comp, label=r'Computational $e^-$')
+                         marker=symbol_comp, linestyle=line, color=color_comp, label=r'Computational $e^-$')
         if real:
             plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[1] * self.means_ele.data_array[2], 
-                         marker=symbol, linestyle=line, color=color_real, label=r'Real $e^-$')
+                         marker=symbol_real, linestyle=line, color=color_real, label=r'Real $e^-$')
         plt.legend()
         plt.grid()
         plt.show()
+        
+        return (0, OK)
+        
 
     def plot_electron_weight(self,line='None', symbol='.', color='red'):
+        """ Plot the electron weight as a function of the simulation time """
+        
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Electron weight')
         plt.xlabel('Time / ns')
         plt.ylabel('Weight')
@@ -275,10 +377,17 @@ class CcplaSavedData:
                      marker=symbol, linestyle=line, color=color, label = r'Weight $e^-$')
         plt.legend()
         plt.grid()
-        plt.show()     
+        plt.show()
+
+        return (0, OK)
 
     def plot_electron_density(self, line='None', symbol='.', color='red'):
-        plt.ioff()        
+        """ Plot the number density of electrons as a function of the simulation time """
+        
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Electron density')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$n_e$ / $m^{-3}$')
@@ -287,9 +396,16 @@ class CcplaSavedData:
         plt.grid()
         plt.legend()
         plt.show()
+        
+        return (0, OK)
 
-    def plot_plasma_frequency(self,line='None', symbol='.', color='red'):
-        plt.ioff()        
+    def plot_plasma_frequency(self, line='None', symbol='.', color='red'):
+        """ Plot the plasma frequency as a function of the simulation time """
+        
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)        
         plt.title('Plasma frequency')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$\nu_P$ / $s^{-1}$')
@@ -297,10 +413,16 @@ class CcplaSavedData:
                      marker=symbol, linestyle=line, color=color, label = r'$\nu_P$')
         plt.grid()
         plt.legend()
-        plt.show()        
+        plt.show()
+        
+        return (0, OK)
 
-    def plot_debye_length(self,line='None', symbol='.', color='red'):
-        plt.ioff()        
+    def plot_debye_length(self, line='None', symbol='.', color='red'):
+        """ Plot the Debye length as a function of the simulation time """        
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Debye length')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$\lambda_D$ / m')
@@ -310,8 +432,16 @@ class CcplaSavedData:
         plt.legend()
         plt.show()
         
+        return (0, OK)
+    
+        
     def plot_debye_number(self,line='None', symbol='.', color='red'):
-        plt.ioff()        
+        """ Plot the Debye number as a function of the simulation time """
+        
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Debye number')
         plt.xlabel('Time / ns')
         plt.ylabel(r'$N_D$')
@@ -319,12 +449,20 @@ class CcplaSavedData:
                      marker=symbol, linestyle=line, color=color, label = r'$N_D$')
         plt.grid()
         plt.legend()
-        plt.show()    
+        plt.show()
+        
+        return (0, OK)
+    
                
     def plot_electron_mean_energy(self, plot_sigma=False, plot_min=False, plot_max=False, semilog=False,
                                   line='None', symbol='.', color='red', ecolor='orange',
                                   maxcolor='cyan', mincolor='blue'):
+        """ Plot the mean energy of electrons as a function of the simulation time """
+        
         plt.ioff()
+        plt.minorticks_on()      
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Electron mean energy')
         plt.xlabel('Time / ns')
         plt.ylabel(r'<$E_e$> / eV')
@@ -346,12 +484,19 @@ class CcplaSavedData:
         plt.legend()
         plt.grid()
         plt.show()
+        
+        return (0, OK)
 
         
     def plot_electron_angle(self, plot_sigma=True, plot_min=True, plot_max=True,
                             line='None', symbol='.', color='red', ecolor='orange',
                             maxcolor='cyan', mincolor='blue'):
+        """ Plot the angle between z direction for electrons as a function of the simulation time """
+        
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Mean angle between electron velocity and electric field')
         plt.xlabel('Time / ns')
         plt.ylabel(r'<$\theta$> / °')
@@ -369,24 +514,43 @@ class CcplaSavedData:
         plt.legend()
         plt.grid()                
         plt.show()
+        
+        return (0, OK)
 
         
-    def plot_tau(self, line='None', symbol='.', color='red'):
+    def plot_tau(self, plot_dt=False, line='None', symbol_dt='+', symbol_tau='x', color_dt='blue', color_tau='red'):
+        """ Plot the mean time between collisions and the timestep as a function of the simulation time """
+        
         plt.ioff()
-        plt.title('Timestep and time between collisions')
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
+        if plot_dt:
+            plt.title('Timestep and mean time between collisions')
+        else:
+            plt.title('Mean time between collisions')
         plt.xlabel('Time / ns')
         plt.ylabel('Time / fs')
-        plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[11], 
-                     marker=symbol, linestyle=line, color=color, label = 'dt')
         plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[12], 
-                     marker=symbol, linestyle=line, color=color,  label = r'$\tau$')
+                     marker=symbol_tau, linestyle=line, color=color_tau,  label = r'$\tau$')
+        if plot_dt:
+            plt.semilogy(self.means_ele.data_array[0], self.means_ele.data_array[11], 
+                         marker=symbol_dt, linestyle=line, color=color_dt, label = 'dt')
+        
         plt.legend()
         plt.grid()
         plt.show()
+        
+        return (0, OK)
 
         
     def plot_collision_frequency(self, line='None', symbol='.', color='red'):
+        """ Plot the mean collision frequency for electron collisions """
+        
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Collision frequency')
         plt.xlabel('Time / ns')
         plt.ylabel('f %')
@@ -395,36 +559,66 @@ class CcplaSavedData:
         plt.legend()
         plt.grid()
         plt.show()
+        
+        return (0, OK)
 
     # +-------------------------------------+
     # | Ion parameters time evolution plots |
     # +-------------------------------------+
 
-    def plot_ion_number(self, ion_type, ion_string=None, real=True, computational=True, line='None', symbol='.',
-                              color_real='red', color_comp='blue'):
+    def plot_ion_number(self, ion_type, ion_string=None, real=True, computational=True, line='None',
+                        symbol_real='x', symbol_comp='+',
+                        color_real='red', color_comp='blue'):
+        """ Plot the number of ions as a function of the simulation time """
+        
+        ion_type = int(ion_type)
+        if ((ion_type < 1) or (ion_type > self.neutrals.types)):
+            status  = 1
+            message = 'Ion type must be in range [1,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        else:
+            ion_type -= 1            
         if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Number of ' + ion_string +' ions')
         plt.xlabel('Time / ns')
         plt.ylabel('Number of ions')
         if computational:
             plt.semilogy(self.means_ion[ion_type].data_array[0],
                          self.means_ion[ion_type].data_array[1], 
-                         marker=symbol, linestyle=line, color=color_comp,
+                         marker=symbol_comp, linestyle=line, color=color_comp,
                          label='Computational ' + ion_string)
         if real:
             plt.semilogy( self.means_ion[ion_type].data_array[0],
                           self.means_ion[ion_type].data_array[1]
                         * self.means_ion[ion_type].data_array[2], 
-                         marker=symbol, linestyle=line, color=color_real,
+                         marker=symbol_real, linestyle=line, color=color_real,
                          label='Real ' + ion_string)
         plt.legend()
         plt.grid()
         plt.show()
+        
+        return (0, OK)
+    
 
     def plot_ion_weight(self, ion_type, ion_string=None, line='None', symbol='.', color='red'):
+        """ Plot the ion weight as a function of the simulation time """
+        
+        ion_type = int(ion_type)
+        if ((ion_type < 1) or (ion_type > self.neutrals.types)):
+            status  = 1
+            message = 'Ion type must be in range [1,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        else:
+            ion_type -= 1
         if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)        
         plt.title(ion_string + ' weight')
         plt.xlabel('Time / ns')
         plt.ylabel('Weight')
@@ -434,27 +628,57 @@ class CcplaSavedData:
                      label = 'Weight ' + ion_string)
         plt.legend()
         plt.grid()
-        plt.show()             
+        plt.show()
+        
+        return (0, OK)
 
     def plot_ion_density(self, ion_type, ion_string=None, line='None', symbol='.', color='red'):
+        """ Plot the ion number density as a function of the simulation time """
+
+        
+        ion_type = int(ion_type)
+        if ((ion_type < 1) or (ion_type > self.neutrals.types)):
+            status  = 1
+            message = 'Ion type must be in range [1,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        else:
+            ion_type -= 1
         if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'        
-        plt.ioff()        
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title(ion_string + ' density')
         plt.xlabel('Time / ns')
-        plt.ylabel(r'$n_i / m^{-3}$')
+        plt.ylabel(r'$n_i$ / $m^{-3}$')
         plt.semilogy(self.means_ion[ion_type].data_array[0],
                      self.means_ion[ion_type].data_array[11], 
                      marker=symbol, linestyle=line, color=color, label=ion_string)
         plt.grid()
         plt.legend()
         plt.show()
+        
+        return (0, OK)
 
+        
     def plot_ion_mean_energy(self, ion_type, ion_string=None,
                              plot_sigma=False, plot_min=False, plot_max=False, semilog=False,
                              line='None', symbol='.', color='red', ecolor='orange',
                              maxcolor='cyan', mincolor='blue'):
+        """ Plot the ion mean energy as a function of the simulation time """
+        
+        ion_type = int(ion_type)
+        if ((ion_type < 1) or (ion_type > self.neutrals.types)):
+            status  = 1
+            message = 'Ion type must be in range [1,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        else:
+            ion_type -= 1
         if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'        
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title(ion_string + ' mean energy')
         plt.xlabel('Time / ns')
         plt.ylabel(r'<$E_i$> / eV')
@@ -483,13 +707,27 @@ class CcplaSavedData:
         plt.grid()
         plt.show()
         
+        return (0, OK)
+        
 
     def plot_ion_angle(self, ion_type, ion_string=None,
                        plot_sigma=True, plot_min=True, plot_max=True,
                        line='None', symbol='.', color='red', ecolor='orange',
                        maxcolor='cyan', mincolor='blue'):
+        """ Plot the angle with z direction for ions as a function of the simulation time """
+        
+        ion_type = int(ion_type)
+        if ((ion_type < 1) or (ion_type > self.neutrals.types)):
+            status  = 1
+            message = 'Ion type must be in range [1,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        else:
+            ion_type -= 1
         if (ion_string is None): ion_string = self.neutrals.names[ion_type] + r'$^{+}$'                
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Mean angle between ' + ion_string + ' velocity and electric field')
         plt.xlabel('Time / ns')
         plt.ylabel(r'<$\theta$> / °')
@@ -512,6 +750,8 @@ class CcplaSavedData:
         plt.legend()
         plt.grid()                
         plt.show()
+        
+        return (0, OK)
 
         
     # +---------------------------+
@@ -519,7 +759,16 @@ class CcplaSavedData:
     # +---------------------------+
     
     def plot_current_density(self, absolute=False, line='None', symbol='.', color='red'):
+        """ Plot the current density as a function of the simulation time """        
+
+        if (not self.read_V):
+            status  = 1
+            message = 'Electric potential and current are not available'
+            return (status, message)        
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Current density')
         plt.xlabel('Time / ns')
         plt.ylabel(r'j / $A m^{-2}$')
@@ -535,81 +784,132 @@ class CcplaSavedData:
         plt.legend()
         plt.grid()
         plt.show()
+        
+        return (0, OK)
 
 
-    def plot_potential(self,time, line='-', symbol='.', color='red'):
+    def plot_potential(self, time, line='-', symbol='.', color='red'):
+        """ Plot the electric potential as a function of z coordinate """        
+        
+        if (not self.read_V):
+            status  = 1
+            message = 'Electric potential and current are not available'
+            return (status, message)        
+        if ((time < 0) or (time > self.max_time)):
+            status  = 2
+            message = 'Time must be in range [0,' + str(self.max_time) + '] ns'
+            return (status, message)
         row = self.get_row(time)
         plt.ioff()
-        plt.title('Electric potential')
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
+        plt.title('Electric potential (t = ' + str(time) + ' ns)')
         plt.xlabel('z / mm')
         plt.ylabel(r'$\Delta V$ / V')
         plt.plot(self.ccp.grid_points*1.0E3, self.V.data_array[row], 
                  marker=symbol, linestyle=line, color=color)
         plt.grid()
-        plt.show()           
+        plt.show()
+        
+        return (0, OK)
         
     # +---------------------------------------+
     # | Dissociation rate/rate constant plots |
     # +---------------------------------------+
-        
-    def plot_dissocation_rates(self, line='None', symbol='.', color='red'):
-        plt.title('Dissociation rates')
-        plt.xlabel('Time / ns')
-        plt.ylabel('R / m**3 s**-1')
-        i_name = 0
-        for i in range(self.mol_types):
-            col = 1 + i*2
-            # search the name of the molecule
-            for j in range(i_name, self.neutrals.types):
-                if (self.neutrals.molecule_type[j] != 'a'):
-                    i_name = j
-                    break
-            name = self.neutrals.names[i_name]
-            i_name += 1
-            plt.semilogy(self.means_neu.data_array[0], self.means_neu.data_array[col],
-                         marker=symbol, linestyle=line, color=color, label = name)
-        plt.grid()
-        plt.legend()
-        plt.show()
+    
+    def plot_dissociation_rate(self, neutral_index, neutral_string=None, line='None', symbol='.', color='red'):
+        """ Plot the dissociation rate as a function of the simulation time """
 
+        if ((neutral_index < 1) or (neutral_index > self.neutrals.types)):
+            status  = 1
+            message = 'Neutral type must be in range [1,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        else:
+            neutral_index -= 1        
         
-    def plot_dissocation_rate_const(self, line='None', symbol='.', color='red'):
-        plt.title('Dissociation rate constants')
+        if (not self.is_molecule(neutral_index)):
+            status  = 1
+            message = self.neutrals.names[neutral_index] + ' is not a molecule'
+            return (status, message)
+        
+        if (neutral_string is None): neutral_string = self.neutrals.names[neutral_index]
+        
+        molecule_index = self.get_molecule_index(neutral_index)
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
+        plt.title('Dissociation rate')
         plt.xlabel('Time / ns')
-        plt.ylabel('k / m**3 s**-1')
-        i_name = 0                
-        for i in range(self.mol_types):
-            col = 1 + i*2 +1
-            # search the name of the molecule
-            for j in range(i_name, self.neutrals.types):
-                if (self.neutrals.molecule_type[j] != 'a'):
-                    i_name = j
-                    break
-            name = self.neutrals.names[i_name]
-            i_name += 1                        
-            plt.semilogy(self.means_neu.data_array[0],self.means_neu.data_array[col],
-                         marker=symbol, linestyle=line, color=color, label = name)
+        plt.ylabel(r'R / $m^3$ $s^{-1}$')
+        col = 1 + molecule_index * 2
+        plt.semilogy(self.means_neu.data_array[0], self.means_neu.data_array[col],
+                     marker=symbol, linestyle=line, color=color, label=neutral_string)        
         plt.grid()
         plt.legend()
         plt.show()
+        
+        return (0, OK)
+        
+
+    def plot_dissociation_rate_const(self, neutral_index, neutral_string=None, line='None', symbol='.', color='red'):
+        """ Plot the dissociation rate constant as a function of the simulation time """
+
+        if ((neutral_index < 1) or (neutral_index > self.neutrals.types)):
+            status  = 1
+            message = 'Neutral type must be in range [1,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        else:
+            neutral_index -= 1     
+        
+        if (not self.is_molecule(neutral_index)):
+            status  = 1
+            message = self.neutrals.names[neutral_index] + ' is not a molecule'
+            return (status, message)
+        if (neutral_string is None): neutral_string = self.neutrals.names[neutral_index] + r'$^{+}$'
+        molecule_index = self.get_molecule_index(neutral_index)
+        plt.ioff()        
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
+        plt.title('Dissociation rate constant')
+        plt.xlabel('Time / ns')
+        plt.ylabel(r'k / $m^3$ $s^{-1}$')
+        col = 2 + molecule_index * 2
+        plt.plot(self.means_neu.data_array[0],self.means_neu.data_array[col],
+                 marker=symbol, linestyle=line, color=color, label=neutral_string)         
+        plt.grid()
+        plt.legend()
+        plt.show()
+        
+        return (0, OK)
+            
 
     # +------------------+
     # | Z position plots |
     # +------------------+
                 
     def plot_position(self, index, name_string=None, time=None, row=None, log=False, color='red', symbol='.'):
-        if not self.read_z:
-            print('Positions are not available')
-            return
-        if (time is None):
-            if (row is None):
-                print('Give either simulation time or data row number !')
-                return
+        """ Plot the particle z coordinate as a function of the simulation time """        
+        
+        if (not self.read_z):
+            status  = 1
+            message = 'Positions are not available'
+            return (status, message)
+        elif ((time is None) and (row is None)):
+            status  = 2
+            message = 'Give either simulation time or data row number !'
+            return (status, message)
+        elif (time is None):
+            time = self.means_ele.data_array[0][row]            
+        elif ((time < 0) or (time > self.max_time)):
+            status  = 3
+            message = 'Time must be in range [0,' + str(self.max_time) + '] ns'
+            return (status, message)
         else:
-            row = self.get_row(time)
-
-        time = self.means_ele.data_array[0][row]
-        name = name_string
+            row = self.get_row(time)        
         string = ': row = ' + str(row) + "; time = " + str(time) + ' ns'        
         if (index == 0):
             if (name_string is None): name = r'$e^{-}$'
@@ -618,6 +918,9 @@ class CcplaSavedData:
             if (name_string is None): name = self.neutrals.names[index-1] + r'$^{+}$ '
             ensamble = self.ipos_z[index-1].data_array[row] * 1.0e3
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Ensamble of ' + name)
         plt.xlabel('Particle index')
         plt.ylabel('z / mm')
@@ -629,31 +932,85 @@ class CcplaSavedData:
         plt.grid()
         plt.show()
         
+        return (0, OK)
 
+
+    def plot_z_distribution(self, particle_index, time, name_string=None, bins=None, density=True, hist_type='step', color='red'):
+        """ Plot the particle distribution along the z axis """
+        
+        if ((particle_index < 0) or (particle_index > self.neutrals.types)):
+             status  = 1
+             message = 'Particle index must be in range [0,' + str(self.neutrals.types) + ']'
+             return (status, message)
+        if (not self.read_z):
+            status  = 2
+            message = 'Positions are not available'
+            return (status, message)        
+        if ((time < 0) or (time > self.max_time)):
+            status  = 3
+            message = 'Time must be in range [0,' + str(self.max_time) + '] ns'
+            return (status, message)
+        row = self.get_row(time)
+        if (particle_index == 0):
+            if (name_string is None): name = r'$e^{-}$'
+            ensamble = self.epos_z.data_array[row] * 1.0e3
+        else:
+            if (name_string is None): name = self.neutrals.names[particle_index-1] + r'$^{+}$ '
+            ensamble = self.ipos_z[particle_index-1].data_array[row] * 1.0e3
+        if (bins is None):
+            bins = self.ccp.grid_points * 1.0E3
+            #bins = self.parameters.N_cells
+        plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
+        plt.title(name + ' spatial distribution (t = ' + str(time) + ' ns)')
+        plt.xlabel('z / mm')
+        if density:
+            plt.ylabel(r'Particle density / $mm^{-3}$')
+        else:
+            plt.ylabel(r'Number of particles')
+        plt.hist(ensamble, bins=bins, density=density, histtype=hist_type, color=color)
+        plt.grid()
+        plt.show()
+        
+        return (0, OK)
+    
         
     # +---------------------------+
     # | Energy distribution plots |
     # +---------------------------+
                 
     def plot_ensamble(self, index, time=None, row=None, log=False, color='red', symbol=','):
-        if not self.read_edf:
-            print('Distribution functions are not available')
-            return
-        if (time is None):
-            if (row is None):
-                print('Give either simulation time or data row number !')
-                return
+        """ Plot the particle energy """
+        
+        if (not self.read_edf):
+            status  = 1
+            message = 'Energy distribution functions are not available'
+            return (status, message)
+        elif ((time is None) and (row is None)):
+            status  = 2
+            message = 'Give either simulation time or data row number !'
+            return (status, message)
+        elif (time is None):
+            time = self.means_ele.data_array[0][row]
+        elif ((time < 0) or (time > self.max_time)):
+            status  = 3
+            message = 'Time must be in range [0,' + str(self.max_time) + '] ns'
+            return (status, message)
         else:
-            row = self.get_row(time)
-        time = self.means_ele.data_array[0][row]                
+            row = self.get_row(time)                        
         string = 'row #' + str(row) + "; time = " + str(time) + ' ns'
         if (index == 0):
             name = 'e- '
             ensamble = self.eedf.data_array[row]
         else:
             name     = self.neutrals.names[index-1] + '+ '
-            ensamble = self.iedf[index-1].data_array[row]
+            ensamble = self.iedf[index-1].data_array[row]            
         plt.ioff()
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.title('Ensamble of ' + name)
         plt.xlabel('Particle index')
         plt.ylabel('Energy / eV')
@@ -664,9 +1021,82 @@ class CcplaSavedData:
         plt.legend()
         plt.grid()
         plt.show()
-                
-                
-    def plot_eedf(self, time=None, row=None, pdf='Maxwell', intervals=0, int_method='sqrt', method='fixed', plot_interface='pylab'):
+        
+        return (0, OK)
+    
+
+    def plot_edf(self, particle_index, time, name_string=None, bins='fd',
+                 e_min=None, e_max=None, plot_inset=False, hist_type='step', color='red',
+                 major_grid=False, minor_grid=False):
+        """ Plot EEDF or IEDF """
+        
+        if not self.read_edf:
+            status  = 1 
+            message = 'Energy distribution functions are not available'
+            return (status, message)
+        particle_index=int(particle_index)
+        if ( (particle_index < 0) or (particle_index > self.neutrals.types) ):
+            status  = 2
+            message = 'Particle index must be in range [0,' + str(self.neutrals.types) + ']'
+            return (status, message)
+        if ((time < 0) or (time > self.max_time)):
+            status  = 3
+            message = 'Time must be in range [0,' + str(self.max_time) + '] ns'
+            return (status, message)        
+        row = self.get_row(time) 
+        #print('\nRow # ' + str(row) + ' of ' + str(self.n_rows-1))        
+        if (particle_index==0):
+            if (name_string is None): name_string= r'$e^{-}$'
+            title_string = 'EEDF (time = ' + str(time) + ' ns)'
+            x = self.eedf.data_array[row]
+        else:
+            ion_type = particle_index-1
+            if (name_string is None): name_string = self.neutrals.names[particle_index-1]
+            title_string = 'IEDF ' + name_string + r'$^{+}$ (time = ' + str(time) + ' ns)'            
+            x = self.iedf[ion_type].data_array[row]
+        edf = x[~numpy.isnan(x)]
+
+        # Prepare main figure
+        plt.figure()
+        plt.title(title_string)
+        plt.xlabel('Energy / eV')
+        plt.ylabel(r'Probability density / $eV^{-1}$')
+
+        # Plot main histogram
+        plt.hist(edf, bins=bins, density=True, histtype=hist_type, color=color)
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
+        if major_grid: plt.tick_params(axis='x', which='major', grid_linestyle='-',  grid_color='grey')
+        if minor_grid: plt.tick_params(axis='x', which='minor', grid_linestyle='--', grid_color='grey')
+        plt.ylim(-0.0025)
+        if (major_grid and minor_grid):
+            plt.grid(axis='x', which='both')
+        elif major_grid:
+            plt.grid(axis='x', which='major')
+        elif minor_grid:
+            plt.grid(axis='x', which='minor')
+        if plot_inset:
+            if (e_min is None): e_min = - edf.min()
+            if (e_max is None): e_max = edf.max() / 4
+            # Prepare inset
+            ax2 = inset_locator.inset_axes(plt.gca(), width='50%', height='60%')
+            # Plot secondary histogram in inset
+            ax2.hist(edf, bins=bins, density=True, histtype=hist_type, color=color)
+            ax2.minorticks_on()
+            ax2.tick_params(which='major', direction='in', length=self.tick_length_major)
+            ax2.tick_params(which='minor', direction='in', length=self.tick_length_minor)
+            ax2.tick_params(axis='x', which='major', grid_linestyle='-',  grid_color='grey')
+            ax2.tick_params(axis='x', which='minor', grid_linestyle='--', grid_color='grey')
+            ax2.set_xlim(left=e_min, right=e_max)
+            ax2.set_ylim(bottom=-0.01)
+            ax2.grid(axis='x', which='both')
+        plt.show()             
+
+        return (0, OK)
+
+        
+    def plot_eedf_un(self, time=None, row=None, pdf='Maxwell', intervals=0, int_method='sqrt', method='fixed', plot_interface='pylab'):
         """ Compare the particle distribution with a distribution fuction. 
 
             A histogram will be created, the number of bins can be given or automatically calculated
@@ -701,13 +1131,15 @@ class CcplaSavedData:
         """
         
         if not self.read_edf:
-            print('Distribution functions are not available')
-            return
+            status  = 1
+            message = 'Energy distribution functions are not available'
+            return (status, message)
         
         if (time is None):
                 if (row is None):
-                        print('Give either simulation time or data row number !')
-                        return
+                        status =  2
+                        message = 'Give either simulation time or data row number !'
+                        return (status, message)
         else:
                 row = self.get_row(time) 
         print('\nRow # ' + str(row) + ' of ' + str(self.n_rows-1))
@@ -745,4 +1177,6 @@ class CcplaSavedData:
         print('Chisquare   = ' + str(self.h.chisquare))
         print('P-value     = ' + str(self.h.p_value))
         print(self.h.plot_histogram(interface=plot_interface))
+        
+        return (0, OK)
         

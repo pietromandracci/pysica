@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,8 +33,6 @@ from pysica.parameters import *
 from pysica.constants import *
 from pysica.plasmapro.ccpla_defaults import *
 from pysica.io.io_screen import wait_input
-from .fortran.fmodule import f_main
-
 MIN_DEBUG_LEVEL = 2
 
 
@@ -134,6 +132,11 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                Returns
                -------
         """
+
+        if options.cpu_multicore:
+                from .fortran.fmodule_parallel import f_main
+        else:        
+                from .fortran.fmodule          import f_main        
 
         if (options.debug_lev >= MIN_DEBUG_LEVEL): print('\n***** START OF PARTICLE MOVER *****\n')
 

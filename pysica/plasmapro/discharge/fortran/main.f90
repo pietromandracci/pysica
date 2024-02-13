@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2022 Pietro Mandracci
+! COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 module f_main
+
+   use f_constants
 
    use f_precision
 
@@ -78,7 +80,6 @@ contains
       !  Several types of scattering center may be considered and the dependence of scattering cross section
       !  from particle velocity must be given to the function.
       !  The densities of particles and collision centers are considered fixed in time.
-
 
       !f2py intent(in)        :: cm_ratio, rescale-factor, v_values, coll_freq, p_limits, n_limits, limit1_exc, limit1_diss
       !f2py intent(in)        :: v_values_ions, coll_freq_ions, coll_f_tot_ions, p_limists_ions
@@ -209,7 +210,8 @@ contains
       real(dp), dimension(0:n_types,1:n_particles) :: z_part_added       ! Positions of the particles of each type to be added (z-component)
       real(dp), dimension(0:n_types,1:n_particles) :: vx_part_added      ! Velocities of the particles of each type to be added (x-component)
       real(dp), dimension(0:n_types,1:n_particles) :: vy_part_added      ! Velocities of the particles of each type to be added (y-component)
-      real(dp), dimension(0:n_types,1:n_particles) :: vz_part_added      ! Velocities of the particles of each type to be added (z-component)      
+      real(dp), dimension(0:n_types,1:n_particles) :: vz_part_added      ! Velocities of the particles of each type to be added (z-component)
+      
       integer                                      :: i
 
       ! Variables used for performance checking
@@ -266,7 +268,7 @@ contains
          p_collision_ions(i) = 1.D0 - exp(- coll_freq_ions(i) * dt )
       enddo 
 
-      ! Erase time counter (counts only the time elapsed during the call to simccp fuction, so it is erases at each new call)
+      ! Erase time counter (counts only the time elapsed during the call to simccp fuction, so it is erased at each new call)
       time = 0.0
       ! Reset the iteration counter, used for debug purposes only
       n_iterations = 0 
@@ -294,6 +296,13 @@ contains
 
          n_part_added   = 0
          n_part_removed = 0
+         w_part_added   = 0
+!         x_part_added   = 0
+!         y_part_added   = 0
+!         z_part_added   = 0
+!         vx_part_added  = 0
+!         vy_part_added  = 0
+!         vz_part_added  = 0    
 
          ! +--------------------------------------------------------+
          ! | Calculate electric potential and particle acceleration |
@@ -510,10 +519,11 @@ contains
          print *, "*** BEGIN OF FORTRAN FUNCTION SIMCCP ***"
          print *, ""         
          print *, "Electric field pulsation [rad/s]        = ", omega
+         print *, "Electric field frequency [Hz]           = ", omega / (2*PI)
          if (omega > 0) then
             print *, "Electric field phase [rad]              = ", phi
-            print *, "Max electric potential [V]              = ", Vmax
-            print *, "Start electric potential [V/m]          = ", Vmax*sin(phi)
+            print *, "Maximum  electric potential [V]         = ", Vmax
+            print *, "Starting electric potential [V]         = ", Vmax*sin(phi)
          else
             print *, "Electric field intensity (static) [V/m] = ", Vmax
          endif
@@ -521,7 +531,7 @@ contains
          print *, "Requested duration [s]                  = ", duration
 !         print *, "Maximum velocity increase in dt [m/s] "
          do i = 0, n_types
-            print *, "Particle type, cm ratio          ", i, cm_ratio(i)
+            print *, "Particle weight, number, type           = ", weight(i), count(isactive(i,:)), i
          enddo
 !        print *, "isactive", isactive
 !        print *, "restart ", restart
@@ -578,9 +588,9 @@ contains
             print *, "Net electric current:     ", average_current, " A"
          endif
          
-         print *, " "
-         print *, "Time                                    = ", time
-         print *, "Phase                                   = ", phi
+!        print *, " "
+!        print *, "Time                                    = ", time
+!        print *, "Phase                                   = ", phi
 !        print *, "isactive", isactive
 !        print *, "restart ", restart
          print *, ""
@@ -600,10 +610,9 @@ contains
          clock_mean = real(clock_sum) / real(n_iterations)
 
          print *, ''         
-         print *, 'CPU TIME REPORT'
-         print *, 'Iterations       ->', n_iterations
-!         print *, ''
-         print *, 'CPU TIME (s)       ', char(9), char(9),'Mean', char(9), char(9), 'delta', char(9), char(9),'%'         
+         print *, 'CPU TIME REPORT: iterations = ', n_iterations
+         print *, ''
+         print *, 'CPU TIME [s]       ', char(9), char(9),'Mean', char(9), char(9), 'delta', char(9), char(9),'%'         
          print *, 'All steps        ->', tcpu_mean(0), tcpu_max(0)-tcpu_min(0)  
          print *, 'Particle in cell ->', tcpu_mean(1), tcpu_max(1)-tcpu_min(1), tcpu_sum(1)/tcpu_sum(0)*100
          print *, 'Leap frog        ->', tcpu_mean(2), tcpu_max(2)-tcpu_min(2), tcpu_sum(2)/tcpu_sum(0)*100
@@ -611,8 +620,8 @@ contains
          print *, 'Remove particles ->', tcpu_mean(4), tcpu_max(4)-tcpu_min(4), tcpu_sum(4)/tcpu_sum(0)*100
          print *, 'Check collisions ->', tcpu_mean(5), tcpu_max(5)-tcpu_min(5), tcpu_sum(5)/tcpu_sum(0)*100
          print *, 'Add particles    ->', tcpu_mean(6), tcpu_max(6)-tcpu_min(6), tcpu_sum(6)/tcpu_sum(0)*100
-!         print *, ''
-         print *, 'CLOCK TIME (s)     ', char(9), char(9),'Mean', char(9), char(9), 'delta', char(9), char(9),'%' 
+         print *, ''
+         print *, 'CLOCK TIME [s]     ', char(9), char(9),'Mean', char(9), char(9), 'delta', char(9), char(9),'%' 
          print *, 'All steps        ->', clock_mean(0)*1.0E-9, (clock_max(0)-clock_min(0))*1.0E-9  
          print *, 'Particle in cell ->', clock_mean(1)*1.0E-9, (clock_max(1)-clock_min(1))*1.0E-9, &
                                          real(clock_sum(1))/real(clock_sum(0))*100.0

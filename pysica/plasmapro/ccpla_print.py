@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -117,7 +117,12 @@ def print_simulation_information(neutrals, ccp, parameters, options,
         elif (parameters.save_delay == 1):
             string += 'every cycle' + '\n'
         else:
-            string += 'every ' + str(parameters.save_delay) + ' cycles' + '\n'            
+            string += 'every ' + str(parameters.save_delay) + ' cycles' + '\n'
+        string += 'Save distributions to file:          '
+        if (parameters.save_delay_dist == 1):
+            string += 'every data save' + '\n'
+        else:
+            string += 'every ' + str(parameters.save_delay_dist) + ' data saves' + '\n'            
         if options.gui_mode:
             string += 'Max number of points in plots:       ' + str(parameters.n_max_points) + '\n'
             string += 'Decimation factor:                   ' + str(parameters.decimation_factor) + '\n'
@@ -135,7 +140,11 @@ def print_filenames(charges, neutrals, ccp):
         else:
             string +=  (charges.names[i] + ':').ljust(str_length)
             string += '\"' + charges.f_mean_ion_names[i-1] + '\"\n'
-    string += 'neutrals:'.ljust(str_length) + '\"' + neutrals.filename + '\"\n'
+    # Neutrals savefile was created only if there are molecule types 
+    try:        
+        string += 'neutrals:'.ljust(str_length) + '\"' + neutrals.filename + '\"\n'
+    except AttributeError:
+        string += 'neutrals:'.ljust(str_length) + 'N/A\n'
 
     string += 'EEDF/IEDF\n'
     for i in range(charges.types):
@@ -165,35 +174,35 @@ def print_gas_information(neutrals):
     string = ''
     for i in range(neutrals.types):
         string += '\n' 
-        string += 'Name:                                     ' + str(neutrals.names[i]) + '\n'
+        string += 'Name:                                ' + str(neutrals.names[i]) + '\n'
         if   (neutrals.molecule_type[i]=='a'):
-            string += 'Type:                                     ' + 'atom' + '\n'
+            string += 'Type:                                ' + 'atom' + '\n'
         elif (neutrals.molecule_type[i]=='m'):
-            string += 'Type:                                     ' + 'non polar molecule' + '\n'
+            string += 'Type:                                ' + 'non polar molecule' + '\n'
         elif (neutrals.molecule_type[i]=='p'):
-            string += 'Type:                                     ' + 'polar molecule' + '\n'
-        string +=('Flow rate percentage:                     '
+            string += 'Type:                                ' + 'polar molecule' + '\n'
+        string +=('Flow rate percentage:                '
                   + str( unit_manager.fix_digits(neutrals.gas_flow[i]/neutrals.gas_flow.sum()*100.0, 3) )
                   + ' %' + '\n')
-        string +=('Partial pressure [Pa]:                    '
+        string +=('Partial pressure [Pa]:               '
                   + str( unit_manager.fix_digits(neutrals.partial_pressure[i], 3) ) + '\n')
-        string +=('Number density [m**-3]:                   ' + str( unit_manager.fix_digits(neutrals.number_density[i], 4) )
-                                                               + '\n')
-        string += 'Mass [u]:                                 ' + str( neutrals.mass[i] ) + '\n'
-        string += 'Mean molecule speed [m s**-1]             ' + str( unit_manager.fix_digits(neutrals.mean_v[i], 4) ) + '\n'   
-        string +=('Electron energy loss (elastic):           ' + str( unit_manager.fix_digits(neutrals.energy_loss[i], 6) )
-                                                               + '\n')
-        string += 'Secondary emission coefficient            ' + str( neutrals.secondary_emission[i] ) + '\n'
-        string += 'Ionization energy [eV]:                   ' + str( neutrals.ionization_energy[i] ) + '\n'
-        string += 'Number of excitation processes:           ' + str( neutrals.excitation_types[i] ) + '\n'
-        string += 'Excitation energies [eV]                  '
+        string +=('Number density [m**-3]:              ' + str( unit_manager.fix_digits(neutrals.number_density[i], 4) )
+                                                          + '\n')
+        string += 'Mass [u]:                            ' + str( neutrals.mass[i] ) + '\n'
+        string += 'Mean molecule speed [m s**-1]        ' + str( unit_manager.fix_digits(neutrals.mean_v[i], 4) ) + '\n'   
+        string +=('Electron energy loss (elastic):      ' + str( unit_manager.fix_digits(neutrals.energy_loss[i], 6) )
+                                                          + '\n')
+        string += 'Secondary emission coefficient       ' + str( neutrals.secondary_emission[i] ) + '\n'
+        string += 'Ionization energy [eV]:              ' + str( neutrals.ionization_energy[i] ) + '\n'
+        string += 'Number of excitation processes:      ' + str( neutrals.excitation_types[i] ) + '\n'
+        string += 'Excitation energies [eV]             '
         for j in range(neutrals.excitation_types[i]):
             string += str(neutrals.excitation_energy[i][j])
         string += '\n'
 
         if (neutrals.molecule_type[i] != 'a'):
-            string += 'Number of dissociation processes:         ' + str( neutrals.dissociation_types[i] ) + '\n'
-            string += 'Dissociation energies [eV]                ' 
+            string += 'Number of dissociation processes:    ' + str( neutrals.dissociation_types[i] ) + '\n'
+            string += 'Dissociation energies [eV]           ' 
             for j in range(neutrals.dissociation_types[i]):
                 string += str(neutrals.dissociation_energy[i][j])
             string += '\n'

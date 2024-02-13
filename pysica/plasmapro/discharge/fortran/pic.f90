@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2022 Pietro Mandracci
+! COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -38,14 +38,12 @@ contains
       ! In steps (a) and (d) the "cell size" is considered: a function that weights the charge of each particle inside the cell
     
       !f2py intent(out)  :: dv_z, rho, psi
-      !f2py intent(in)   :: z, isactive, weight, cm_ratio, dt, psi_0, distance, area
-      !f2py intent(hide) :: N_cells, N_types, N_particles
+      !f2py intent(in)   :: z, isactive, weight, cm_ratio, dt, psi_0, distance, area, N_cells, N_types, N_particles
 
       ! Parameters
       real(dp), dimension(0:N_types,1:N_particles),  intent(out) :: dv_z         ! Velocity increment during timestep, z-component
       real(dp), dimension(0:N_cells),                intent(out) :: rho          ! Charge density
       real(dp), dimension(0:N_cells),                intent(out) :: psi          ! Electric potential
-!      real(dp), dimension(1:N_cells),                intent(out) :: E            ! Electric field, z component
       real(dp), dimension(0:N_types,1:N_particles),  intent(in)  :: z            ! Particles positions, z-component
       logical,  dimension(0:N_types,1:N_particles),  intent(in)  :: isactive     ! Select which particles are active
       real(dp), dimension(0:N_types),                intent(in)  :: weight       ! Simulation weight of each particle type

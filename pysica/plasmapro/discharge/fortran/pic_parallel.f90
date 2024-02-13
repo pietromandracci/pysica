@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2022 Pietro Mandracci
+! COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -38,8 +38,7 @@ contains
       ! In steps (a) and (d) the "cell size" is considered: a function that weights the charge of each particle inside the cell
     
       !f2py intent(out)  :: dv_z, rho, psi
-      !f2py intent(in)   :: z, isactive, weight, cm_ratio, dt, psi_0, distance, area
-      !f2py intent(hide) :: N_cells, N_types, N_particles
+      !f2py intent(in)   :: z, isactive, weight, cm_ratio, dt, psi_0, distance, area, N_cells, N_types, N_particles
 
       ! Parameters
       real(dp), dimension(0:N_types,1:N_particles),  intent(out) :: dv_z         ! Velocity increment during timestep, z-component
@@ -73,15 +72,15 @@ contains
       call calculate_potential(E, psi, rho, N_cells, psi_0, psi_N, delta) 
       
       ! Calculate the velocity increment for each active particle
-      do i = 0, N_types
-         !$omp parallel do default(shared), private(j)         
-         do j = 1, N_particles
+      !$omp parallel do
+      do j = 1, N_particles
+         do i = 0, N_types
             if (isactive(i,j)) then
                dv_z(i,j) = electric_acceleration(z(i,j), cm_ratio(i), delta, E, N_cells) * dt 
             endif
          enddo
-         !$omp end parallel do
       enddo
+      !$omp end parallel do
 
    end subroutine calculate_velocity_increments
 
@@ -107,6 +106,7 @@ contains
       integer  :: grid_index, type_index, particle_index
       real(dp) :: z_grid, distance, multiplier
 
+      !$omp parallel do private(grid_index, z_grid, multiplier, distance)
       do grid_index = 0, N_cells
          z_grid = real(grid_index) * delta
          rho(grid_index) = 0.0
@@ -115,23 +115,22 @@ contains
                multiplier =   weight(type_index)
             else
                multiplier = - weight(type_index)
-            endif
-!            !$omp parallel do default(shared) private(particle_index, distance) reduction(+:rho) ! PEGGIORATIVO
+            endif            
             do particle_index = 1, N_particles
                if (isactive(type_index, particle_index)) then
                   distance = z_grid - z(type_index, particle_index) 
                   rho(grid_index) = rho(grid_index) +  multiplier * particle_size(distance, delta)
                endif
-            enddo ! particle_index = 1, N_particles
-!            !$omp end parallel do
+            enddo ! particle_index = 1, N_particles           
          enddo ! type_index = 0, N_types
       enddo ! grid_index = 0, N_cells
+      !$omp end parallel do
       rho = rho * E_CHARGE / (area*delta)
 
    end subroutine calculate_charge_density
 
 
-   pure subroutine calculate_potential(E_field, psi, rho, N_cells, psi_0, psi_N, delta)
+   subroutine calculate_potential(E_field, psi, rho, N_cells, psi_0, psi_N, delta)
 
       !f2py intent(out)  :: psi, E_field
       !f2py intent(in)   :: rho, psi_0, psi_N, delta
@@ -146,21 +145,23 @@ contains
       integer,                        intent(in)  :: N_cells  
 
       ! Local variables
-      integer                            :: i
-      real(dp)                           :: psi_1, C_sum
+      integer                        :: i
+      real(dp)                       :: psi_1, C_sum
       real(dp), dimension(0:N_cells) :: constant            ! Electric charge density
 
       ! Calculate constants C = rho * delta**2 / epsilon0
+      !!$omp parallel do
       do i = 0, N_cells-1
          constant(i) = - rho(i) * delta*delta / EPSILONZERO
       enddo
+      !!$omp end parallel do
 
       ! Calculate summation 
       C_sum = 0
       do i = 1, N_cells-1
          C_sum = C_sum + real(i) * constant(N_cells-i)
       enddo
-
+      
       ! Calculate potential at i = 1
       psi_1 = psi_N + real(N_cells-1) * psi_0 - C_sum
       psi_1 = psi_1 / N_cells
@@ -182,7 +183,7 @@ contains
 
    real(dp) pure function electric_acceleration(z_charge, cm_ratio, delta, E_field, N_cells)
 
-      ! Calculate the z-component of the acceleration of a charge, accordiing to the PIC scheme
+      ! Calculate the z-component of the acceleration of a charge, according to the PIC scheme
      
       !f2py intent(in)   :: z_charge, cm_ratio, electric_field, delta
       !f2py intent(hide) :: N_cells
@@ -200,13 +201,11 @@ contains
       real(dp) :: z_field, distance, sum
 
       sum = 0.0
-!      !$omp parallel do default(shared) private(i, z_field, distance)  
       do i = 1, N_cells
          z_field = ( real(i) - 0.5 ) * delta ! Position of cell center
          distance = z_field - z_charge
          sum = sum + E_field(i) * particle_size(distance, delta)
       enddo
-!      !$omp end parallel do 
       electric_acceleration = cm_ratio * sum
 
    end function electric_acceleration 

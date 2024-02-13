@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -717,7 +717,7 @@ class MovingParticles:
                         data_file.close()                
                 
                         
-        def save_data_to_files(self):
+        def save_data_to_files(self, save_edf=True, save_z=True):
                 """Saves actual data values to files """
 
                 # Save data on electron mean quantities
@@ -739,13 +739,13 @@ class MovingParticles:
                 data_file.write( str( self.number_density[0]             ) + self.sep )                 
                 data_file.write(EOL)
                 data_file.close()
-
+                
                 # Save data on ion mean quantities
                 for i in range(1, self.types):
                         i_file = i-1
                         data_file = open(self.f_mean_ion_names[i_file], 'a')                             
                         data_file.write( str( 1E9*self.time                      ) + self.sep )
-                        data_file.write( str( self.n_active(i)                   ) + self.sep ) # number of active electrons
+                        data_file.write( str( self.n_active(i)                   ) + self.sep ) # number of active ions
                         data_file.write( str( self.weight[i]                     ) + self.sep ) # weight
                         data_file.write( str( self.e_average(i)                  ) + self.sep )
                         data_file.write( str( self.e_sigma(i)                    ) + self.sep )
@@ -758,38 +758,38 @@ class MovingParticles:
                         data_file.write( str( self.number_density[i]             ) + self.sep )                 
                         data_file.write(EOL)
                         data_file.close()
-                
-                # Save actual eedf
-                data_file = open(self.f_distrib_ele_name,'a')
-                self.e_distr = self.energies(0)
-                for j in range(self.n_active(0)):
-                        data_file.write( str(self.e_distr[j]) + self.sep )
-                data_file.write( EOL )
-                data_file.close()
 
-                # Save actual iedf for all ion types
-                for i in range(1,self.types):
-                        i_file = i-1
-                        data_file = open(self.f_distrib_ion_names[i_file], 'a')
-                        self.e_distr = self.energies(i)
-                        for j in range(self.n_active(i)):
+                if save_edf:                
+                        # Save actual eedf
+                        data_file = open(self.f_distrib_ele_name,'a')
+                        self.e_distr = self.energies(0)
+                        for j in range(self.n_active(0)):
                                 data_file.write( str(self.e_distr[j]) + self.sep )
                         data_file.write( EOL )
                         data_file.close()
+                        # Save actual iedf for all ion types
+                        for i in range(1,self.types):
+                                i_file = i-1
+                                data_file = open(self.f_distrib_ion_names[i_file], 'a')
+                                self.e_distr = self.energies(i)
+                                for j in range(self.n_active(i)):
+                                        data_file.write( str(self.e_distr[j]) + self.sep )
+                                data_file.write( EOL )
+                                data_file.close()
 
-                # Save actual elecron z coordinates
-                data_file = open(self.f_zpos_ele_name,'a')
-                for j in range(self.n_active(0)):
-                        data_file.write( str(self.z[0][self.active[0]][j]) + self.sep )
-                data_file.write( EOL )
-                data_file.close()
-
-                # Save actual ion z coordinates for all ion types
-                for i in range(1, self.types):
-                        i_file = i-1
-                        data_file = open(self.f_zpos_ion_names[i_file], 'a')
-                        #self.e_distr = self.energies(i)
-                        for j in range(self.n_active(i)):
-                                data_file.write( str(self.z[i][self.active[i]][j]) + self.sep )
+                if save_z:                
+                        # Save actual elecron z coordinates
+                        data_file = open(self.f_zpos_ele_name,'a')
+                        for j in range(self.n_active(0)):
+                                data_file.write( str(self.z[0][self.active[0]][j]) + self.sep )
                         data_file.write( EOL )
-                        data_file.close()                
+                        data_file.close()                        
+                        # Save actual ion z coordinates for all ion types
+                        for i in range(1, self.types):
+                                i_file = i-1
+                                data_file = open(self.f_zpos_ion_names[i_file], 'a')
+                                #self.e_distr = self.energies(i)
+                                for j in range(self.n_active(i)):
+                                        data_file.write( str(self.z[i][self.active[i]][j]) + self.sep )
+                                data_file.write( EOL )
+                                data_file.close()                

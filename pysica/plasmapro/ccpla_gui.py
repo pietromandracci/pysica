@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,8 +63,6 @@ class CcplaWindow(tk.Frame):
         self.sim_status            = False #True=running; False=stopped; None=paused
         self.error                 = False
         self.savefiles_initialized = False
-        #self.plot_counter          = 0
-        #self.save_counter          = 0        
         
         # Tk control variables
         self.dt_exp             = tk.IntVar()
@@ -386,16 +384,28 @@ class CcplaWindow(tk.Frame):
                 self.show_runtime_info()                
                 # Update plots 
                 self.draw_plots()                
-                # Save data to files
+                # Save data to files every n cycles, where n = self.parameters.save_delay (if not zero)
                 if (self.parameters.save_delay > 0):
-                    self.save_counter += 1
-                    if (self.save_counter >= self.parameters.save_delay):
-                        if self.debug: print('[GUI]   -> Saving data')                                        
-                        self.charges.save_data_to_files()
+                    self.save_data_counter += 1                    
+                    if (self.save_data_counter >= self.parameters.save_delay):
+                        # If required, energy and z distributions are not saved always,
+                        # but every n data saves only, to preserve disk space
+                        # where n = parameters.save_delay_dist
+                        if (self.parameters.save_delay_dist > 1):
+                            self.save_dist_counter += 1
+                            if (self.save_dist_counter >= self.parameters.save_delay_dist):
+                                self.save_dist_flag    = True
+                                self.save_dist_counter = 0                                
+                                if self.debug: self.save_dist_string  = ' (distributions included)'
+                            else:
+                                self.save_dist_flag    = False
+                                if self.debug: self.save_dist_string = ' (distributions not included)'                                
+                        if self.debug: print('[GUI]   -> Saving data' + self.save_dist_string)                 
+                        self.charges.save_data_to_files(save_edf=self.save_dist_flag, save_z=self.save_dist_flag)
                         self.neutrals.save_data_to_files(self.charges.time)
                         self.ccp.save_data_to_files(self.charges.time)
                         if self.debug: print('[GUI]   -> Data saved')
-                        self.save_counter = 0                    
+                        self.save_data_counter = 0                    
                 # Save actual time to be shown in next iteration
                 self.time_before          = self.charges.time
                 self.n_active_el_before   = self.charges.n_active(0)
@@ -531,7 +541,10 @@ class CcplaWindow(tk.Frame):
             self.ccp.initialize_savefiles(self.parameters.filename_I, self.parameters.filename_V,
                                           append=False, sep=SEP, ext=EXT)
             self.savefiles_initialized = True
-            self.save_counter = 0          
+            self.save_data_counter = 0
+            self.save_dist_counter = 0
+            self.save_dist_flag    = True
+            if self.debug: self.save_dist_string  = ' (distributions included)'            
             
         # Arrange flags, windows and buttons status
         if self.debug: print('[GUI]   -> Initializing status')  

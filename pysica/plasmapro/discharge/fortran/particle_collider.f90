@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2022 Pietro Mandracci
+! COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -846,13 +846,13 @@ contains
                                        &vx_neu, vy_neu, vz_neu, &
                                        &vx_rel_0, vy_rel_0, vz_rel_0, vrel_0)
 
-         ! To manage ion elastic collision we need to express velocity vectors in 3 different frames of reference
+         ! To manage ion elastic collision we need to express velocity vectors in 3 different frames of reference (FOR)
          ! DISFOR) discharge frame of reference, in which both ion and neutral are moving,
          !         and the z axis is parallel to the electric field direction,
          !         the initial and final ion velocity vectors will be expresses in this FOR
          ! TARFOR) target frame of reference, in which the target (neutral particle) is at rest,
          !         and the z axis is parallel to the direction of the relative (ion-neutral) velocity vector before scattering.
-         ! COMFOR) center of mass frame of reference, in which the COM of the ion-neutral system is at rest,
+         ! COMFOR) center of mass (COM) frame of reference, in which the COM of the ion-neutral system is at rest,
          !         and the z axis is parallel to the direction of the relative velocity between ion and neutral before scattering
          !         the elastic ion scattering is considered isotropic in this FOR
          ! I have avoided the use of the term "Laboratory frame of reference" because it may refer to both the DISFOR or the TARFOR,

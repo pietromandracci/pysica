@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2022 Pietro Mandracci
+# COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -141,7 +141,7 @@ class TargetParticles:
                         self.temperature:               temperature of the gas mixture / K
                         self.total_pressure:            total pressure of the gas mixture / Pa
                         self.isactive_recomb:           set if electron/ion recombination processes must be activated or not
-                        self.types:                     how many types of target molcules are involved
+                        self.types:                     how many types of target atoms/molecules are involved
                         self.n_sigma:                   number of velocity values for which electron impact cross sections 
                                                                are tabulated
                         self.n_sigma_ions:              number of velocity values for which ion impact cross sections are tabulated
@@ -227,6 +227,8 @@ class TargetParticles:
                         Initialized data attributes
                         ---------------------------
                         self.names:                      names of the gas molecules (max 8 char)
+                        self.types_atoms:                number of atom types
+                        self.types_molecules:            number of molecule types (not atoms)
                         self.molecule_type:              string describing the type of molecule (1 char)
                                                                 'a'= atom, 'm'= nonpolar molecule, 'p'= polar molecule
                                                                 actually polar and non-polar molecules are treated in the 
@@ -360,6 +362,12 @@ class TargetParticles:
                 # Read neutral properties from ascii file
                 (status, message) = read_file_properties(filename, sep, self, debug)
                 if (status != 0): return (status, message)
+
+                # Calculate the number of types of atoms and molecules
+                self.types_atoms = 0
+                for i in range(self.types):
+                        if (self.molecule_type[i] == 'a'): self.types_atoms += 1
+                self.types_molecules = self.types - self.types_atoms
 
                 # Calculate neutral properties
                 self.partial_pressure   = self.gas_flow * self.total_pressure / self.gas_flow.sum()
@@ -1884,6 +1892,9 @@ class TargetParticles:
                    self.f_neutral:        file to which values of several quantities will be saved
                 """
 
+                # If there are not target molecules, do nothing
+                if (self.types_molecules == 0): return
+                
                 self.sep = sep
                 self.filename = str(filename_neutral) + ext
                 
@@ -1907,6 +1918,9 @@ class TargetParticles:
         def save_data_to_files(self, time):
                 """Saves actual data values of dissociation rates to files """
 
+                # If there are not target molecules, do nothing
+                if (self.types_molecules == 0): return
+                
                 data_file = open(self.filename,'a')
                 data_file.write( str(1E9*time) + self.sep )                
                 for i in range(self.types):

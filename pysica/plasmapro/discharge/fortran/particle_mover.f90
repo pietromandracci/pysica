@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2022 Pietro Mandracci
+! COPYRIGHT (c) 2020-2024 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -257,7 +257,7 @@ contains
 
          n_secondaries = i
           
-         if (debug_level > 0) then
+         if (debug_level > 1) then
             print *, ""
             print *, "SECONDARY EMISSION"
             print *, "ion                = ", ion_type 
@@ -267,7 +267,6 @@ contains
             print *, "nw_secondaries     = ", nw_secondaries
             print *, "n_secondaries      = ", n_secondaries
             if (debug_level > 1) call pause
-            call pause
          endif
 
          ! Check that the number of SE does not exceed the capacity of arrays used to store the positions at which they must be generated
