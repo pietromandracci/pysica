@@ -16,10 +16,13 @@
 """
     Tools for the simulation of plasma discharges.
 
-    This package contains some modules and subpackages which may be useful for the simulation of plasma discharges.
+    This package contains some modules and subpackages for the simulation of plasma discharges.
 
-    * subpackages
-        - ccpla         -> simulation of capacitively coupled low pressure plasma dishcarges
+    Subpackages
+    -----------
+
+    *ccpla*
+        tools for the simulation of capacitively coupled low pressure plasma discharges
 
     Documentation is also available in the docstrings.
 """

@@ -30,8 +30,6 @@
 
     *functions*
         some general purpose functions
-    *fortran*
-        modules compiled from Fortran using f2py
     *managers*
         modules which can be used to manage the input/output of data from/to ascii files
         and to print physical quantities managing the unit prefixes

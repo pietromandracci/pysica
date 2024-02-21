@@ -20,13 +20,22 @@
     This sub-package contains some modules which can be used for managing data input/output from/to files, 
     print of physical quantities whith automatic managing of the units prefixes
 
-    * subpackages
-            - gnuplot manager        -> plot graphs by means of gnuplot
+    Subpackages
+    -----------
 
-    * modules
-            - data_manager           -> read/write data from/to ASCII files
-            - unit_manager           -> prints physical quantities, managing the unit prefixes 
-                                        (e.g. 1.23456E-9 A -> 1.23 nA)
+    *gnuplot manager*
+        plot graphs by means of gnuplot
+    *io*
+        general purpose input/output modules
+
+    Modules
+    -------
+
+    *data_manager*
+        read/write data from/to ASCII files
+    *unit_manager*
+        prints physical quantities, managing the unit prefixes 
+        (e.g. 1.23456E-9 A -> 1.23 nA)
 
     Documentation is also available in the docstrings.
 """

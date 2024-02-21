@@ -18,14 +18,26 @@
 
         The modules in this subpackage define classes to store data about electrons, ions and neutrals.
         They also provide functions which call fortran functions compiled into the fortran package 
-        to simulate the motion and interaction of these particles inside plasma discharges,
- 
-       	* modules
-		- reactors 	         -> defines characteristics of plasma reactors, such as electrodes dimensions, bias, etc...
-                - moving_particles       -> defines the ensables of electrons and ions
-		- target_particles       -> defines neutral particles and their cross sections for impact with electrons and ions
+        to simulate the motion and interaction of these particles inside plasma discharges
 
-                - particles_data_manager -> read properties of neutral particles from a ascii file
-                - particle_mover         -> provides functions to simulate the particles motion and interaction in a cold plasma
-                                            it uses the modules contained in the fortran package
+        Subpackages
+        -----------
+
+        *fortran*
+            functions compiled from Fortran to simulate the motion of particles in a CCP discharge
+ 
+       	Modules
+        -------
+
+	*reactors*
+ 	    defines characteristics of plasma reactors, such as electrodes dimensions, bias, etc...
+        *moving_particles*
+            defines the ensables of electrons and ions
+	*target_particles*
+            defines neutral particles and their cross sections for impact with electrons and ions
+        *particles_data_manager*
+            read properties of neutral particles from a ascii file
+        *particle_mover*
+            provides functions to simulate the particles motion and interaction in a cold plasma
+            it uses the modules contained in the fortran subpackage
 """

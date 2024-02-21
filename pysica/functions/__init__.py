@@ -17,17 +17,26 @@
 
     This subpackage contains some modules which provide several utility functions.
 
+    Subpackages
+    -----------
+
+    *fortran*
+        functions compiled from Fortran
+
+
     Modules
     -------
 
-    *physics*
-        functions used to calculate or convert some physical quantities
-    *optical*
-        functions for analysis of the optical properties of thin films (absorption, reflection)
     *mathematics*
         functions used to calculate averages, derivatives and other calculations
     *pdf*
-        collection of probability distribution functions used in the package
+        collection of probability distribution functions
+    *random_pdf*
+        functions to generate random numbers following specific pdfs
     *statistics*
-        some statistical tools   
+        some statistical tools
+    *physics*
+        functions used to calculate or convert some physical quantities
+    *optics*
+        functions for analysis of the optical properties of thin films (absorption, reflection)
 """

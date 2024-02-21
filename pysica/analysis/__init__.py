@@ -23,7 +23,7 @@
     -------
 
     *univariate*
-        analysis of univariate data 
+        analysis of univariate data
     *bivariate*
         analysis of bivariate data               
     *spectra*
