@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from scipy.stats import chi2
 
-# Mudules from plasmapro package
+# Mudules from plasma.ccpla package
 from pysica.parameters import *
 from pysica.functions.pdf import *
 from pysica.functions.statistics import *

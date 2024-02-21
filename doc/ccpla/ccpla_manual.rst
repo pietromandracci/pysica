@@ -46,7 +46,7 @@ a virtual environment `here <https://packaging.python.org/en/latest/guides/insta
 
 .. note:: The module compiled from Fortran is a linux library ('*.so*' file): if you want to use *ccpla* in another operating system,
           you need to recompile it using the *f2py* program and a Fortran compiler.
-          The directory *pysica/plasmapro/discharge/fortran* of the *pysica* package contains the Fortran source files,
+          The directory *pysica/plasma/ccpla/discharge/fortran* of the *pysica* package contains the Fortran source files,
           the compiled module and the script used for the compilation (named 'f2py-fmodule'), but the options
           used in the script to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ fortran compiler.
 
@@ -84,15 +84,15 @@ How to run the script
 
 Once installed, you can run the *ccpla* script from the console using the following command::
 
-$ python3 -m pysica.plasmapro.ccpla [options]
+$ python3 -m pysica.plasma.ccpla.ccpla [options]
 
 where *[options]* states for a list of options you can give to the script.  A list of the available options can be obtained by typing::
 
-$ python3 -m pysica.plasmapro.ccpla -h
+$ python3 -m pysica.plasma.ccpla.ccpla -h
 
 The *-g* option runs the GUI instead of the text-based script::
 
-$ python3 -m pysica.plasmapro.ccpla -g
+$ python3 -m pysica.plasma.ccpla.ccpla -g
 
 
 Command line options 
@@ -116,6 +116,9 @@ Here's a list of the available command line options and their meaning
     
 *-g, --gui-mode*
     start the GUI
+
+*-m, --multicore*
+    run the Fortran module in parallel mode, using more than one CPU core
     
 *-W TEXT_WINDOW_WIDTH, --text-window-width=TEXT_WINDOW_WIDTH*
     set the width of the GUI window expressed in characters, accepted values are in the range [120..200] (default=160), 
@@ -155,7 +158,7 @@ Graphical User Interface
 
 The GUI is run by using the *-g* options when callig the script
 
-$ python3 -m pysica.plasmapro.ccpla -g
+$ python3 -m pysica.plasma.ccpla.ccpla -g
 
 When the GUI is started, it activates a main graphic window and a numerical kernel. The latter is an independent process,
 which runs parallell to the GUI and is responsible for calling the Fortran-compiled module when a simulation cycle is requested.
@@ -167,7 +170,7 @@ Main window
 When the GUI starts, a main window is rised, together with a small window with licencing information,
 which can be closed by pressing the "Dismiss" button.
 
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main+splash.png
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main+splash.png
    :width:  809
    :height: 436
 
@@ -191,7 +194,7 @@ The *File* menu shows the following options:
     
 *Edit configuration files*
     open the *ccpla.conf* file in an external editor. The file is reloaded after closing the editor.  The name of the editor to use is
-    registered in the variable *EDITOR_NAME* in the file *pysica/plasmapro/ccpla_defaults.py*, presently is *mousepad*.
+    registered in the variable *EDITOR_NAME* in the file *pysica/plasma/ccpla/ccpla_defaults.py*, presently is *mousepad*.
     If the editor is not installed, an error window is opened
 
 *Quit*
@@ -200,7 +203,7 @@ The *File* menu shows the following options:
 .. note:: The *File* menu is not active while the simulation is running: in that case you have to press the *Pause* button,
    then the *STOP/KILL* button, in order to stop the simulation and have the menu active again.
 
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-file.png
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-file.png
 
 
 *Parameters*
@@ -249,7 +252,7 @@ The *Parameters* menu shows the following options:
 
 .. [#c] This option is activated only if the simulation parameter *isactive_recomb* in the file *ccpla.conf* is not zero.
                
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-parameters.png
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-parameters.png
          
 
 *Runtime Plots*
@@ -281,7 +284,7 @@ The *Runtime plots* menu allows to select which plots are shown during the simul
 .. note:: if some active plots are deactivated while the simulation is running, they are not removed from the screen,
    but they are no longer refreshed until they are re-activated
 
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-plots.png
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-plots.png
 
 *Help*
 ,,,,,,
@@ -290,13 +293,13 @@ The *Help* menu shows the following options.
 
 *Online documentation (open in browser)*
     opens the online documentation (this file) inside a web browser. The name of the browser to use is
-    registered in the variable *BROWSER_NAME* in the file *pysica/plasmapro/ccpla_defaults.py*, presently *firefox*.
+    registered in the variable *BROWSER_NAME* in the file *pysica/plasma/ccpla/ccpla_defaults.py*, presently *firefox*.
     If the browser is not installed, an error window is opened.
 
 *About*
     shows a window with licencing information
 
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-main-menu-help.png
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-help.png
 
 
 Buttons and sliders
@@ -326,4 +329,4 @@ of these parameters are written, together with the timestep.  The latter can not
 but is determined by the *dt* entry in the *ccpla.conf* file.
 
 
-.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/plasmapro/figure_gui-buttons.png
+.. image:: https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-buttons.png

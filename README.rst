@@ -9,13 +9,13 @@ Introduction
 ============
 
 This package contains a collection of tools developed for some specific simulation and calculus tasks
-in the fields of cold plasma processes, as well as thin-film and surface characterization.
+in some fields of physics, including nonthermal plasma discharges, as well as surface modification and analysis.
 
 
 Package structure
 =================
 
-In the following, the modules and subpackages are listed.
+In the following, the main modules and subpackages are listed.
 Additional documentation is available in the docstrings of each module and subpackage.
 
 
@@ -48,35 +48,33 @@ Contains some modules to manage distribution functions and data histograms.
     - surface morphology data (e.g. surface roughness analysis).
 
 
-fortran (package)
------------------
-
-Contains some general purpose modules compiled from Fortran using f2py.
-
-
-*fmathematics (module)*
-  contains some general purpose mathematical functions used in other modules and
-  compiled from fortran to improve speed.
-
   
 functions (package)
 -------------------
 
 Contains some general purpose functions.
 
+*fortran (package)*
+  some general purpose functions, compiled from Fortran using f2py.
+  They are collected in the *fmathematics* module.
 
-io (package)
-------------
+*mathematics (module)*
+  some general purpose mathematical funtions.
 
-Contains some tools for input-output management.
+*statistics (module)*
+  some generic statistics functions.  
 
+*pdf (module)*
+  some probabilty distribution functions (pdf).
 
-*io_files (module)*
-  contains some tools to operate on files;
-
-
-*io_screen (module)*
-  contains some tools to operate on the screen.
+*random_pdf (module)*
+  functions useful to generate random numbers following specific pdfs.
+  
+*physics (module)*
+  some general purpose funcions used in generic physics applications.
+  
+*optics (module)*
+  some functions useful for optical applications.
 
 
 managers (package)
@@ -85,13 +83,14 @@ managers (package)
 Contains some modules and packages used to manage input/output of data from/to ascii files,
 to print physical quantities managing the unit prefixes, and to plot data by means of the *gnuplot* program.
 
+*io (package)*
+  some modules used for generic input-output management.
+
 *data_manager (module)*
   tools to manage data reading and writing from files;
 
-
 *unit_manager (module)*
   tools to manage the output of numerical data with automatic managment of unit prefixies;
-
 
 *gnuplot_manager (package)*
   a package to facilitate the use of gnuplot inside python [#gnuplot_manager]_.
@@ -101,16 +100,13 @@ to print physical quantities managing the unit prefixes, and to plot data by mea
   `PyPi <https://pypi.org/project/gnuplot-manager>`_.
 
 
-plasmapro (package)
+plasma (package)
 -------------------
 
 A package containing tools for the simulation of plasma discharges.
 
-*ccpla*
-  a script to simulate a ccp cold plasma discharge by means of the PIC-MC (1d3v) technique;
-
-*ccpla_analysis*
-  a module containing tools to analyze the output data from *ccpla*.
+*ccpla (package)*
+  a package containing scripts, modules, and subpackages used to simulate low pressure capacitively coupled discharges.
     
 
 Installing and importing *pysica*

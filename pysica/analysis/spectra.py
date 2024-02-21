@@ -39,10 +39,10 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.integrate   import quad
 
-# Mudules from plasmapro package
+# Mudules from plasma.ccpla package
 from pysica.parameters import *
 from pysica.functions.mathematics import *
-from pysica.fortran.fmathematics import f_math
+from pysica.functions.fortran.fmathematics import f_math
 from pysica.functions.optics import *
 from pysica.managers import data_manager, unit_manager
 

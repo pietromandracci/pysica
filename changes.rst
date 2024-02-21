@@ -1,4 +1,10 @@
 =============
+Version 0.4.0
+=============
+
+* The subpackages structure was rearranged in more rational way (or at least I hope so)
+
+=============
 Version 0.3.0
 =============
 

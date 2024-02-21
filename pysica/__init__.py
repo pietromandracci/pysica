@@ -37,8 +37,8 @@
         and to print physical quantities managing the unit prefixes
     *analysis*
         modules which can be helpful to manage distribution functions and data histograms
-    *plasmapro*
-        package of tools for simulatio of plasma discharges.
+    *plasma*
+        package of tools for simulation of plasma discharges.
 
     Documentation is also available in the docstrings.
 """

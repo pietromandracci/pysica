@@ -1,0 +1,13 @@
+#! /bin/sh
+
+echo Press RETURN to begin ...
+read STRING
+
+f2py3 -c --fcompiler=gnu95 -m fmodule \
+precision.f90 constants.f90 io.f90 random.f90 arrays.f90 \
+pic.f90 scattering.f90 particle_manager.f90 particle_mover.f90 particle_collider.f90 \
+main.f90
+
+echo
+echo Press RETURN to exit ...
+read STRING
