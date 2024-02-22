@@ -37,6 +37,8 @@
         functions used to print simulation info in text windows
     *ccpla_gui*
         functions and classes used to run the simulaion within a GUI
+    *cppla_kernel*
+        numerical kernel which is called from the ccpla_gui module and runs in parallel to it
     *ccpla_plot*
         functions used to plot simulation data
 

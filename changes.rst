@@ -1,3 +1,8 @@
+=============
+Version 0.4.1
+=============
+
+* Cleaning up of unused files and minor updates
 
 =============
 Version 0.4.0
