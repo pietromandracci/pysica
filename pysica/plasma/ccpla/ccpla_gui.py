@@ -21,7 +21,7 @@
 
 # Modules from the standard Python library
 import math
-from subprocess import run
+from subprocess import run, Popen
 from multiprocessing import Process, Pipe
 import tkinter as tk
 import tkinter.messagebox
@@ -191,7 +191,7 @@ class CcplaWindow(tk.Frame):
 
         # Add label to show paused/running
         self.status_label = tk.Label(self)
-        self.show_status_label(text='Press RESET to start', color='red')
+        self.show_status_label(text='Press RESET to inizialize simulation', color='blue')
 
         # Add buttons
         self.button_reset = tk.Button(self, text='RESET', foreground='red', background='light yellow',
@@ -234,9 +234,20 @@ class CcplaWindow(tk.Frame):
     # | Methods to set the window properties |
     # +--------------------------------------+
     
-    def set_menu(self, reload_parameters=True, edit_parameters=True, let_quit=True):
+    def set_menu(self, reload_parameters=True, edit_parameters=True, let_quit=True, all_menu=None):
         """ Set the active/inactive state of some entries in the main menu """
-            
+
+        # Enable/Disable the menu completely this overrides all the other parameters
+        if all_menu is not None:
+            if   all_menu is True:  self.state = tk.NORMAL
+            elif all_menu is False: self.state = tk.DISABLED
+            else:                   return
+            self.menubutton_file["state"]=self.state
+            self.menubutton_parameters["state"]=self.state
+            self.menubutton_runtime_plot["state"]=self.state
+            self.menubutton_help["state"]=self.state
+            return
+                    
         # Parameters / Show filenames
         if self.savefiles_initialized: self.state = tk.NORMAL
         else:                          self.state = tk.DISABLED
@@ -491,7 +502,7 @@ class CcplaWindow(tk.Frame):
         self.button_pause["state"]  = tk.DISABLED
         self.button_stop["text"]    = 'STOP'
         self.button_stop["state"]   = tk.DISABLED
-        self.show_status_label(text='Press RESET to start over', color='blue')
+        self.show_status_label(text='Press RESET to inizialize simulation', color='blue')
         self.button_reset["state"]  = tk.NORMAL
         self.set_menu()       
 
@@ -562,26 +573,45 @@ class CcplaWindow(tk.Frame):
         self.update_idletasks()
         
 
-
     # +-----------------------------------------------+
     # | Metods to interact with simulation parameters |
     # +-----------------------------------------------+
 
-    def edit_parameters(self):
-        try:
-            #editor_process = run([EDITOR_NAME, FILENAME_CONFIG, FILENAME_NEUTRALS])
-            editor_process = run([EDITOR_NAME, FILENAME_CONFIG])
-        except FileNotFoundError:
-            string = ('Error while trying to execute command: \"'
-                      + EDITOR_NAME
-                      + ' ' 
-                      + FILENAME_CONFIG
-#                      + ' '
-#                      + FILENAME_NEUTRALS
-                      + '\" ')
-            self.show_message(message=string, fore='red', back='light yellow')
+    def wait_editor(self):
+        # Wait until the editor window is closed
+        if self.editor_process.poll() is None:
+            self.update_idletasks()
+            self.after(IDLE_TIME, self.wait_editor)
+        else:
+            self.set_menu(all_menu=True)  
+            self.reload_parameters()
             return
-        self.reload_parameters()
+
+    
+    def edit_parameters(self):
+        self.string = (   'About to open the file \"' + FILENAME_CONFIG + '\" in the external editor \"' + EDITOR_NAME +'\". \n\n'
+                        + 'The GUI will remain freezed until you close the editor window. \n\n'
+                        + 'Do you want to proceed ?' )
+        self.answer = tkinter.messagebox.askokcancel( title='WARNING', message=self.string, icon='warning')
+        if not self.answer: return
+        # Freeze the GUI
+        self.button_reset["state"] = tk.DISABLED
+        self.button_start["state"] = tk.DISABLED
+        self.set_menu(all_menu=False)
+        self.show_status_label(text='GUI FREEZED: waiting for the editor to close', color='red')
+        # Open the external editor window
+        try:
+            self.editor_process = Popen([EDITOR_NAME, FILENAME_CONFIG])
+        except FileNotFoundError:
+            string = ('Sorry, but it seems that the program \"'
+                      + EDITOR_NAME + '\"'
+                      + ' is not installed on your system')            
+            self.show_message(message=string, fore='red', back='light yellow')
+            self.button_reset["state"] = tk.NORMAL
+            self.show_status_label(text='Press RESET to inizialize simulation', color='blue')
+            self.set_menu(all_menu=True) 
+            return
+        self.wait_editor()
         
                         
     def reload_parameters(self): 
@@ -636,6 +666,7 @@ class CcplaWindow(tk.Frame):
 #            if (status !=0):
 #                self.error= True
 #                ERRORS += message + '\n'
+
         if self.error:
             self.button_reset["state"] = tk.DISABLED
             self.button_start["state"] = tk.DISABLED
@@ -652,7 +683,7 @@ class CcplaWindow(tk.Frame):
             self.button_start["state"] = tk.DISABLED
             self.set_menu()
             self.set_dt_output()
-            self.show_status_label(text='Press RESET to start over', color='blue')
+            self.show_status_label(text='Press RESET to inizialize simulation', color='blue')
                         
     def set_dt_output(self, set_value=None):
         # If set_value is None, self.parameters.dt_output is assumed to have been already set
@@ -723,14 +754,14 @@ class CcplaWindow(tk.Frame):
 
     def show_doc(self):
         try:
-            editor_process = run([BROWSER_NAME, DOC_URL])
+            #self.editor_process = run([BROWSER_NAME, DOC_URL])
+            self.editor_process = Popen([BROWSER_NAME, DOC_URL])
         except FileNotFoundError:
-            string = ('Error while trying to execute command: \"'
+            string = ('Sorry, but it seems that the browser \"'
                       + BROWSER_NAME
-                      + ' '
-                      + DOC_URL
-                      + '\"')
+                      + '\" is not installed on your system.')
             self.show_message(message=string, fore='red', back='light yellow')
+        self.update_idletasks()
         
     def show_about(self):
         self.about_window = tk.Toplevel(self)
