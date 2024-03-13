@@ -439,20 +439,22 @@ used in the script to call <em>f2py</em> are specific for linux and the <a class
 <div class="section" id="data-files">
 <h2><a class="toc-backref" href="#toc-entry-6">Data files</a></h2>
 <p>The <em>ccpla</em> script requires to read some data (configuration data and cross-section data) from external files
-in order to perform the simulation: these files must be present in the directory from which the script is run,
-otherwise it will give an error message.</p>
-<p>Two plain ASCII files are needed for configuration:</p>
+in order to perform the simulation, and will give an error message if unable to find them.</p>
+<p>Two plain ASCII files are needed for configuration, and must be present in the directory from which the script is run
+(<em>working directory</em>):</p>
 <dl class="docutils">
-<dt><em>ccpla.conf</em> file</dt>
+<dt><em>ccpla.conf</em></dt>
 <dd>contains the main physical and simulation parameters;</dd>
 <dt><em>ccpla.neutrals</em></dt>
 <dd>contains the data about the gas mixture to simulate.</dd>
 </dl>
-<p>Additionaly, a set of <em>.csv</em> (comma separated value) files are needed, which contain cross-section data about the gases.</p>
+<p>Additionaly, a set of <em>.csv</em> (comma separated value) files are needed, which contain cross-section data about the types of collision
+considered in the simulation.
+These files must be present in a subdirectory named <em>ccpla.sigma</em> inside the working directory.</p>
 <p>A set of examples files for the simulation of He, Ar and O2 plasmas (or their mixtures) can be downloded from the
 <a class="reference external" href="https://github.com/pietromandracci/pysica/tree/master/data/ccpla">data/ccpla</a> directory of the <em>pysica</em> <em>GitHub</em> repository.
-You can copy them in the directory from which you want to run the script and then modify them at your will,
-as explained in the comments inside each file.</p>
+You can create a subdirectory named <em>ccpla.sigma</em> the directory from which you want to run the script, and then copy these files inside it.
+Of course, you can modify them at your will, as explained in the comments inside each file.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">the cross sections tabulated in these files have been taken from some publications or public databases,

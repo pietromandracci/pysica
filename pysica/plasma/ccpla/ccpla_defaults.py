@@ -105,6 +105,7 @@ SCRIPTNAME                = 'ccpla'                       # Name of the script
 EXT                       = '.csv'                        # Extension to use for saved data files
 EOL                       = '\n'                          # End-of-line char for data files
 SEP                       = '\t'
+XSECT_DIRECTORY_NAME      = SCRIPTNAME + '.sigma'         # Directory from which cross section data is loaded
 SAVE_DIRECTORY_NAME       = SCRIPTNAME + '.out'           # Directory into which simulation data is saved
 FILENAME_DEFAULTS         = SCRIPTNAME + '.defaults'      # Name of the file to which default parameters are saved with -s option
 FILENAME_CONFIG           = SCRIPTNAME + '.conf'          # Configuration file 

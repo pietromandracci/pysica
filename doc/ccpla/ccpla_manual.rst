@@ -58,23 +58,25 @@ Data files
 ----------
 
 The *ccpla* script requires to read some data (configuration data and cross-section data) from external files
-in order to perform the simulation: these files must be present in the directory from which the script is run,
-otherwise it will give an error message.
+in order to perform the simulation, and will give an error message if unable to find them.
 
-Two plain ASCII files are needed for configuration:
+Two plain ASCII files are needed for configuration, and must be present in the directory from which the script is run
+(*working directory*):
 
-*ccpla.conf* file
+*ccpla.conf*
   contains the main physical and simulation parameters;
 
 *ccpla.neutrals*
   contains the data about the gas mixture to simulate.
 
-Additionaly, a set of *.csv* (comma separated value) files are needed, which contain cross-section data about the gases.
+Additionaly, a set of *.csv* (comma separated value) files are needed, which contain cross-section data about the types of collision
+considered in the simulation.
+These files must be present in a subdirectory named *ccpla.sigma* inside the working directory.
 
 A set of examples files for the simulation of He, Ar and O2 plasmas (or their mixtures) can be downloded from the 
 `data/ccpla <https://github.com/pietromandracci/pysica/tree/master/data/ccpla>`_ directory of the *pysica* *GitHub* repository.
-You can copy them in the directory from which you want to run the script and then modify them at your will,
-as explained in the comments inside each file.
+You can create a subdirectory named *ccpla.sigma* the directory from which you want to run the script, and then copy these files inside it.
+Of course, you can modify them at your will, as explained in the comments inside each file.
 
 .. note:: the cross sections tabulated in these files have been taken from some publications or public databases,
           and are given as example only.  There is no guarantee that they are suited for a specific task.

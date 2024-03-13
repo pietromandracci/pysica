@@ -316,7 +316,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
 
     # Read elastic scattering cross-sections for electron impact
     for neutral_index in range(neutrals.types):
-        filename_sigma = SCRIPTNAME + '_sigma_' + neutrals.names[neutral_index] + '_elastic' + EXT
+        filename_sigma = os.path.join(XSECT_DIRECTORY_NAME, SCRIPTNAME + '_sigma_' + neutrals.names[neutral_index] + '_elastic' + EXT)
         if (cl_options.verbosity > 1): print('\n--> file \"' + filename_sigma + '\"')
         ERROR = '\nERROR in file \"' + filename_sigma+'\": '
         (status, message) = neutrals.read_xsec_electrons_elastic(filename_sigma, '\t', neutral_index, 
@@ -326,8 +326,9 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
 
     # Read ionization cross-sections for electron impact
     for neutral_index in range(neutrals.types):
-        filename_sigma = ( SCRIPTNAME + '_sigma_' + neutrals.names[neutral_index]
-                           + '_ionization' + EXT )
+        filename_sigma = os.path.join(XSECT_DIRECTORY_NAME,
+                                      SCRIPTNAME + '_sigma_' + neutrals.names[neutral_index]
+                                      + '_ionization' + EXT ) 
         if (cl_options.verbosity > 1): print('\n--> file \"'+filename_sigma+'\"')
         ERROR = '\nERROR in file \"'+filename_sigma+'\": '
         (status, message) = neutrals.read_xsec_electrons_ionization(filename_sigma, '\t', neutral_index, 
@@ -342,8 +343,9 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
     # Read excitation cross-sections for electron impact
     for neutral_index in range(neutrals.types):
         for exc_type in range(neutrals.excitation_types[neutral_index]):
-            filename_sigma = ( SCRIPTNAME+'_sigma_' + neutrals.names[neutral_index]
-                               + '_excitation_' + str(exc_type)+EXT )
+            filename_sigma = os.path.join(XSECT_DIRECTORY_NAME,
+                                          SCRIPTNAME+'_sigma_' + neutrals.names[neutral_index]
+                                          + '_excitation_' + str(exc_type)+EXT )
             if (cl_options.verbosity > 1): print('\n--> file \"'+filename_sigma+'\"')
             ERROR = '\nERROR in file \"'+filename_sigma+'\": '
             (status, message) = neutrals.read_xsec_electrons_excitation(
@@ -355,8 +357,9 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
     # Read dissociation cross-sections for electron impact
     for neutral_index in range(neutrals.types):
         for diss_type in range(neutrals.dissociation_types[neutral_index]):
-            filename_sigma = ( SCRIPTNAME+'_sigma_' + neutrals.names[neutral_index]
-                               + '_dissociation_' + str(diss_type)+EXT )
+            filename_sigma = os.path.join(XSECT_DIRECTORY_NAME,
+                                          SCRIPTNAME+'_sigma_' + neutrals.names[neutral_index]
+                                          + '_dissociation_' + str(diss_type)+EXT )
             if (cl_options.verbosity > 1): print('\n--> file \"'+filename_sigma+'\"')
             ERROR = '\nERROR in file \"'+filename_sigma+'\": '
             (status, message) = neutrals.read_xsec_electrons_dissociation(
@@ -388,7 +391,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
     if (cl_options.verbosity > 0): print('\nReading cross-section tables for ion/neutrals scattering ...')
         
     # Read elastic scattering cross-sections for ions
-    filename_sigma = SCRIPTNAME + NAME_ION_ELASTIC + EXT
+    filename_sigma = os.path.join(XSECT_DIRECTORY_NAME, SCRIPTNAME + NAME_ION_ELASTIC + EXT)
     for ion_index in range(neutrals.types):
         for neutral_index in range(neutrals.types):
             if (cl_options.verbosity > 1): print('\n--> file \"'+filename_sigma+'\"')
@@ -400,7 +403,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
             if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Read charge exchange scattering cross-sections for ions
-    filename_sigma = SCRIPTNAME + NAME_ION_CHARGE_EX + EXT
+    filename_sigma = os.path.join(XSECT_DIRECTORY_NAME, SCRIPTNAME + NAME_ION_CHARGE_EX + EXT)
     for ion_index in range(neutrals.types):
         for neutral_index in range(neutrals.types):
             if (cl_options.verbosity > 1):
@@ -439,7 +442,8 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
             # Check if this neutral is an atom or a molecule
             if (neutrals.molecule_type[neutral_index] == 'a'):
                 # For atoms, load the 3body recombination cross section
-                filename_sigma = SCRIPTNAME+'_sigma_'+neutrals.names[neutral_index]+'_recombination_3body'+EXT
+                filename_sigma = os.path.join(XSECT_DIRECTORY_NAME,
+                                              SCRIPTNAME+'_sigma_'+neutrals.names[neutral_index]+'_recombination_3body'+EXT)
                 if (cl_options.verbosity > 1): print('\n--> file \"'+filename_sigma+'\"')
                 ERROR = '\nERROR reading file \"'+filename_sigma+'\": '
                 (status, message) = neutrals.read_xsec_ele_ion_recomb(filename_sigma, '\t', neutral_index,
@@ -451,10 +455,11 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
             else:
                 # For molecules, load the dissociative recombination cross section
                 for diss_type in range(neutrals.dissociation_types[neutral_index]):
-                    filename_sigma = ( SCRIPTNAME
-                                       + '_sigma_'+neutrals.names[neutral_index]
-                                       + '_recombination_diss_'
-                                       + str(diss_type)+EXT )
+                    filename_sigma = os.path.join(XSECT_DIRECTORY_NAME,
+                                                  SCRIPTNAME
+                                                  + '_sigma_'+neutrals.names[neutral_index]
+                                                  + '_recombination_diss_'
+                                                  + str(diss_type)+EXT )
                     if (cl_options.verbosity > 1):
                         print('\n--> file \"'+filename_sigma+'\"')
                     ERROR = '\nERROR reading file \"'+filename_sigma+'\": '

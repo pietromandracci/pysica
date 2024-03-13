@@ -1,4 +1,11 @@
 =============
+Version 0.5.0
+=============
+
+* In the ccpla subpackage some changes were made in the format the data files are saved, moreover now the cross section files
+  are loaded from a the ccpla.sigma subdiretory, allowing for a more clean working directory
+
+=============
 Version 0.4.1
 =============
 
