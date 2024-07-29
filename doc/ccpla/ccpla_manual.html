@@ -361,7 +361,7 @@ ul.auto-toc {
 </head>
 <body>
 <div class="document" id="ccpla-capacitively-coupled-plasma-simulation">
-<h1 class="title">CCPLA: Capacitively Coupled PLAsma simulation</h1>
+<h1 class="title"><em>CCPLA</em>: Capacitively Coupled PLAsma simulation</h1>
 
 <div class="contents topic" id="contents">
 <p class="topic-title">Contents</p>
@@ -369,25 +369,26 @@ ul.auto-toc {
 <li><a class="reference internal" href="#introduction" id="toc-entry-1">Introduction</a></li>
 <li><a class="reference internal" href="#installing" id="toc-entry-2">Installing</a><ul>
 <li><a class="reference internal" href="#dependencies" id="toc-entry-3">Dependencies</a></li>
-<li><a class="reference internal" href="#how-to-install" id="toc-entry-4">How to install</a></li>
+<li><a class="reference internal" href="#installing-in-the-global-python-structure" id="toc-entry-4">Installing in the global python structure</a></li>
+<li><a class="reference internal" href="#installing-in-a-local-directory" id="toc-entry-5">Installing in a local directory</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#running" id="toc-entry-5">Running</a><ul>
-<li><a class="reference internal" href="#data-files" id="toc-entry-6">Data files</a></li>
-<li><a class="reference internal" href="#how-to-run-the-script" id="toc-entry-7">How to run the script</a></li>
-<li><a class="reference internal" href="#command-line-options" id="toc-entry-8">Command line options</a></li>
+<li><a class="reference internal" href="#running" id="toc-entry-6">Running</a><ul>
+<li><a class="reference internal" href="#data-files" id="toc-entry-7">Data files</a></li>
+<li><a class="reference internal" href="#how-to-run-the-script" id="toc-entry-8">How to run the script</a></li>
+<li><a class="reference internal" href="#command-line-options" id="toc-entry-9">Command line options</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#graphical-user-interface" id="toc-entry-9">Graphical User Interface</a><ul>
-<li><a class="reference internal" href="#main-window" id="toc-entry-10">Main window</a></li>
-<li><a class="reference internal" href="#menu-bar" id="toc-entry-11">Menu bar</a><ul>
-<li><a class="reference internal" href="#file" id="toc-entry-12"><em>File</em></a></li>
-<li><a class="reference internal" href="#parameters" id="toc-entry-13"><em>Parameters</em></a></li>
-<li><a class="reference internal" href="#runtime-plots" id="toc-entry-14"><em>Runtime Plots</em></a></li>
-<li><a class="reference internal" href="#help" id="toc-entry-15"><em>Help</em></a></li>
+<li><a class="reference internal" href="#graphical-user-interface" id="toc-entry-10">Graphical User Interface</a><ul>
+<li><a class="reference internal" href="#main-window" id="toc-entry-11">Main window</a></li>
+<li><a class="reference internal" href="#menu-bar" id="toc-entry-12">Menu bar</a><ul>
+<li><a class="reference internal" href="#file" id="toc-entry-13"><em>File</em></a></li>
+<li><a class="reference internal" href="#parameters" id="toc-entry-14"><em>Parameters</em></a></li>
+<li><a class="reference internal" href="#runtime-plots" id="toc-entry-15"><em>Runtime Plots</em></a></li>
+<li><a class="reference internal" href="#help" id="toc-entry-16"><em>Help</em></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#buttons-and-sliders" id="toc-entry-16">Buttons and sliders</a></li>
+<li><a class="reference internal" href="#buttons-and-sliders" id="toc-entry-17">Buttons and sliders</a></li>
 </ul>
 </li>
 </ul>
@@ -406,22 +407,9 @@ technique in the <em>1d3v</em> mode (one dimension for the electric field and 3 
 The GUI depends on <a class="reference external" href="https://docs.python.org/3/library/tkinter.html">tkinter</a> also,
 and makes use of the the <a class="reference external" href="http://www.gnuplot.info/">gnuplot</a> progam to plot data 'on the fly' during the simulation.</p>
 <p>The script should work without <em>tkinter</em> and <em>gnuplot</em> installed, but without using the GUI (i.e. without the <em>-g</em> option).</p>
-</div>
-<div class="section" id="how-to-install">
-<h2><a class="toc-backref" href="#toc-entry-4">How to install</a></h2>
-<p>The <em>ccpla</em> script is part of the <em>pysica</em> package, which is distribuited as a pypi wheel so,
-if you have <em>pip</em> installed on your system, you can simply type at the console:</p>
-<pre class="literal-block">
-$ pip install pysica
-</pre>
-<p>In some linux distributions (including Debian-related ones, such as Ubuntu) you will have to install the package
-inside a python virtual environment, since the operative system doesn't allow <em>pip</em> to install software
-in the main file hierarchy.
-You can find instructions on how to create
-a virtual environment <a class="reference external" href="https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments">here</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The script has been developed and tested for use in a linux environment. It is possible that it may work in other systems also,
+<p class="last">The script has been developed and tested to be used in a Linux environment. It may work in other systems also,
 but <em>it has not been tested on them</em> and there is no guarantee that it would work.</p>
 </div>
 <div class="admonition note">
@@ -433,12 +421,31 @@ the compiled module and the script used for the compilation (named 'f2py-fmodule
 used in the script to call <em>f2py</em> are specific for linux and the <a class="reference external" href="https://gcc.gnu.org/fortran/">gnu95</a> fortran compiler.</p>
 </div>
 </div>
+<div class="section" id="installing-in-the-global-python-structure">
+<h2><a class="toc-backref" href="#toc-entry-4">Installing in the global python structure</a></h2>
+<p>The <em>ccpla</em> script is part of the <em>pysica</em> package, which is distribuited as a <em>Python wheel</em>.
+If you have the <em>pip</em> software installed on your system, you can simply type at the console:</p>
+<pre class="literal-block">
+$ pip install pysica
+</pre>
+<p>In some linux distributions (including Debian-related ones, such as Ubuntu) you will have to install the package
+inside a python virtual environment, since the operative system doesn't allow <em>pip</em> to install software
+in the main file hierarchy.
+You can find instructions on how to create
+a virtual environment <a class="reference external" href="https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments">here</a>.</p>
+</div>
+<div class="section" id="installing-in-a-local-directory">
+<h2><a class="toc-backref" href="#toc-entry-5">Installing in a local directory</a></h2>
+<p>Another way to install <em>pysica</em> is to download the most recent zip archive from the
+<a class="reference external" href="https://github.com/pietromandracci/pysica/releases">Github pysica directory</a> and unzip it in a directory of your choice.</p>
+<p>A new directory will be created, named <em>pysica-x.y.z</em>, where <em>x.y.z</em> identifies the version number.</p>
+</div>
 </div>
 <div class="section" id="running">
-<h1><a class="toc-backref" href="#toc-entry-5">Running</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-6">Running</a></h1>
 <div class="section" id="data-files">
-<h2><a class="toc-backref" href="#toc-entry-6">Data files</a></h2>
-<p>The <em>ccpla</em> script requires to read some data (configuration data and cross-section data) from external files
+<h2><a class="toc-backref" href="#toc-entry-7">Data files</a></h2>
+<p>The <em>ccpla</em> script needs to read some data (configuration data and cross-section data) from external files
 in order to perform the simulation, and will give an error message if unable to find them.</p>
 <p>Two plain ASCII files are needed for configuration, and must be present in the directory from which the script is run
 (<em>working directory</em>):</p>
@@ -462,8 +469,20 @@ and are given as example only.  There is no guarantee that they are suited for a
 </div>
 </div>
 <div class="section" id="how-to-run-the-script">
-<h2><a class="toc-backref" href="#toc-entry-7">How to run the script</a></h2>
-<p>Once installed, you can run the <em>ccpla</em> script from the console using the following command:</p>
+<h2><a class="toc-backref" href="#toc-entry-8">How to run the script</a></h2>
+<p>Once you have installed the <em>pysica</em> package, you can run the <em>ccpla</em> script invoking the Python interpreter.</p>
+<ul class="simple">
+<li>If you have installed <em>pysica</em> using the <em>pip install pysica</em> command in the global environment,
+you can run the <em>ccpla</em> script from any directory of your filesystem.</li>
+<li>If you have installed <em>pysica</em> using the <em>pip install pysica</em> command in a Python virtual environment,
+you can run the <em>ccpla</em> script from any directory <em>inside</em> the virtual environment.</li>
+<li>If you have installed <em>pysica</em> unzipping the package archive in a local directory,
+you will be able to run <em>ccpla</em> from the <em>pysica-x.y.z</em> directory created by the unzippig process, as described in the
+<a class="reference internal" href="#installing-in-a-local-directory">Installing in a local directory</a> section.
+In order to run <em>ccpla</em> from another directory, you have to create inside it a link to the directory named <em>ccpla</em>,
+that is located inside the <em>ccpla-x.y.z</em>.</li>
+</ul>
+<p>Once you are in the proper directory, you can run the <em>ccpla</em> script from the console using the following command:</p>
 <pre class="literal-block">
 $ python3 -m pysica.plasma.ccpla.ccpla [options]
 </pre>
@@ -477,7 +496,7 @@ $ python3 -m pysica.plasma.ccpla.ccpla -g
 </pre>
 </div>
 <div class="section" id="command-line-options">
-<h2><a class="toc-backref" href="#toc-entry-8">Command line options</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-9">Command line options</a></h2>
 <p>Here's a list of the available command line options and their meaning</p>
 <dl class="docutils">
 <dt><em>-h, --help</em></dt>
@@ -521,24 +540,24 @@ this option rises an error when calling the GUI (-g option)</dd>
 </div>
 </div>
 <div class="section" id="graphical-user-interface">
-<h1><a class="toc-backref" href="#toc-entry-9">Graphical User Interface</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-10">Graphical User Interface</a></h1>
 <p>The GUI is run by using the <em>-g</em> options when callig the script</p>
 <p>$ python3 -m pysica.plasma.ccpla.ccpla -g</p>
 <p>When the GUI is started, it activates a main graphic window and a numerical kernel. The latter is an independent process,
 which runs parallell to the GUI and is responsible for calling the Fortran-compiled module when a simulation cycle is requested.
 The simulation data are transferred between the GUI and the kernel by means of pipes.</p>
 <div class="section" id="main-window">
-<h2><a class="toc-backref" href="#toc-entry-10">Main window</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-11">Main window</a></h2>
 <p>When the GUI starts, a main window is rised, together with a small window with licencing information,
 which can be closed by pressing the &quot;Dismiss&quot; button.</p>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main+splash.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main+splash.png" style="width: 809px; height: 436px;" />
 <p>The main window has a menu bar at the top and some buttons and sliders at the bottom.</p>
 </div>
 <div class="section" id="menu-bar">
-<h2><a class="toc-backref" href="#toc-entry-11">Menu bar</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-12">Menu bar</a></h2>
 <p>The menu bar includes the following drop-down menus: <em>File</em>, <em>Parameters</em>, <em>Runtime Plots</em>, and <em>Help</em>.</p>
 <div class="section" id="file">
-<h3><a class="toc-backref" href="#toc-entry-12"><em>File</em></a></h3>
+<h3><a class="toc-backref" href="#toc-entry-13"><em>File</em></a></h3>
 <p>The <em>File</em> menu shows the following options:</p>
 <dl class="docutils">
 <dt><em>Reload configuration files</em></dt>
@@ -560,7 +579,7 @@ then the <em>STOP/KILL</em> button, in order to stop the simulation and have the
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-file.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-file.png" />
 </div>
 <div class="section" id="parameters">
-<h3><a class="toc-backref" href="#toc-entry-13"><em>Parameters</em></a></h3>
+<h3><a class="toc-backref" href="#toc-entry-14"><em>Parameters</em></a></h3>
 <p>The <em>Parameters</em> menu shows the following options:</p>
 <dl class="docutils">
 <dt><em>Show physical parameters</em></dt>
@@ -608,7 +627,7 @@ parameter <em>save_delay</em> in the file <em>ccpla.conf</em> is not zero.</td><
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-parameters.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-parameters.png" />
 </div>
 <div class="section" id="runtime-plots">
-<h3><a class="toc-backref" href="#toc-entry-14"><em>Runtime Plots</em></a></h3>
+<h3><a class="toc-backref" href="#toc-entry-15"><em>Runtime Plots</em></a></h3>
 <p>The <em>Runtime plots</em> menu allows to select which plots are shown during the simulation:</p>
 <dl class="docutils">
 <dt><em>Select all</em></dt>
@@ -634,7 +653,7 @@ but they are no longer refreshed until they are re-activated</p>
 <img alt="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-plots.png" src="https://raw.githubusercontent.com/pietromandracci/pysica/master/doc/ccpla/figure_gui-main-menu-plots.png" />
 </div>
 <div class="section" id="help">
-<h3><a class="toc-backref" href="#toc-entry-15"><em>Help</em></a></h3>
+<h3><a class="toc-backref" href="#toc-entry-16"><em>Help</em></a></h3>
 <p>The <em>Help</em> menu shows the following options.</p>
 <dl class="docutils">
 <dt><em>Online documentation (open in browser)</em></dt>
@@ -648,7 +667,7 @@ If the browser is not installed, an error window is opened.</dd>
 </div>
 </div>
 <div class="section" id="buttons-and-sliders">
-<h2><a class="toc-backref" href="#toc-entry-16">Buttons and sliders</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-17">Buttons and sliders</a></h2>
 <p>The following buttons are positioned at the botton of the main window, each one of them may be inactive (and appear in grey) in some
 situations:</p>
 <dl class="docutils">

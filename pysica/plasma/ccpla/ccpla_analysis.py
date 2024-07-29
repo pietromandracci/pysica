@@ -300,7 +300,9 @@ class CcplaSavedData:
         print('')
         print('Gas temperature                     : ' + str(self.neutrals.temperature) + ' K')
         print('Total pressure                      : ' + str(self.neutrals.total_pressure) + ' Pa')
-        print('Number of tabulated e- xsec values  : ' + str(self.neutrals.n_sigma))
+        print('Particle loss on lateral walls      : ' + str(self.parameters.lateral_loss))
+        print('Electron-ion recombination          : ' + str(self.parameters.isactive_recomb))      
+        print('Number of tabulated e-  xsec values : ' + str(self.neutrals.n_sigma))
         print('Number of tabulated ion xsec values : ' + str(self.neutrals.n_sigma_ions))
         print('')
         print('Maximum number of electrons         : ' + str(self.parameters.Nmax_particles))
@@ -950,7 +952,8 @@ class CcplaSavedData:
             status  = 3
             message = 'Time must be in range [0,' + str(self.max_time) + '] ns'
             return (status, message)
-        row = self.get_row(time)
+        row = self.get_row_dist(time)
+        time_real = round(self.get_time_dist(row))
         if (particle_index == 0):
             if (name_string is None): name = r'$e^{-}$'
             ensamble = self.epos_z.data_array[row] * 1.0e3
@@ -964,7 +967,7 @@ class CcplaSavedData:
         plt.minorticks_on()
         plt.tick_params(which='major', direction='in', length=self.tick_length_major)
         plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
-        plt.title(name + ' spatial distribution (t = ' + str(time) + ' ns)')
+        plt.title(name + ' spatial distribution (t = ' + str(time_real) + ' ns)')
         plt.xlabel('z / mm')
         if density:
             plt.ylabel(r'Particle density / $mm^{-3}$')
@@ -1043,7 +1046,8 @@ class CcplaSavedData:
             status  = 3
             message = 'Time must be in range [0,' + str(self.max_time) + '] ns'
             return (status, message)        
-        row = self.get_row(time) 
+        row = self.get_row_dist(time)
+        time_real = round(self.get_time_dist(row))
         #print('\nRow # ' + str(row) + ' of ' + str(self.n_rows-1))        
         if (particle_index==0):
             if (name_string is None): name_string= r'$e^{-}$'
@@ -1052,7 +1056,7 @@ class CcplaSavedData:
         else:
             ion_type = particle_index-1
             if (name_string is None): name_string = self.neutrals.names[particle_index-1]
-            title_string = 'IEDF ' + name_string + r'$^{+}$ (time = ' + str(time) + ' ns)'            
+            title_string = 'IEDF ' + name_string + r'$^{+}$ (time = ' + str(time_real) + ' ns)'            
             x = self.iedf[ion_type].data_array[row]
         edf = x[~numpy.isnan(x)]
 

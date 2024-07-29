@@ -93,7 +93,7 @@ to print physical quantities managing the unit prefixes, and to plot data by mea
   tools to manage the output of numerical data with automatic managment of unit prefixies;
 
 *gnuplot_manager (package)*
-  a package to facilitate the use of gnuplot inside python [#gnuplot_manager]_.
+  a package to facilitate the use of gnuplot inside Python [#gnuplot_manager]_.
 
 .. [#gnuplot_manager] *gnuplot_manager* is also available as a standalone package (without the rest of *pysica*) on
   `GitHub <https://github.com/pietromandracci/gnuplot_manager>`_  and
@@ -113,7 +113,7 @@ Installing and importing *pysica*
 =================================
 
 
-Dependancies
+Dependencies
 ------------
 
 This package depends heavily on `numpy <https://numpy.org/>`_ and `matplotlib <https://matplotlib.org/>`_,
@@ -122,19 +122,8 @@ Some packages make use of `tkinter <https://docs.python.org/3/library/tkinter.ht
 and of the `gnuplot <http://www.gnuplot.info/>`_ progam, but they should work also without it,
 although without some features. 
 
-
-How to install
---------------
-
-*pysica* is distribuited as a pypi wheel so, if you have *pip* installed on your system, you can simply type at the console::
-
-$ pip install pysica
-
-In some linux distributions (e.g. Debian-related ones) you will have to install the package inside a python virtual environment,
-since the operative system doesn't allow *pip* to install software in the main file hierarchy.  You can find instructions on how to create
-a virtual environment `here <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_.
-
-.. note:: The package has been developed and tested for use in linux. Some subpackages could probably be used under other systems also,
+.. note:: The package has been developed and tested to be used in a Linux-based operative system.
+          Some subpackages could probably be used under other systems also,
           but *they have not been tested on them* and there is no guarantee that they would work.
 
 .. note:: The modules compiled from Fortran are linux libraries ('*.so*' files): if you want to use them in another operating system you need to
@@ -143,10 +132,41 @@ a virtual environment `here <https://packaging.python.org/en/latest/guides/insta
           used in the scripts to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ Fortran compiler.
 
 
+How to install in the global Python environement
+------------------------------------------------
+
+*pysica* is distribuited as a *Python wheel* so, if you have the program *pip* installed on your system, you can simply type at the console::
+
+$ pip install pysica
+
+in this way the Python interpreter will be able to use the *pysica* package regardless of the location from where it is invoked.
+
+.. note::  In some Linux distributions (e.g. Debian-related ones) you will have to install the package inside a Python virtual environment,
+           since the operative system doesn't allow *pip* to install software in the main file hierarchy.
+           You can find instructions on how to create a virtual environment
+           `in this page <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_
+           of the Python documentation.
+
+
+How to install in a local directory
+-----------------------------------
+
+You can also install *pysica* in any directory of your system by dowloading the most recent zip archive from the *pysica* 
+`GitHub page <https://github.com/pietromandracci/pysica/releases>`_ and unzipping it in a directory of your choice.
+
+A new directory will be created, named *pysica-x.y.z*, where *x.y.z* identifies the version number.
+In order to use *pysica* you will have to open a terminal, navigate to this directory, and call the Python interpreter from there.
+
+          
+
 How to import
 -------------
 
-Once installed, you can import *pysica* using the *import* directive as usual:
+Once you have installed *pysica*, you can run the Python interpreter from the console::
+
+$ python3
+
+and then import *pysica* using the *import* directive as usual:
 
 >>> import pysica
 

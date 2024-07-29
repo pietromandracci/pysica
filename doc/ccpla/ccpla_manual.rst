@@ -1,7 +1,7 @@
 
-#############################################
-CCPLA: Capacitively Coupled PLAsma simulation
-#############################################
+###############################################
+*CCPLA*: Capacitively Coupled PLAsma simulation
+###############################################
 
 .. contents::
 
@@ -26,12 +26,21 @@ and makes use of the the `gnuplot <http://www.gnuplot.info/>`_ progam to plot da
 
 The script should work without *tkinter* and *gnuplot* installed, but without using the GUI (i.e. without the *-g* option).
 
+.. note:: The script has been developed and tested to be used in a Linux environment. It may work in other systems also,
+          but *it has not been tested on them* and there is no guarantee that it would work.
 
-How to install
---------------
+.. note:: The module compiled from Fortran is a linux library ('*.so*' file): if you want to use *ccpla* in another operating system,
+          you need to recompile it using the *f2py* program and a Fortran compiler.
+          The directory *pysica/plasma/ccpla/discharge/fortran* of the *pysica* package contains the Fortran source files,
+          the compiled module and the script used for the compilation (named 'f2py-fmodule'), but the options
+          used in the script to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ fortran compiler.
 
-The *ccpla* script is part of the *pysica* package, which is distribuited as a pypi wheel so,
-if you have *pip* installed on your system, you can simply type at the console::
+
+Installing in the global python structure
+-----------------------------------------
+
+The *ccpla* script is part of the *pysica* package, which is distribuited as a *Python wheel*. 
+If you have the *pip* software installed on your system, you can simply type at the console::
              
 $ pip install pysica
 
@@ -41,14 +50,15 @@ in the main file hierarchy.
 You can find instructions on how to create
 a virtual environment `here <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_.
 
-.. note:: The script has been developed and tested for use in a linux environment. It is possible that it may work in other systems also,
-          but *it has not been tested on them* and there is no guarantee that it would work.
 
-.. note:: The module compiled from Fortran is a linux library ('*.so*' file): if you want to use *ccpla* in another operating system,
-          you need to recompile it using the *f2py* program and a Fortran compiler.
-          The directory *pysica/plasma/ccpla/discharge/fortran* of the *pysica* package contains the Fortran source files,
-          the compiled module and the script used for the compilation (named 'f2py-fmodule'), but the options
-          used in the script to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ fortran compiler.
+Installing in a local directory
+-------------------------------
+
+Another way to install *pysica* is to download the most recent zip archive from the 
+`Github pysica directory <https://github.com/pietromandracci/pysica/releases>`_ and unzip it in a directory of your choice.
+
+A new directory will be created, named *pysica-x.y.z*, where *x.y.z* identifies the version number.
+
 
 Running
 =======
@@ -57,7 +67,7 @@ Running
 Data files
 ----------
 
-The *ccpla* script requires to read some data (configuration data and cross-section data) from external files
+The *ccpla* script needs to read some data (configuration data and cross-section data) from external files
 in order to perform the simulation, and will give an error message if unable to find them.
 
 Two plain ASCII files are needed for configuration, and must be present in the directory from which the script is run
@@ -84,7 +94,21 @@ Of course, you can modify them at your will, as explained in the comments inside
 How to run the script
 ---------------------
 
-Once installed, you can run the *ccpla* script from the console using the following command::
+Once you have installed the *pysica* package, you can run the *ccpla* script invoking the Python interpreter.
+
+- If you have installed *pysica* using the *pip install pysica* command in the global environment,
+  you can run the *ccpla* script from any directory of your filesystem.
+  
+- If you have installed *pysica* using the *pip install pysica* command in a Python virtual environment,
+  you can run the *ccpla* script from any directory *inside* the virtual environment.
+  
+- If you have installed *pysica* unzipping the package archive in a local directory,
+  you will be able to run *ccpla* from the *pysica-x.y.z* directory created by the unzippig process, as described in the
+  `Installing in a local directory`_ section.  
+  In order to run *ccpla* from another directory, you have to create inside it a link to the directory named *ccpla*,
+  that is located inside the *ccpla-x.y.z*.
+
+Once you are in the proper directory, you can run the *ccpla* script from the console using the following command::
 
 $ python3 -m pysica.plasma.ccpla.ccpla [options]
 
@@ -95,6 +119,7 @@ $ python3 -m pysica.plasma.ccpla.ccpla -h
 The *-g* option runs the GUI instead of the text-based script::
 
 $ python3 -m pysica.plasma.ccpla.ccpla -g
+
 
 
 Command line options 

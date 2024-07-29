@@ -534,7 +534,7 @@ class CcplaWindow(tk.Frame):
             if self.debug: print('[GUI]   -> Initializing save directory')
             initialize_filenames(self.neutrals, self.parameters)                        
             self.answer = tkinter.messagebox.askyesno( title='Check',
-                                                       message=('Use this name for the save directory? \"'
+                                                       message=('Is name of the save directory ok ? \n\n\"'
                                                                 + str(self.parameters.basename)
                                                                 + '\"') )
             if not self.answer: self.change_basename()
