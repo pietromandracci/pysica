@@ -36,19 +36,21 @@ The script should work without *tkinter* and *gnuplot* installed, but without us
           used in the script to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ fortran compiler.
 
 
-Installing in the global python structure
------------------------------------------
+Installing in the global Python environment
+-------------------------------------------
 
 The *ccpla* script is part of the *pysica* package, which is distribuited as a *Python wheel*. 
 If you have the *pip* software installed on your system, you can simply type at the console::
              
 $ pip install pysica
 
-In some linux distributions (including Debian-related ones, such as Ubuntu) you will have to install the package
-inside a python virtual environment, since the operative system doesn't allow *pip* to install software
-in the main file hierarchy.
-You can find instructions on how to create
-a virtual environment `here <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_.
+.. note::  In some Linux distributions (e.g. Debian-related ones) the operative system doesn't allow *pip* to install software
+           in the main file hierarchy and  you will get an error message saying "externally managed environment" or something similar.
+           In this situation, you can install the package in a local directory, as described in the
+           `Installing in a local directory`_ section, or inside a *Python virtual environment*.
+           You can find instructions on how to create a virtual environment
+           `in this page <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_
+           of the Python documentation. 
 
 
 Installing in a local directory
@@ -58,7 +60,6 @@ Another way to install *pysica* is to download the most recent zip archive from 
 `Github pysica directory <https://github.com/pietromandracci/pysica/releases>`_ and unzip it in a directory of your choice.
 
 A new directory will be created, named *pysica-x.y.z*, where *x.y.z* identifies the version number.
-
 
 Running
 =======

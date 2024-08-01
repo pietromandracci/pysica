@@ -11,6 +11,80 @@ Introduction
 This package contains a collection of tools developed for some specific simulation and calculus tasks
 in some fields of physics, including nonthermal plasma discharges, as well as surface modification and analysis.
 
+Installing and importing *pysica*
+=================================
+
+
+Dependencies
+------------
+
+This package depends heavily on `numpy <https://numpy.org/>`_ and `matplotlib <https://matplotlib.org/>`_,
+while some specific modules and packages depend on `scipy <https://scipy.org/>`_ also.
+Some packages make use of `tkinter <https://docs.python.org/3/library/tkinter.html>`_
+and of the `gnuplot <http://www.gnuplot.info/>`_ progam, but they should work also without it,
+although without some features. 
+
+.. note:: The package has been developed and tested to be used in a Linux-based operative system.
+          Some subpackages could probably be used under other systems also,
+          but *they have not been tested on them* and there is no guarantee that they would work.
+
+.. note:: The modules compiled from Fortran are linux libraries ('*.so*' files): if you want to use them in another operating system you need to
+          recompile them using the *f2py* program and a Fortran compiler. The directories named *fortran* contain the Fortran source files,
+          the compiled modules and the scripts used for the compilation (the name of which always start with 'f2py'), but the options
+          used in the scripts to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ Fortran compiler.
+
+
+How to install in the global Python environment
+-----------------------------------------------
+
+*pysica* is distribuited as a *Python wheel* so, if you have the program *pip* installed on your system, you can simply type at the console::
+
+$ pip install pysica
+
+in this way the Python interpreter will be able to use the *pysica* package regardless of the location from where it is invoked.
+
+.. note::  In some Linux distributions (e.g. Debian-related ones) the operative system doesn't allow *pip* to install software
+           in the main file hierarchy and  you will get an error message saying "externally managed environment" or something similar.
+           In this situation, you can install the package in a local directory, as described in the
+           `How to install in a local directory`_ section, or inside a *Python virtual environment*.
+           You can find instructions on how to create a virtual environment
+           `in this page <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_
+           of the Python documentation.           
+
+
+How to install in a local directory
+-----------------------------------
+
+You can also install *pysica* in any directory of your system by dowloading the most recent zip archive from the *pysica* 
+`GitHub page <https://github.com/pietromandracci/pysica/releases>`_ and unzipping it in a directory of your choice.
+
+A new directory will be created, named *pysica-x.y.z*, where *x.y.z* identifies the version number.
+In order to use *pysica* you will have to open a terminal, navigate to this directory, and call the Python interpreter from there.
+
+If you want to use the package from another directory, you can create in that directory a symbolic link to the directory
+named *pysica*, which is inside the *pysica-x.y.z* directory.
+          
+
+How to import
+-------------
+
+Once you have installed *pysica*, you can run the Python interpreter from the console::
+
+$ python3
+
+and then import *pysica* using the *import* directive as usual:
+
+>>> import pysica
+
+Or you can import a single mudule or package that you need, such as:
+
+>>> from pysica.managers import gnuplot_manager
+
+or
+
+>>> from pysica.analysis import spectra
+
+
 
 Package structure
 =================
@@ -109,74 +183,6 @@ A package containing tools for the simulation of plasma discharges.
   a package containing scripts, modules, and subpackages used to simulate low pressure capacitively coupled discharges.
     
 
-Installing and importing *pysica*
-=================================
-
-
-Dependencies
-------------
-
-This package depends heavily on `numpy <https://numpy.org/>`_ and `matplotlib <https://matplotlib.org/>`_,
-while some specific modules and packages depend on `scipy <https://scipy.org/>`_ also.
-Some packages make use of `tkinter <https://docs.python.org/3/library/tkinter.html>`_
-and of the `gnuplot <http://www.gnuplot.info/>`_ progam, but they should work also without it,
-although without some features. 
-
-.. note:: The package has been developed and tested to be used in a Linux-based operative system.
-          Some subpackages could probably be used under other systems also,
-          but *they have not been tested on them* and there is no guarantee that they would work.
-
-.. note:: The modules compiled from Fortran are linux libraries ('*.so*' files): if you want to use them in another operating system you need to
-          recompile them using the *f2py* program and a Fortran compiler. The directories named *fortran* contain the Fortran source files,
-          the compiled modules and the scripts used for the compilation (the name of which always start with 'f2py'), but the options
-          used in the scripts to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ Fortran compiler.
-
-
-How to install in the global Python environement
-------------------------------------------------
-
-*pysica* is distribuited as a *Python wheel* so, if you have the program *pip* installed on your system, you can simply type at the console::
-
-$ pip install pysica
-
-in this way the Python interpreter will be able to use the *pysica* package regardless of the location from where it is invoked.
-
-.. note::  In some Linux distributions (e.g. Debian-related ones) you will have to install the package inside a Python virtual environment,
-           since the operative system doesn't allow *pip* to install software in the main file hierarchy.
-           You can find instructions on how to create a virtual environment
-           `in this page <https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments>`_
-           of the Python documentation.
-
-
-How to install in a local directory
------------------------------------
-
-You can also install *pysica* in any directory of your system by dowloading the most recent zip archive from the *pysica* 
-`GitHub page <https://github.com/pietromandracci/pysica/releases>`_ and unzipping it in a directory of your choice.
-
-A new directory will be created, named *pysica-x.y.z*, where *x.y.z* identifies the version number.
-In order to use *pysica* you will have to open a terminal, navigate to this directory, and call the Python interpreter from there.
-
-          
-
-How to import
--------------
-
-Once you have installed *pysica*, you can run the Python interpreter from the console::
-
-$ python3
-
-and then import *pysica* using the *import* directive as usual:
-
->>> import pysica
-
-Or you can import a single mudule or package that you need, such as:
-
->>> from pysica.managers import gnuplot_manager
-
-or
-
->>> from pysica.analysis import spectra
 
 
 Documentation
