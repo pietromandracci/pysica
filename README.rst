@@ -32,7 +32,7 @@ as described in the section `How to install in a local directory`_.
 .. note:: The package has been developed and tested in a Linux-based operative system.
           Some subpackages could probably be used under other systems also,
           but they have not been tested on them and there is no guarantee that they would work.
-          The modules compiled from Fortran are linux libraries ('*.so*' files): if you want to use them in another operating system you need to
+          The modules have been compiled from Fortran as Linux executables: if you want to use them in another operating system you need to
           recompile them using the *f2py* program and a Fortran compiler. The directories named *fortran* contain the Fortran source files,
           the compiled modules and the scripts used for the compilation (the name of which always start with 'f2py'), but the options
           used in the scripts to call *f2py* are specific for linux and the `gnu95 <https://gcc.gnu.org/fortran/>`_ Fortran compiler.          
