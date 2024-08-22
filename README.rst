@@ -225,9 +225,9 @@ Contains some modules to manage distribution functions and data histograms.
   tools for the statistical analysis of bivariate samples;
 
 *spectra (module)*
-  tools for the analysis of different types of spectra, whith a special focus on:
-    - optical data (e.g. transmission spectra) of thin films;
-    - surface morphology data (e.g. surface roughness analysis).
+  tools for the analysis of different types of spectra, whith a special focus on
+   - optical data (e.g. transmission spectra) of thin films;
+   - surface morphology data (e.g. surface roughness analysis).
 
 
   
