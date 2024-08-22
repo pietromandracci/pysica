@@ -20,7 +20,8 @@
 
     * modules
 
-            - fmodule	-> functions used to simulate the motion of charged particles in a cold plasma discharge
+            - fmodule		-> functions used to simulate the motion of charged particles in a cold plasma discharge (single core)
+            - fmodule_parallel	-> functions used to simulate the motion of charged particles in a cold plasma discharge (milti core)
 
     Documentation is also available in the docstrings.
 """

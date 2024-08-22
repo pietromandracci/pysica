@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<meta name="generator" content="Docutils 0.20.1: https://docutils.sourceforge.io/" />
 <title>CCPLA: Capacitively Coupled PLAsma simulation</title>
 <style type="text/css">
 
@@ -368,9 +368,9 @@ ul.auto-toc {
 <ul class="simple">
 <li><a class="reference internal" href="#introduction" id="toc-entry-1">Introduction</a></li>
 <li><a class="reference internal" href="#installing" id="toc-entry-2">Installing</a><ul>
-<li><a class="reference internal" href="#dependencies" id="toc-entry-3">Dependencies</a></li>
-<li><a class="reference internal" href="#installing-in-the-global-python-environment" id="toc-entry-4">Installing in the global Python environment</a></li>
-<li><a class="reference internal" href="#installing-in-a-local-directory" id="toc-entry-5">Installing in a local directory</a></li>
+<li><a class="reference internal" href="#distribution-method" id="toc-entry-3">Distribution method</a></li>
+<li><a class="reference internal" href="#dependencies" id="toc-entry-4">Dependencies</a></li>
+<li><a class="reference internal" href="#fortran-compiled-modules" id="toc-entry-5">Fortran compiled modules</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#running" id="toc-entry-6">Running</a><ul>
@@ -401,49 +401,38 @@ technique in the <em>1d3v</em> mode (one dimension for the electric field and 3 
 </div>
 <div class="section" id="installing">
 <h1><a class="toc-backref" href="#toc-entry-2">Installing</a></h1>
+<div class="section" id="distribution-method">
+<h2><a class="toc-backref" href="#toc-entry-3">Distribution method</a></h2>
+<p>The <em>ccpla</em> script is part of the <em>pysica</em> package, which is distribuited as a <em>Python wheel</em>, and can be installed using the program <em>pip</em>.
+However, in some Linux distributions (e.g. Debian-related ones, including Ubuntu) the operative system doesn't allow <em>pip</em> to install software
+in the main file hierarchy and  you will get an error message saying &quot;externally managed environment&quot; or something similar.
+In this situation, you can install the package inside a <em>Python virtual environment</em> or in a local directory,
+as described in the <em>pysica</em> documentation page, that you can find following the link given below.</p>
+<p>Detailed instructions on how to install the <em>pysica</em> package can be found in the
+<a class="reference external" href="https://github.com/pietromandracci/pysica/tree/master?tab=readme-ov-file#installing-and-importing-pysica">this page</a>
+of the <em>pysica</em> documentation on GitHub.</p>
+</div>
 <div class="section" id="dependencies">
-<h2><a class="toc-backref" href="#toc-entry-3">Dependencies</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-4">Dependencies</a></h2>
 <p>The ccpla script depends heavily on <a class="reference external" href="https://numpy.org/">numpy</a>.
 The GUI depends on <a class="reference external" href="https://docs.python.org/3/library/tkinter.html">tkinter</a> also,
 and makes use of the the <a class="reference external" href="http://www.gnuplot.info/">gnuplot</a> progam to plot data 'on the fly' during the simulation.</p>
-<p>The script should work without <em>tkinter</em> and <em>gnuplot</em> installed, but without using the GUI (i.e. without the <em>-g</em> option).</p>
+<p>The script should work even if <em>tkinter</em> and <em>gnuplot</em> are not installed, but without using the GUI (i.e. without the <em>-g</em> option).</p>
+</div>
+<div class="section" id="fortran-compiled-modules">
+<h2><a class="toc-backref" href="#toc-entry-5">Fortran compiled modules</a></h2>
+<p>The directory <em>pysica/plasma/ccpla/discharge/fortran</em> of the <em>pysica</em> package contains the Fortran source files,
+the compiled modules for single core an multicore operation, and the scripts used for their compilation,
+which are named <em>f2py-fmodule</em> and <em>f2py-fmodule-parallel</em> respectively.
+Note that the options used in those scripts to call <em>f2py</em> are specific for Linux and the
+<a class="reference external" href="https://gcc.gnu.org/fortran/">GNU Fortran compiler</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The script has been developed and tested to be used in a Linux environment. It may work in other systems also,
-but <em>it has not been tested on them</em> and there is no guarantee that it would work.</p>
+but <em>it has not been tested on them</em> and there is no guarantee that it would work.
+The module compiled from Fortran is a linux library ('<em>.so</em>' file): if you want to use <em>ccpla</em> in another operating system,
+you need to recompile it using the <em>f2py</em> program and a Fortran compiler.</p>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The module compiled from Fortran is a linux library ('<em>.so</em>' file): if you want to use <em>ccpla</em> in another operating system,
-you need to recompile it using the <em>f2py</em> program and a Fortran compiler.
-The directory <em>pysica/plasma/ccpla/discharge/fortran</em> of the <em>pysica</em> package contains the Fortran source files,
-the compiled module and the script used for the compilation (named 'f2py-fmodule'), but the options
-used in the script to call <em>f2py</em> are specific for linux and the <a class="reference external" href="https://gcc.gnu.org/fortran/">gnu95</a> fortran compiler.</p>
-</div>
-</div>
-<div class="section" id="installing-in-the-global-python-environment">
-<h2><a class="toc-backref" href="#toc-entry-4">Installing in the global Python environment</a></h2>
-<p>The <em>ccpla</em> script is part of the <em>pysica</em> package, which is distribuited as a <em>Python wheel</em>.
-If you have the <em>pip</em> software installed on your system, you can simply type at the console:</p>
-<pre class="literal-block">
-$ pip install pysica
-</pre>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">In some Linux distributions (e.g. Debian-related ones) the operative system doesn't allow <em>pip</em> to install software
-in the main file hierarchy and  you will get an error message saying &quot;externally managed environment&quot; or something similar.
-In this situation, you can install the package in a local directory, as described in the
-<a class="reference internal" href="#installing-in-a-local-directory">Installing in a local directory</a> section, or inside a <em>Python virtual environment</em>.
-You can find instructions on how to create a virtual environment
-<a class="reference external" href="https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments">in this page</a>
-of the Python documentation.</p>
-</div>
-</div>
-<div class="section" id="installing-in-a-local-directory">
-<h2><a class="toc-backref" href="#toc-entry-5">Installing in a local directory</a></h2>
-<p>Another way to install <em>pysica</em> is to download the most recent zip archive from the
-<a class="reference external" href="https://github.com/pietromandracci/pysica/releases">Github pysica directory</a> and unzip it in a directory of your choice.</p>
-<p>A new directory will be created, named <em>pysica-x.y.z</em>, where <em>x.y.z</em> identifies the version number.</p>
 </div>
 </div>
 <div class="section" id="running">
@@ -479,13 +468,17 @@ and are given as example only.  There is no guarantee that they are suited for a
 <ul class="simple">
 <li>If you have installed <em>pysica</em> using the <em>pip install pysica</em> command in the global environment,
 you can run the <em>ccpla</em> script from any directory of your filesystem.</li>
-<li>If you have installed <em>pysica</em> using the <em>pip install pysica</em> command in a Python virtual environment,
-you can run the <em>ccpla</em> script from any directory <em>inside</em> the virtual environment.</li>
+<li>If you have installed <em>pysica</em> using the <em>pip install pysica</em> command in a <em>Python virtual environment</em>,
+you can run the <em>ccpla</em> script from any directory of your filesystem, <em>after having activated the virtual environment</em>
+as described in
+<a class="reference external" href="https://github.com/pietromandracci/pysica/tree/master?tab=readme-ov-file#How-to-install-in-a-virtual-Python-environment">this section</a>
+of the <em>pysica</em> documentation.</li>
 <li>If you have installed <em>pysica</em> unzipping the package archive in a local directory,
-you will be able to run <em>ccpla</em> from the <em>pysica-x.y.z</em> directory created by the unzippig process, as described in the
-<a class="reference internal" href="#installing-in-a-local-directory">Installing in a local directory</a> section.
-In order to run <em>ccpla</em> from another directory, you have to create inside it a link to the directory named <em>ccpla</em>,
-that is located inside the <em>ccpla-x.y.z</em>.</li>
+you will be able to run <em>ccpla</em> from the <em>pysica-x.y.z</em> directory created by the unzippig process, as described in
+<a class="reference external" href="https://github.com/pietromandracci/pysica/tree/master?tab=readme-ov-file#How-to-install-in-a-local-directory">this other section</a>
+of the <em>pysica</em> documentation.
+In order to run <em>ccpla</em> from another directory, you have to create inside it a link to the directory named <em>pysica</em>,
+that is located inside the <em>pysica-x.y.z</em> directory.</li>
 </ul>
 <p>Once you are in the proper directory, you can run the <em>ccpla</em> script from the console using the following command:</p>
 <pre class="literal-block">
@@ -546,8 +539,10 @@ this option rises an error when calling the GUI (-g option)</dd>
 </div>
 <div class="section" id="graphical-user-interface">
 <h1><a class="toc-backref" href="#toc-entry-10">Graphical User Interface</a></h1>
-<p>The GUI is run by using the <em>-g</em> options when callig the script</p>
-<p>$ python3 -m pysica.plasma.ccpla.ccpla -g</p>
+<p>The GUI is run by using the <em>-g</em> options when callig the script:</p>
+<pre class="literal-block">
+$ python3 -m pysica.plasma.ccpla.ccpla -g
+</pre>
 <p>When the GUI is started, it activates a main graphic window and a numerical kernel. The latter is an independent process,
 which runs parallell to the GUI and is responsible for calling the Fortran-compiled module when a simulation cycle is requested.
 The simulation data are transferred between the GUI and the kernel by means of pipes.</p>
@@ -568,7 +563,7 @@ which can be closed by pressing the &quot;Dismiss&quot; button.</p>
 <dt><em>Reload configuration files</em></dt>
 <dd>reload the content of the <em>ccpla.conf</em>. Note that some changes in the file may take effect only after the program is restarted,
 as explained in the comments inside the file itself.  The file <em>ccpla.neutrals</em> is <em>not</em> reloaded by this command,
-since any change to it becomes effective after the program is restarted only</dd>
+since any change to it becomes effective only after the program is restarted</dd>
 <dt><em>Edit configuration files</em></dt>
 <dd>open the <em>ccpla.conf</em> file in an external editor. The file is reloaded after closing the editor.  The name of the editor to use is
 registered in the variable <em>EDITOR_NAME</em> in the file <em>pysica/plasma/ccpla/ccpla_defaults.py</em>, presently is <em>mousepad</em>.
