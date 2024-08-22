@@ -176,10 +176,10 @@ Documentation
 =============
 
 Documentation about the modules and packages is available in the docstrings, which can be accessed inside the Python interpreter
-using the *help* function, after you have imported them. As an example, to read the docstrings of the subpackage named *analysis* you can type::
+using the *help* function, after you have imported them. As an example, to read the docstring of the subpackage named *analysis* you can type::
 
   >>> import pysica.analysis
-  >>> help(pyisca.analysis)
+  >>> help(pysica.analysis)
 
 or::
 
