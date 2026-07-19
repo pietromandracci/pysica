@@ -3,8 +3,8 @@
 echo Press RETURN to begin ...
 read STRING
 
-f2py3 -c --fcompiler=gnu95 --f90flags="-fopenmp" -lgomp -m fpic_parallel \
-precision.f90 constants.f90 io.f90 pic_parallel.f90
+FFLAGS=-fopenmp f2py3 -c -m fpic_parallel \
+precision.f90 constants.f90 io.f90 pic_parallel.f90 -lgomp
 
 echo
 echo Press RETURN to exit ...

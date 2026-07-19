@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -267,8 +267,6 @@ def print_uncertainty(value, uncertainty, digits=2, debug=False):
         value:  numerical value to be converted
         digits: maximum number of significant digits allowed for the uncertainty
                 0 or a negative value means keep all the digits
-        align:  is set to True, add a leading space to integer number
-                to mantain alignment to upper rows in columnar output
 
         Returns
         -------

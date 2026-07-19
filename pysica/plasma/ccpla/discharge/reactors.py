@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 import math
 import numpy
 from pysica.plasma.ccpla.ccpla_defaults import *
+from pysica.managers import unit_manager
 
 # +-------------+
 # | CCP Reactor |
@@ -151,8 +152,9 @@ class CcpProperties:
         def save_data_to_files(self, time):
                 """Saves actual data values of electric current and potential spatial distribution to the savefiles """
 
+                self.time_export = unit_manager.fix_digits(1E9*time, TIME_EXPORT_RES)
                 data_file_I = open(self.filename_I,'a')                        
-                data_file_I.write( str(1E9*time) + self.sep + str(self.average_current[0]) )
+                data_file_I.write( str(self.time_export) + self.sep + str(self.average_current[0]) )
                 data_file_I.write(EOL)
                 data_file_I.close()
 

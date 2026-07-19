@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2024 Pietro Mandracci
+! COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -71,6 +71,7 @@ contains
                    &n_v_values_ions, &                                  ! arrays dimensions (hide)
                    &n_types, nmax_excpro, nmax_disspro, &               ! arrays dimensions (hide)
                    &n_cells, &                                          ! arrays dimensions (hide)
+                   &cpu_threads, &                                      ! number of theads in multicore mode (zero = all cores)
                    &debug_level)                                        ! used for debug purposes (in)
 
       !  Simulates evolution of the velocities of charged particles 
@@ -84,7 +85,8 @@ contains
       !f2py intent(in)        :: cm_ratio, rescale-factor, v_values, coll_freq, p_limits, n_limits, limit1_exc, limit1_diss
       !f2py intent(in)        :: v_values_ions, coll_freq_ions, coll_f_tot_ions, p_limists_ions
       !f2py intent(in)        :: k_recomb, isactive_recomb, min_scattered, e_loss, e_loss_ions, en_ion, en_exc, en_diss, n_excpro, n_disspro
-      !f2py intent(in)        :: mean_speed, se_coefficient, distance, length, vmax, omega, phi, lateral_loss, dt, duration, debug_level
+      !f2py intent(in)        :: mean_speed, se_coefficient, distance, length, vmax, omega, phi, lateral_loss, dt, duration
+      !f2py intent(in)        :: cpu_threads, debug_level
       !f2py intent(inout)     :: x, y, z, vx, vy, vz, v, weight
       !f2py intent(inout)     :: isactive, restart, coll_null, coll_ela, coll_ion, coll_exc, coll_dis, coll_rec
       !f2py intent(inout)     :: rho, psi
@@ -178,6 +180,7 @@ contains
       integer,                                          intent(in)    :: nmax_excpro     ! Maximum number of excitation types      
       integer,                                          intent(in)    :: nmax_disspro    ! Maximum number of dissociation types
       integer,                                          intent(in)    :: n_cells         ! Number of cells used in the PIC scheme
+      integer,                                          intent(in)    :: cpu_threads     ! Number of threads in multicore mode
       integer,                                          intent(in)    :: debug_level     ! Amount of output given for debugging purposes
 
       !  Local variables
@@ -221,16 +224,20 @@ contains
       integer(kind=8)                              :: clock_rate, clock_start, clock_end
       integer(kind=8), dimension(0:6)              :: clock, clock_sum, clock_min, clock_max
       
-      tcpu       = 0
-      tcpu_sum   = 0
-      tcpu_min   = 1
-      tcpu_max   = 0
-      clock      = 0
-      clock_sum  = 0
-      clock_min  = 1000000000
-      clock_max  = 0      
+      tcpu        = 0
+      tcpu_sum    = 0
+      tcpu_min    = 1
+      tcpu_max    = 0
+      clock       = 0
+      clock_sum   = 0
+      clock_min   = 1000000000
+      clock_max   = 0
+      clock_start=  0
 
-      ! Initialize internal clock, since cloc_rate is kind=8, rate should be 1 us
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !print *, '########### dt=', dt
+      
+      ! Initialize internal clock, since clock_rate is kind=8, rate should be 1 us
       call system_clock(count_rate=clock_rate)    
       ! if (debug_level >0) print *, 'CLOCK RATE = ', clock_rate
 
@@ -327,7 +334,7 @@ contains
          ! Calculate the actual velocity increment of e- and ions, based on the potential at the biased electrode
          ! and on the charge distribution         
          call calculate_velocity_increments(dv_z, rho, psi, z, isactive, weight, cm_ratio, &
-                                            &dt, Vactual, distance, area, n_cells, n_types, n_particles)
+                                            &dt, Vactual, distance, area, n_cells, n_types, n_particles, cpu_threads)
          
          if (debug_level > 0) then
             call cpu_time(tcpu_end)

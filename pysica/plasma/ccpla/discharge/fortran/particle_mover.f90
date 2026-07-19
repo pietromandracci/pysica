@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2024 Pietro Mandracci
+! COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -91,8 +91,8 @@ contains
 
          ! Calculate the modulus of velocity (v) and store its squared value (to be used later)
          v2(particle_type, particle) = vx(particle_type,particle) * vx(particle_type,particle) + &
-                             &vy(particle_type,particle) * vy(particle_type,particle) + &
-                             &vz(particle_type,particle) * vz(particle_type,particle)
+                                      &vy(particle_type,particle) * vy(particle_type,particle) + &
+                                      &vz(particle_type,particle) * vz(particle_type,particle)
          v(particle_type, particle)  = sqrt(v2(particle_type, particle))
 
          ! Calculates new position x(t), y(t), z(t)

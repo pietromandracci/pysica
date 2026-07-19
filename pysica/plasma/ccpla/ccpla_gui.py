@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 # Modules from the standard Python library
 import math
+import time
 from subprocess import run, Popen
 from multiprocessing import Process, Pipe
 import tkinter as tk
@@ -33,8 +34,10 @@ from pysica.constants import *
 from pysica.plasma.ccpla.ccpla_defaults import *
 
 # Import required modules, classes, and functions
+from pysica.managers.time_manager import print_timestamp2time
 from pysica.plasma.ccpla.ccpla_init import *
 from pysica.plasma.ccpla.ccpla_print import *
+from pysica.plasma.ccpla.ccpla_info import *
 from pysica.plasma.ccpla.ccpla_plot import *
 from pysica.plasma.ccpla.ccpla_kernel import kernel
                 
@@ -63,6 +66,10 @@ class CcplaWindow(tk.Frame):
         self.sim_status            = False #True=running; False=stopped; None=paused
         self.error                 = False
         self.savefiles_initialized = False
+
+        self.clock_time_start      = time.time_ns()
+        self.thread_time_start     = time.thread_time_ns()
+        self.perf_time_start       = time.perf_counter_ns()
         
         # Tk control variables
         self.dt_exp             = tk.IntVar()
@@ -368,8 +375,11 @@ class CcplaWindow(tk.Frame):
     def iteration(self):
         """ Main simulation iteration """
 
-        # If self.sim_status if False, the simulation must end: exit from simulation loop
+        # If self.sim_status if False, the simulation must end: save final info and exit from simulation loop
         if (self.sim_status is False):
+            if (self.parameters.save_delay > 0):
+                save_info_to_file( self.parameters.filename_info, self.options, (self.clock_time, self.thread_time, self.perf_time),
+                                   gui=True )
             return        
         # If self.sim_status if True or None, the simulation is running or paused
         else:            
@@ -421,6 +431,10 @@ class CcplaWindow(tk.Frame):
                 self.time_before          = self.charges.time
                 self.n_active_el_before   = self.charges.n_active(0)
                 self.electric_bias_before = self.ccp.V
+                # Calculate simulation run duration
+                self.clock_time  = time.time_ns()         - self.clock_time_start
+                self.thread_time = time.thread_time_ns()  - self.thread_time_start
+                self.perf_time   = time.perf_counter_ns() - self.perf_time_start
                 if (self.charges.n_active(0) <= 0):
                     self.show_end_simulation(text ='\n\nSimulation interrupted \n (no more electrons)\n\n',
                                              color='red')
@@ -486,6 +500,7 @@ class CcplaWindow(tk.Frame):
                                                            message=('Stop the simulation ?'),
                                                            icon='question')
                 if not self.answer: return
+                self.show_end_simulation(text='\nSimulation stopped by user\n\n', color='blue')
             self.stop_kernel()            
         else:
             self.answer = tkinter.messagebox.askyesno( title='WARNING',
@@ -494,9 +509,11 @@ class CcplaWindow(tk.Frame):
                                                        icon='warning')
             if not self.answer: return
             else:
+                self.show_end_simulation(text='\nSimulation killed by user\n\n', color='red')
                 self.quit_kernel()
                 self.close_pipes()
                 self.initialize_kernel()
+                
         #self.flush_pipes()
         self.sim_status = False        
         self.button_pause["state"]  = tk.DISABLED
@@ -857,8 +874,12 @@ class CcplaWindow(tk.Frame):
         self.end_simulation_window = tk.Toplevel(self) 
         self.end_simulation_window.title('Ccpla End')
         self.end_simulation_window.resizable(False,False)
+        self.string = text + '\n'
+        self.string += 'Clock time:       ' + print_timestamp2time(self.clock_time,  printzeros=True) + '\n'
+        self.string += 'Thread time:      ' + print_timestamp2time(self.thread_time, printzeros=True) + '\n'
+        self.string += 'Performance time: ' + print_timestamp2time(self.perf_time,   printzeros=True)
         self.end_simulation_window.message = tk.Message(self.end_simulation_window,
-                                                        text=text, font=FONT_MESSAGE_BIG,
+                                                        text=self.string, font=FONT_MESSAGE_BIG,
                                                         foreground=color,
                                                         width=1500,
                                                         justify=tk.CENTER, relief=tk.RIDGE)

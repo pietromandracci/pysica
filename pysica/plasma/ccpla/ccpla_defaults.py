@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,8 @@
 """ Default values of several global variables """
 
 from math import pi
+from multiprocessing import cpu_count
+from os import getpid
 
 # +-------------------------------+
 # | Configuration file parameters |
@@ -73,6 +75,7 @@ class ConfigurationOptions:
 
 # Default values of parameters that can be modified via command-line options
 cpu_multicore           = False  # If True, use parallel multicore module
+cpu_threads             = 0      # Number of cores to use in multicore mode (zero means all cores)
 verbosity               = 1      # How much should the program bore with text-based output
 plot_xsec               = False  # Plot cross sections at start
 debug_level_python      = 0      # For debugging purposes
@@ -93,9 +96,17 @@ text_window_font_size   = 12     # Size of font used in the output text window i
 # | Immutable parameters |
 # +----------------------+
 
+# PID of this process
+PID                       = getpid()
+
+# Maximum number of theads executable on the machine
+MAX_CPU_THREADS           = cpu_count()
+
 # Directories, filemames and separators
+SID                       = '_PID' + str(PID) + '_'       # String used to identify the process in log file names
+TIME_EXPORT_RES           = 6                             # Number of significant digits of the time values exported to savefiles
 EXEC_PATH                 = '/usr/bin/'
-EDITOR_NAME               = 'mousepad'
+EDITOR_NAME               = 'featherpad'
 #EDITOR_NAME               = 'gedit'
 BROWSER_NAME              = 'firefox'
 #DOC_URL                   = 'https://github.com/pietromandracci/pysica/tree/master/doc/ccpla/ccpla_manual.rst'
@@ -108,10 +119,11 @@ SEP                       = '\t'
 XSECT_DIRECTORY_NAME      = SCRIPTNAME + '.sigma'         # Directory from which cross section data is loaded
 SAVE_DIRECTORY_NAME       = SCRIPTNAME + '.out'           # Directory into which simulation data is saved
 FILENAME_DEFAULTS         = SCRIPTNAME + '.defaults'      # Name of the file to which default parameters are saved with -s option
-FILENAME_CONFIG           = SCRIPTNAME + '.conf'          # Configuration file 
+FILENAME_INFO             = SCRIPTNAME + '.info'          # Name of the file to which info about the process are saved (PID, exec time...)
+FILENAME_CONFIG           = SCRIPTNAME + '.conf'          # Name of the configuration file 
 FILENAME_NEUTRALS         = SCRIPTNAME + '.neutrals'      # Filename for neutrals properties
-FILENAME_OUTPUT_LOG       = SCRIPTNAME + '_output.log'    # File to which output will be saved
-FILENAME_ERROR_LOG        = SCRIPTNAME + '_errors.log'    # File to which python error messages will be saved
+FILENAME_OUTPUT_LOG       = SCRIPTNAME + SID+'output.log' # File to which output will be saved
+FILENAME_ERROR_LOG        = SCRIPTNAME + SID+'errors.log' # File to which python error messages will be saved
 NAME_STAT_ELE             = '_means_ele'                  # Name of output file: time evolution of electron parameters
 NAME_STAT_ION             = '_means_ion'                  # First part of name of output file: time evolution of ion parameters
 NAME_STAT_NEU             = '_means_neu'                  # Name of output file: time evolution of several parameters
@@ -125,6 +137,7 @@ NAME_ION_ELASTIC          = '_sigma4ions_Ar_elastic'
 NAME_ION_CHARGE_EX        = '_sigma4ions_Ar_charge-exchange'
 
 # Simulation parameters
+#DT_MIN                    = 1.0E-15                       # / s minimum timestep value allowed
 NMAXPARTICLES             = 100000                        # Maximum allowed number of computational particles
 MAX_RESCALE_FACTOR        = 1.0E6                         # Maximum allowed rescale factor
 DEFAULT_RESCALE_FACTOR    = 10.0                          # Default scaling factor for rescaling of particles weight
@@ -168,7 +181,7 @@ MAX_DT_OUTPUT_EXP         = -6                            # log10 of the maximum
 MIN_PLOT_DELAY            = 1                             # Min value of number of text output cycles between each update of plots
 MAX_PLOT_DELAY            = 100                           # Max value of number of text output cycles between each update of plots
 RES_PLOT_DELAY            = 10                            # Minimum amount of which the value is modified in the ruler
-DEF_PLOT_DELAY            = 1                             # Default value of number of text outputs between each update of plots
+DEF_PLOT_DELAY            = 10                            # Default value of number of text outputs between each update of plots
 
 # Plot parameters
 N_MAX_OUTPUT              = 1000                          # Maximum number of data values registered for historic plots
@@ -185,5 +198,9 @@ LABEL_XPOS                = 1                             # x position of the la
 LABEL_YPOS                = 1                             # y position of the label with time value
 DEL_DATA_FILES_DELAY      = 1                             # Time to wait (in seconds) before deleting data files
                                                           # when closing cross section plots
-# Debug parameters
+# Verbosity and debug parameters
 KERNEL_DEBUG_LEV          = 1                             # Minimum debug level to get kernel debug messages
+MOVER_DEBUG_LEVEL         = 2                             # Minimum debug level to get debug messages from particle mover
+PYTHON_MAX_DEBUG_LEVEL    = 3                             # Maximum debug level for Python code
+FORTRAN_MAX_DEBUG_LEVEL   = 3                             # Maximum debug level for Fortran code
+MAX_VERBOSITY             = 3                             # Maximum verbosity level

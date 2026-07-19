@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -42,12 +42,12 @@ def print_simulation_information(neutrals, ccp, parameters, options,
                                                           + ' ('
                                                           + unit_manager.print_unit(parameters.T_neutrals-ZERO_CELSIUS,'C',4)
                                                           + ')' + '\n')
-        string += 'Total number density of molecules:   '  + unit_manager.print_exp(parameters.neutrals_density, 2) + ' m**-3' + '\n'
-        string += 'Distance between electrodes:         '  + unit_manager.print_unit(parameters.distance,'m') + '\n'
-        string += 'Length of electrodes:                '  + unit_manager.print_unit(parameters.length,'m') + '\n'
-        string += 'Area of electrodes                   '  + unit_manager.print_exp(ccp.area, 2) + ' m**2' + '\n'
+        string += 'Total molecules number density:      '  + unit_manager.print_exp(parameters.neutrals_density, 2) + ' m**-3' + '\n'
+        string += 'Distance between the electrodes:     '  + unit_manager.print_unit(parameters.distance,'m') + '\n'
+        string += 'Length of the electrodes:            '  + unit_manager.print_unit(parameters.length,'m') + '\n'
+        string += 'Area of the electrodes:              '  + unit_manager.print_exp(ccp.area, 2) + ' m**2' + '\n'
         string += 'Plasma volume:                       '  + unit_manager.print_exp(ccp.volume, 2) + ' m**3' + '\n'
-        string += 'Starting electrons number density:   '  + unit_manager.print_exp(parameters.start_e_density, 2) + ' m**-3' + '\n'
+        string += 'Starting electron number density:    '  + unit_manager.print_exp(parameters.start_e_density, 2) + ' m**-3' + '\n'
         string += 'Starting ionization degree:          '  + unit_manager.print_exp(parameters.start_ion_deg, 2) + '\n'
         string += 'Electric bias peak value:            '  + unit_manager.print_unit(parameters.V_bias,'V', 4)  + '\n'
         string += 'Mean electric field intensity:       '  + unit_manager.print_unit(ccp.E_peak,'V/m', 4) + '\n'
@@ -63,7 +63,7 @@ def print_simulation_information(neutrals, ccp, parameters, options,
     if print_simulation:
         if not options.gui_mode: string += '\n'
         string += 'SIMULATION PARAMETERS\n'
-        string += 'Maximum  number of particles:        ' + str(parameters.Nmax_particles) + '\n'
+        string += 'Maximum number of particles:         ' + str(parameters.Nmax_particles) + '\n'
         string += 'Starting number of electrons:        ' + str(parameters.N0_electrons) + '\n'
         string += 'Starting computational weight:       ' + unit_manager.print_exp(parameters.start_weight,3) + '\n'
         string += 'Rescaling factor                     ' + str(parameters.rescale_factor) + '\n'
@@ -100,29 +100,40 @@ def print_simulation_information(neutrals, ccp, parameters, options,
         string += '- Number of cross section values:    ' + str(parameters.N_sigma_ions) + '\n'
         string += '- Minimum cross section energy:      ' + unit_manager.print_unit(parameters.e_min_sigma_ions, 'eV', 4) + '\n'
         string += '- Maximum cross section energy:      ' + unit_manager.print_unit(parameters.e_max_sigma_ions, 'eV', 4) + '\n'
+        string += 'CPU mode:                            '
+        if (options.cpu_multicore):
+            string += 'multicore' + '\n'
+            string += 'number of threads:                   '
+            if (options.cpu_threads == 0): string += 'auto' + '\n'
+            else:                          string += str(options.cpu_threads) + '\n'
+        else:
+            string += 'single core' + '\n'
+            
 
     # Print output information
     if print_output:
         if not options.gui_mode: string += '\n'
         string += 'DATA OUTPUT PARAMETERS\n'
-        string += 'Verbosity level [0..3]:              ' + str(options.verbosity) + '\n'
-        string += 'Python debug level [0..2]:           ' + str(options.debug_lev) + '\n'
-        string += 'Fortran debug level [0..2]:          ' + str(options.debug_lev_for) + '\n'
+        string += 'Verbosity level [0..'     + str(MAX_VERBOSITY)           + ']:              ' + str(options.verbosity)     + '\n'
+        string += 'Python debug level [0..'  + str(PYTHON_MAX_DEBUG_LEVEL)  + ']:           '    + str(options.debug_lev)     + '\n'
+        string += 'Fortran debug level [0..' + str(FORTRAN_MAX_DEBUG_LEVEL) + ']:          '     + str(options.debug_lev_for) + '\n'
         string += 'Plot cross sections:                 ' 
         if options.plot_xsec: string += 'YES' + '\n'
         else:                 string += 'NO' + '\n'
         string += 'Save data to file:                   '
         if (parameters.save_delay == 0):
             string += 'never' + '\n'
-        elif (parameters.save_delay == 1):
-            string += 'every cycle' + '\n'
         else:
-            string += 'every ' + str(parameters.save_delay) + ' cycles' + '\n'
-        string += 'Save distributions to file:          '
-        if (parameters.save_delay_dist == 1):
-            string += 'every data save' + '\n'
-        else:
-            string += 'every ' + str(parameters.save_delay_dist) + ' data saves' + '\n'            
+            if (parameters.save_delay == 1):
+                string += 'every cycle' + '\n'
+            else:
+                string += 'every ' + str(parameters.save_delay) + ' cycles' + '\n'
+            string += 'Save distributions to file:          '
+            if (parameters.save_delay_dist == 1):
+                string += 'every data save' + '\n'
+            else:
+                string += 'every ' + str(parameters.save_delay_dist) + ' data saves' + '\n'
+            
         if options.gui_mode:
             string += 'Max number of points in plots:       ' + str(parameters.n_max_points) + '\n'
             string += 'Decimation factor:                   ' + str(parameters.decimation_factor) + '\n'
@@ -171,7 +182,7 @@ def print_filenames(charges, neutrals, ccp):
 
 
 def print_gas_information(neutrals):
-    string = ''
+    string = 'GAS PROPERTIES'
     for i in range(neutrals.types):
         string += '\n' 
         string += 'Name:                                ' + str(neutrals.names[i]) + '\n'

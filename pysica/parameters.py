@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,12 +22,14 @@
 # Parameters used for stadard behavior when plotting via matplotlib or gnuplot
 #PLOT_INTERFACE  = 'gnuplot'
 PLOT_INTERFACE  = 'pylab'
-PLOT_SYMBOL     = '+'
+PLOT_SYMBOL     = '.'
 PLOT_COLOR      = 'red'
-PLOT_SYMBOLS    = [ '.',     'o',    '+',    'x',     '^',    'v',       '>',   '<',      'D'      ]
+PLOT_SYMBOLS    = [ '.',   '+',    'x',     '^',    'v',       '>',   '<',   'o',  's',   'D'      ]
 N_PLOT_SYMBOLS  = len(PLOT_SYMBOLS)
-PLOT_COLORS     = [ 'black', 'grey', 'blue', 'green', 'cyan', 'magenta', 'red', 'orange', 'yellow' ]
+PLOT_COLORS     = [ 'black', 'blue', 'green', 'cyan', 'magenta', 'red', 'orange', 'yellow', 'maroon', 'grey' ]
 N_PLOT_COLORS   = len(PLOT_COLORS)
+PLOT_LINES      = [ 'solid', 'dashed', 'dotted', 'dashdot' ]
+N_PLOT_LINES    = len(PLOT_LINES)
 FILL_COLOR      = 'grey'
 PLOT_LINE       = 'None'
 
@@ -40,7 +42,7 @@ SEP		= '\t'	   # Separator character for data input/output files
 ZERO		= 1.0E-9
 
 GPL_MESSAGE     = ( '\n'
-                    + 'COPYRIGHT (c) 2020-2024 Pietro Mandracci\n'
+                    + 'COPYRIGHT (c) 2020-2026 Pietro Mandracci\n'
                     + '\n'
                     + 'This program is free software: you can redistribute it and/or modify\n'
                     + 'it under the terms of the GNU General Public License as published by\n'

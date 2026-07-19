@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ import matplotlib.pyplot as plt
 #from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp1d
 from scipy.integrate   import quad
+from scipy.optimize    import curve_fit
 
 # Mudules from plasma.ccpla package
 from pysica.parameters import *
@@ -86,7 +87,7 @@ class SpectraSet:
                         If it is not given, then the x-values are 
                         calculated using the values xmin, xmax, npoints
             xmin:       minimum value of the range to be calculated 
-                                    (used only if xarray is not given)
+                        (used only if xarray is not given)
             xmax:       maximum value of the range to be calculated 
                         (used only if xarray is not given)
                         must be greater than xmin (or the range will be left empty)
@@ -94,7 +95,7 @@ class SpectraSet:
             npoints:    number of points of the range to be calculated 
                         (used only if xarray is not given)
                         must be at leats 2  (or the range will be left empty)
-                                    if it is not an integer, it will be truncated
+                        if it is not an integer, it will be truncated
 
             Initialized data attributes
             ---------------------------
@@ -151,7 +152,33 @@ class SpectraSet:
                 xmin, xmax, self.npoints, retstep=True)
             
         self.spectra = []
+
+        self.tick_length_major = 10
+        self.tick_length_minor = 5        
+         
         self.error = (status, message)
+
+
+#   +-----------------------------------+
+#   | Methods to modify plot properties |
+#   +-----------------------------------+
+
+        
+
+    def set_plot(self, font=None, size=None, size_default=None, size_title=None, size_axes=None, size_legend=None):
+        
+        # Set the font type and dimensions
+        if font        : plt.rcParams["mathtext.default"] = font
+        if size        : plt.rcParams["font.size"]        = size
+        if size_default: plt.rc('font',   size      = size_default) #controls default text size
+        if size_title  : plt.rc('axes',   titlesize = size_title)   #font size of the title
+        if size_axes   : plt.rc('axes',   labelsize = size_axes)    #font size of the x and y labels
+        if size_axes   : plt.rc('xtick',  labelsize = size_axes)    #font size of the x tick labels 
+        if size_axes   : plt.rc('ytick',  labelsize = size_axes)    #font size of the y tick labels
+        if size_legend : plt.rc('legend', fontsize  = size_legend)  #font size of the legend
+
+        return (0, OK)
+      
                
 
 #   +------------------------------------------------+
@@ -211,11 +238,8 @@ class SpectraSet:
             status = 1
             message = 'spectrum ' + str(index) + ' does not exist'
             return (status, message)
-        if (plt.is_string_like(name) == False):
-            status = 2
-            message = 'name given is not a string'
-            return (status, message)
-        self.spectra[index][0] = name
+
+        self.spectra[index][0] = str(name)
 
         return (status, message)
 
@@ -251,9 +275,10 @@ class SpectraSet:
    
         
     def plot_spectrum(self, index, logx=False, logy=False,
-                      xlabel='x', ylabel='y', explabel=True, 
+                      xlabel='x', ylabel='y', explabel=True, show_index=False, 
                       title=None, grid=True, color=PLOT_COLOR, line=PLOT_LINE,
-                      symbol=PLOT_SYMBOL, fill_color=FILL_COLOR):
+                      symbol=PLOT_SYMBOL, fill_color=FILL_COLOR,
+                      note=None, xnote=None, ynote=None, box=True):
         """ Plots a scatter plot of a spectrum.
 
                 Parameters
@@ -265,12 +290,17 @@ class SpectraSet:
                 xlabel:         string to be used as label for the x axis
                 ylabel:         string to be used as label for the y axis
                 explabel:       if True, use scientific format for labels if they exceed 100
+                show_index:     if True, show the index nexto to the label 
                 title:          string to be used as title
                 grid:           wether to show a grid on the plot
                 color:          color to be used for plotting
                 line:           type of line
                 symbol:         type of symbol to use for data points
                 fill_color:     color used to fill symbols area
+                note:           string to be printed in the graph
+                xnote:          x position of the note, expressed in figure coordinates (between 0 and 1)
+                ynote:          y position of the note, expressed in figure coordinates (between 0 and 1)
+                box:            is True, the note will be embedded in a box        
 
                 Returns
                 -------
@@ -296,8 +326,13 @@ class SpectraSet:
         if (title is not None): plt.title(title)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
-        label = '(' + str(index).rjust(2) + ') ' + self.spectra[index][0]
-
+        if show_index: label = '(' + str(index).rjust(2) + ') '
+        else:          label = ''
+        label += self.spectra[index][0]
+        
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)
         plt.grid(grid)
 
         if explabel: plt.ticklabel_format(style='scientific', axis='both', scilimits=(-2,2))
@@ -324,6 +359,129 @@ class SpectraSet:
             else:
                 plt.plot(self.xvalues, self.spectra[index][1], label=label, 
                          marker=symbol, linestyle=line, color=color)
+
+        if note:            
+            if ( (xnote is None) or (xnote < 0) or (xnote > 1) ): xnote = 0
+            if ( (ynote is None) or (ynote < 0) or (ynote > 1) ): ynote = 0
+            if box: box_props = dict(boxstyle='round', facecolor='white')
+            else:   box_props = None
+            plt.figtext(xnote, ynote, str(note), backgroundcolor='white', bbox=box_props) 
+                
+        plt.legend()            
+        plt.show()
+
+        return (status, message)
+
+
+    def plot_spectra(self, indexes=None, logx=False, logy=False, xlabel='x', ylabel='y', kind='all',
+                           explabel=True, show_index=True,
+                           title=None, grid=True, lines=None, symbols=None, colors=None,
+                           note=None, xnote=None, ynote=None, box=True):
+        """ Plots a scatter plot of all the spectra together.
+
+            Parameters
+            ----------
+
+            indexes:        indexes of the spectra to plot (if None, all are plotted)
+            logx:           set logaritmic x axis
+            logy:           set logaritmic y axis
+            xlabel:         string to be used as label for the x axis
+            ylabel:         string to be used as label for the y axis
+            kind:           define which type to spectra plot
+                            'all'       -> plot all
+                            'spectrum'  -> only plot spectra (no histogram)
+                            'histogram' -> only plot histograms
+            explabel:       if True, use scientific format for labels if they execeed 100
+            show_index:     if True, show the spectrum index next to its label
+            title:          string to be used as title
+            grid:           wether to show a grid on the plot
+            lines:          list of the types of line to be used for plotting
+            symbols:        list of the symbols to use for data points
+            colors:         list of the colors to use for data points and lines
+            note:           string to be printed in the graph
+            xnote:          x position of the note, expressed in figure coordinates (between 0 and 1)
+            ynote:          y position of the note, expressed in figure coordinates (between 0 and 1)
+            box:            is True, the note will be embedded in a box
+
+            Returns
+            -------
+
+            status:  0 = no error
+                     1 = no spectra have been loaded yet
+                     2 = unkwnowkn kind
+            message: a string containing an error message or 'Ok'
+        """
+
+        status, message = 0, OK         
+
+        if (len(self.spectra) == 0):
+            status = 1
+            message = "no spectra have been loaded yet"
+            return (status, message)
+        if (kind not in ('spectrum', 'histogram', 'all' )):
+            status = 2
+            message = 'unknow kind \"' + str(kind) + '\"'
+            return (status, message)
+        if (indexes is None):
+            indexes = range(len(self.spectra))
+        else:
+            for i in indexes:
+                try:
+                    if ( (i < 0) or (i > len(self.spectra)-1) ):
+                        status  = 3
+                        message = 'spectrum ' + str(i) + ' does not exist'
+                        return (status, message)
+                except TypeError:
+                        status  = 4
+                        message = 'index \"' + str(i) + '\" is not a valid spectrum index'
+                        return (status, message)
+
+        if (title is not None): plt.title(title)
+
+        plt.minorticks_on()
+        plt.tick_params(which='major', direction='in', length=self.tick_length_major)
+        plt.tick_params(which='minor', direction='in', length=self.tick_length_minor)                
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.grid(grid)
+        if explabel: plt.ticklabel_format(style='scientific', axis='both', scilimits=(-2,2))
+        for i in indexes: #range(len(self.spectra)):
+            j = indexes.index(i) # Get the position of the index i in the indexes list
+            if symbols is None: marker = PLOT_SYMBOLS[j%N_PLOT_SYMBOLS]
+            else:               marker = symbols[j%len(symbols)]
+            if lines is None:   line   = PLOT_LINES[j%N_PLOT_LINES]
+            else:               line   = lines[j%len(lines)]
+            if colors is None:  color  = PLOT_COLORS[j%N_PLOT_COLORS]
+            else:               color  = colors[j%len(colors)]
+            if show_index: label = '(' + str(i).rjust(2) + ') '
+            else:          label = ''
+            label += self.spectra[i][0]
+            if (self.spectra[i][2].startswith('histogram') and ((kind in ('all', 'histogram')))):
+                left   = self.xvalues - self.delta / 2.0
+                height = self.spectra[i][1]
+                width  = self.delta
+                plt.bar(left=left, height=height, width=width, log=logy, label=label, fill=False) 
+            elif (self.spectra[i][2].startswith('spectrum') and ((kind in ('all', 'spectrum')))):
+                if (logx and logy):
+                    plt.loglog(self.xvalues,   self.spectra[i][1], label=label, 
+                               marker=marker, linestyle=line, color=color)
+                elif logx:
+                    plt.semilogx(self.xvalues, self.spectra[i][1], label=label, 
+                                 marker=marker, linestyle=line, color=color)
+                elif logy:
+                    plt.semilogy(self.xvalues, self.spectra[i][1], label=label,
+                                 marker=marker, linestyle=line, color=color)
+                else:
+                    plt.plot(self.xvalues, self.spectra[i][1], label=label, 
+                             marker=marker, linestyle=line, color=color)
+
+        if note:            
+            if ( (xnote is None) or (xnote < 0) or (xnote > 1) ): xnote = 0
+            if ( (ynote is None) or (ynote < 0) or (ynote > 1) ): ynote = 0
+            if box: box_props = dict(boxstyle='round', facecolor='white')
+            else:   box_props = None
+            plt.figtext(xnote, ynote, str(note), backgroundcolor='white', bbox=box_props) 
+                    
         plt.legend()            
         plt.show()
 
@@ -427,80 +585,7 @@ class SpectraSet:
         plt.show()
 
         return (status, message)
-
-
-
-    def plot_spectra(self, logx=False, logy=False, xlabel='x', ylabel='y', kind='all', explabel=True, 
-                     title=None, grid=True, line=PLOT_LINE, symbol=PLOT_SYMBOL):
-        """ Plots a scatter plot of all the spectra together.
-
-            Parameters
-            ----------
-
-            logx:           set logaritmic x axis
-            logy:           set logaritmic y axis
-            xlabel:         string to be used as label for the x axis
-            ylabel:         string to be used as label for the y axis
-            kind:           define which type to spectra plot
-                            'all'       -> plot all
-                            'spectrum'  -> only plot spectra (no histogram)
-                            'histogram' -> only plot histograms
-            explabel:       if True, use scientific format for labels if they execeed 100
-            title:          string to be used as title
-            grid:           wether to show a grid on the plot
-            line:           type of line to be used for plotting
-            symbol:         type of symbol to use for data point
-
-            Returns
-            -------
-
-            status:  0 = no error
-                     1 = no spectra have been loaded yet
-                     2 = unkwnowkn kind
-            message: a string containing an error message or 'Ok'
-        """
-
-        status, message = 0, OK         
-
-        if (len(self.spectra) == 0):
-            status = 1
-            message = "no spectra have been loaded yet"
-            return (status, message)
-        if (kind not in ('spectrum', 'histogram', 'all' )):
-            status = 2
-            message = 'unknow kind \"' + str(kind) + '\"'
-            return (status, message)
-
-        if (title is not None): plt.title(title)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.grid(grid)
-        if explabel: plt.ticklabel_format(style='scientific', axis='both', scilimits=(-2,2))
-        for i in range(len(self.spectra)):
-            label = '(' + str(i).rjust(2) + ') ' + self.spectra[i][0]
-            if (self.spectra[i][2].startswith('histogram') and ((kind in ('all', 'histogram')))):
-                left   = self.xvalues - self.delta / 2.0
-                height = self.spectra[i][1]
-                width  = self.delta
-                plt.bar(left=left, height=height, width=width, log=logy, label=label, fill=False) 
-            elif (self.spectra[i][2].startswith('spectrum') and ((kind in ('all', 'spectrum')))):
-                if (logx and logy):
-                    plt.loglog(self.xvalues,   self.spectra[i][1], label=label, 
-                              marker=symbol, linestyle=line, color=PLOT_COLORS[i%N_PLOT_COLORS])
-                elif logx:
-                    plt.semilogx(self.xvalues, self.spectra[i][1], label=label, 
-                                 marker=symbol, linestyle=line, color=PLOT_COLORS[i%N_PLOT_COLORS])
-                elif logy:
-                    plt.semilogy(self.xvalues, self.spectra[i][1], label=label,
-                                 marker=symbol, linestyle=line, color=PLOT_COLORS[i%N_PLOT_COLORS])
-                else:
-                    plt.plot(self.xvalues, self.spectra[i][1], label=label, 
-                             marker=symbol, linestyle=line, color=PLOT_COLORS[i%N_PLOT_COLORS])
-        plt.legend()            
-        plt.show()
-
-        return (status, message)
-
+    
 
     def save_spectrum(self, index, filename, sep='\t', nan2zero=None):
         """ Saves a spectrum (range of y-values) to an ASCII file.
@@ -1841,7 +1926,7 @@ class SpectraSet:
 
 
     def get_first_last(self, index, xmin=None, xmax=None, kind='first'):
-        """ Returns the firts (or last) non-NaN value of a spectrum.
+        """ Returns the first (or last) non-NaN value of a spectrum.
 
             Parameters
             ---------
@@ -2006,7 +2091,252 @@ class SpectraSet:
 
         return mean 
 
+    
+#   +------------------------------------------+
+#   | Methods for fitting spectra to functions |
+#   +------------------------------------------+
 
+    def fit_spectrum(self, index, f, xmin=None, xmax=None, guess=None, bounds=None, add_spectrum=False, debug=False):
+
+        """ Fits the parameters of a given function to a spectrum
+
+
+
+            Parameters
+            ----------
+
+            index:        index of the spectrum to which the functio must be fitted
+            f:            function to be fitted, in the form f(x, a, b, c, ...)
+                          where a, b, c, ... are parameters to be optimized
+            xmin,
+            xmax          range of xvalues to which the fit must be limited (both included)
+            guess:        array containing the initial guess of the parameters a, b, c, ...
+                          if None, no guess is given
+            bounds:       a tuple containing two 1D-arrays with lenght equal to the number of parameters
+                          first array -> lower bounds
+                          second array -> upper bounds
+                          if None, no bounds are given    
+                          if a scalar is given instead of an array, that value is taken as bound for all parameters
+            add_spectrum: if True, add a new spectrum with y-values computed using 
+                          the values of the f function for the x-values and the optimized parameters
+        
+            Initialized data attributes
+            ---------------------------
+                                
+            self.fit_result:   a tuple (parameters, covariances)
+            parameters:        a 1D array with the optimized parameters of f
+            covariances:       a 2D array with the estimated covariances
+        
+
+            Returns
+            -------
+        
+            status:  0 = no error
+                     1 = wrong spectrum index
+            message: a string containing an error message or 'Ok'        
+        
+        """
+        
+        status, message = 0, OK
+
+        index = int(index)
+        if ( (index < 0) or (index >= len(self.spectra)) ):
+            status  = 1
+            message = 'spectrum ' + str(index) + ' does not exist'
+            return (status, message)
+
+        # Note that in this function we want that the fit is limited to the range fo points between xmin and xmax
+        # where both ends are INCLUDED, while the python range [imin, imax] excludes the upper boundary
+        if xmin is None:
+            imin = 0
+        else:
+            imin = self.get_index_xvalue(xmin, check=True)
+            if imin is None:
+                status  = 2
+                message = 'invalid xmin value: ' + str(xmin)
+                return (status, message)
+               
+        if xmax is None:
+            imax = len(self.xvalues) - 1
+        else:
+            imax = self.get_index_xvalue(xmax, check=True)
+            if ( (imax is None) or (imax <= imin) ):
+                status  =  3
+                message = 'invalid xmax value: '+ str(xmax)
+                return (status, message)            
+        
+        if ( (xmin is not None) or (xmax is not None) ):
+            print( 'Fit will start at point n.' + str(imin) + ', xmin = ' + str(self.xvalues[imin]) )
+            print( 'Fit will end   at point n.' + str(imax) + ', xmax = ' + str(self.xvalues[imax]) )
+               
+        if bounds is None: bounds = (-numpy.inf, numpy.inf)
+        
+        self.fit_result = curve_fit(f, self.xvalues[imin:imax+1], self.spectra[index][1][imin:imax+1], p0=guess, bounds=bounds)
+
+        if add_spectrum:
+            self.add_spectrum( name='Fit of ' + self.spectra[index][0],
+                               yvalues=f(self.xvalues, *self.fit_result[0]) )
+            
+        return (status, message)
+
+
+    def fit_linear_2f(self, index, f1, f2, xmin=None, xmax=None):
+        """ Fits the linear combination of two functions to the data in a spectrum
+
+            Finds the parameters a1 and a2 that provide the best fit to the data
+            for the function given by the linear expression
+
+            a1 * f1(x) + a2 * f2(x)
+
+            The f1(x) and f2(x) can be any functions, but must not have unknown parameters.
+
+            Parameters
+            ----------
+
+            index:   index of the spectrum containing the data to which the function is to be fitted
+            f1, f2:  the functions f1(x) and f2(x)
+            xmin,
+            xmax     range of xvalues to which the fit must be limited (both included)
+        
+
+            Initialized data attributes
+            ---------------------------
+                                
+            self.fit_2f_parameters: an array with the optimized parameters [a1,a2]        
+
+            Returns
+            -------
+        
+            status:  0 = no error
+                     1 = wrong spectrum index
+            message: a string containing an error message or 'Ok'               
+
+        
+        """
+
+        status, message = 0, OK
+
+        index = int(index)
+        if ( (index < 0) or (index >= len(self.spectra)) ):
+            status = 1
+            message = 'spectrum ' + str(index) + ' does not exist'
+            return (status, message)
+
+        if xmin is None:
+            imin = 0
+        else:
+            imin = self.get_index_xvalue(xmin, check=True)
+            if imin is None:
+                status  = 2
+                message = 'invalid xmin value: ' + str(xmin)
+                return (status, message)
+               
+        if xmax is None:
+            imax = len(self.xvalues) - 1
+        else:
+            imax = self.get_index_xvalue(xmax, check=True)
+            if ( (imax is None) or (imax <= imin) ):
+                status  =  3
+                message = 'invalid xmax value: '+ str(xmax)
+                return (status, message)            
+        
+        if ( (xmin is not None) or (xmax is not None) ):
+            print( 'Fit will start at point n.' + str(imin) + ', xmin = ' + str(self.xvalues[imin]) )
+            print( 'Fit will end   at point n.' + str(imax) + ', xmax = ' + str(self.xvalues[imax]) )
+
+        
+        # Calculates the coefficients of the matrix
+        M      = numpy.zeros([2,2])
+        M[0,0] = ( f1(self.xvalues[imin:imax])**2 ).sum()
+        M[0,1] = ( f1(self.xvalues[imin:imax]) * f2(self.xvalues[imin:imax]) ).sum()
+        M[1,0] = M[0,1]                                       # This is not used practically
+        M[1,1] = ( f2(self.xvalues[imin:imax])**2 ).sum()
+
+        C      = numpy.zeros([2])
+        C[0]   = ( self.spectra[index][1][imin:imax] * f1(self.xvalues[imin:imax]) ).sum()
+        C[1]   = ( self.spectra[index][1][imin:imax] * f2(self.xvalues[imin:imax]) ).sum()
+
+        # Calculates the parameters vector
+        self.fit_2f_parameters    = numpy.zeros([2])
+        self.fit_2f_parameters[0] = ( C[0] * M[1,1] - C[1] * M[0,1] ) / ( M[0,0] * M[1,1] - M[0,1] * M[1,0] )
+        self.fit_2f_parameters[1] = ( C[0] * M[1,0] - C[1] * M[0,0] ) / ( M[0,1] * M[1,0] - M[0,0] * M[1,1] )
+
+        return (status, message)
+        
+        
+    def calculate_chisquare(self, index1, index2, parameters=0, xmin=None, xmax=None):
+        """ Calculates the chisquare value of two spectra
+
+            Calculates the sum of the squares of the differences between the y-values of two spectra
+        
+            Parameters
+            ----------
+
+            index1:     index of the first spectrum
+            index2:     index of the second spectrum
+            parameters: number of estimated parameters, used to calculate the DoF
+            xmin,
+            xmax:       limits of the range of xvalues in which the chisquare must be calculated (both included)        
+
+            Initialized data attributes
+            ---------------------------
+                                
+            self.chisquare:         chisquare value
+            self.chisquare_DF:      degrees of freedoms
+            self.chisqyare_reduced: reduced chisquare value
+
+
+            Returns
+            -------
+        
+            status:  0 = no error
+                     1 = wrong spectrum index
+            message: a string containing an error message or 'Ok'        
+        
+        """
+
+        status, message = 0, OK
+
+        index1 = int(index1)
+        if ( (index1 < 0) or (index1 >= len(self.spectra)) ):
+            status = 1
+            message = 'spectrum ' + str(index1) + ' does not exist'
+            return (status, message)
+        index2 = int(index2)        
+        if ( (index2 < 0) or (index2 >= len(self.spectra)) ):
+            status = 1
+            message = 'spectrum ' + str(index2) + ' does not exist'
+            return (status, message)
+        
+        if xmin is None:
+            imin = 0
+        else:
+            imin = self.get_index_xvalue(xmin, check=True)
+            if imin is None:
+                status  = 2
+                message = 'invalid xmin value: ' + str(xmin)
+                return (status, message)
+            
+        if xmax is None:
+            imax = len(self.xvalues) - 1
+        else:
+            imax = self.get_index_xvalue(xmax, check=True)
+            if ( (imax is None) or (imax <= imin) ):
+                status  =  3
+                message = 'invalid xmax value: '+ str(xmax)
+                return (status, message)            
+        
+        if ( (xmin is not None) or (xmax is not None) ):
+            print( 'Calculation will start at point n.' + str(imin) + ', xmin = ' + str(self.xvalues[imin]) )
+            print( 'Calculation will end   at point n.' + str(imax) + ', xmax = ' + str(self.xvalues[imax]) )        
+
+        self.chisquare          = ( ( self.spectra[index2][1][imin:imax] - self.spectra[index1][1][imin:imax] )**2 ).sum()
+        self.chisquare_DF       = imax - imin + 1 - parameters
+        self.chisquare_reduced  = self.chisquare / self.chisquare_DF
+           
+        return (status, message)
+
+        
 #   +-------------------------------------------+
 #   | Specific methods for optical applications |
 #   +-------------------------------------------+

@@ -3,7 +3,7 @@
 echo Press RETURN to begin ...
 read STRING
 
-f2py3 -c --fcompiler=gnu95 -m fpic precision.f90 constants.f90 io.f90 pic_parallel.f90
+f2py3 -c -m fpic precision.f90 constants.f90 io.f90 pic.f90
 
 echo
 echo Press RETURN to exit ...

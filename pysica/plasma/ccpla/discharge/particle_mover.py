@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,8 +33,11 @@ from pysica.parameters import *
 from pysica.constants import *
 from pysica.plasma.ccpla.ccpla_defaults import *
 from pysica.managers.io.io_screen import wait_input
-MIN_DEBUG_LEVEL = 2
 
+
+# +-----------------------------------------------+
+# | Calclulate the timestep (in variable dt mode) |
+# +-----------------------------------------------+
 
 def calculate_dt(charges, neutrals, ccp, parameters, debug_level):
         """ Calculate timestep  """
@@ -51,7 +54,7 @@ def calculate_dt(charges, neutrals, ccp, parameters, debug_level):
         vmax    = v0 + a * parameters.dt_output                 # maximum expected velocity in time dt_output [m/s]
         emax    = -0.5/charges.cm_ratio[0]*vmax**2              # maximum expected energy in time dt_output [eV]
 
-        if (debug_level >= MIN_DEBUG_LEVEL):
+        if (debug_level >= MOVER_DEBUG_LEVEL):
                 print('-> Calculating variable dt ')
                 print('a=', a, end=' ')
                 print('v0=', v0, end=' ')
@@ -84,7 +87,7 @@ def calculate_dt(charges, neutrals, ccp, parameters, debug_level):
                 while (dt > dtmax):
                         dt = dt / 10.0
 
-        if (debug_level >= MIN_DEBUG_LEVEL):
+        if (debug_level >= MOVER_DEBUG_LEVEL):
                 print('E_0= ', e0,' eV', end=' ') #+unit_manager.print_unit(e0,   'eV', 3),
                 print('\te_max= ', emax, ' eV', end=' ') #+unit_manager.print_unit(emax, 'eV', 3),  
                 print('\t\tdt= ', dt, ' s') # +unit_manager.print_unit(dt,    's', 3),
@@ -105,8 +108,6 @@ def calculate_dt(charges, neutrals, ccp, parameters, debug_level):
         return dt
 
 
-
-
 # +-----------------------------------+
 # | Move particles in a CCP discharge |
 # +-----------------------------------+
@@ -120,11 +121,8 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                charges:     instance of the class MovingParticles, a collection of charged particles
                neutrals:    instance of the class TargetParticles, a collection of neutral particles
                ccp:         instance of the class CcpProperties, reactor properties
-
-
-               duration:    required duration of the particle motion (simulation time)
-               dt-var:      if True, timestep mus be recalculated
-               maxcollfreq: maximum allowed vlaue collision frequency
+               parameters:  parameters set throught the configuration file
+               options:     command line options
 
                Initialized data attributes
                ---------------------------
@@ -138,7 +136,7 @@ def move_particles(charges, neutrals, ccp, parameters, options):
         else:        
                 from .fortran.fmodule          import f_main        
 
-        if (options.debug_lev >= MIN_DEBUG_LEVEL): print('\n***** START OF PARTICLE MOVER *****\n')
+        if (options.debug_lev >= MOVER_DEBUG_LEVEL): print('\n***** START OF PARTICLE MOVER *****\n')
 
         if ( parameters.dt_var and (charges.n_active(0) > 0) ):
                 charges.dt = calculate_dt(charges, neutrals, ccp, parameters, options.debug_lev)
@@ -163,7 +161,7 @@ def move_particles(charges, neutrals, ccp, parameters, options):
         active  = charges.active.astype('i')
         restart = charges.restart_lf.astype('i')
 
-        if (options.debug_lev >= MIN_DEBUG_LEVEL): print('-> Calling Fortran function')
+        if (options.debug_lev >= MOVER_DEBUG_LEVEL): print('-> Calling Fortran function')
 
         f_main.simccp(charges.x, charges.y, charges.z, 
                           charges.vx, charges.vy, charges.vz, charges.v, 
@@ -193,10 +191,11 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                           ccp.distance, ccp.length, ccp.V_peak, ccp.pulsation, ccp.phase, ccp.lateral_loss,
                           ccp.charge_density, ccp.potential,
                           ccp.average_current,
-                          charges.dt, parameters.dt_output, 
+                          charges.dt, parameters.dt_output,
                           neutrals.collisions_null, neutrals.collisions_elastic, neutrals.collisions_ionization,
                           neutrals.collisions_excitation,
                           neutrals.collisions_dissociation, neutrals.collisions_recombination,
+                          options.cpu_threads,                      
                           options.debug_lev_for)
 
         # This is needed since f2py seems unable to convert correctly logical arrays between Fortran and Python (see above)
@@ -227,7 +226,7 @@ def move_particles(charges, neutrals, ccp, parameters, options):
         # Calculate average electron collision probability (rough estimation, since charges.n_active(0) changes during the cycle)
         N_iterations = int(parameters.dt_output/charges.dt)
         if (charges.n_active(0) > 0):
-                charges.p_coll =  100.0 * neutrals.collisions_total_electron / ( N_iterations * charges.n_active(0) * charges.weight[0] )
+                charges.p_coll =  100.0 * neutrals.collisions_total_electron / (N_iterations * charges.n_active(0) * charges.weight[0])
         else:
                 charges.p_coll = 0
         
@@ -238,31 +237,31 @@ def move_particles(charges, neutrals, ccp, parameters, options):
         # Calculate Debye length and plasma frequency
         for i in range(charges.types):
                 if (charges.number_density[i] > 0):
-                        charges.debye_length[i]     = numpy.sqrt( - EPSILONZERO * ELECTRON_CHARGE * charges.kT(i) / \
-                                                                  ( charges.charge[i]**2 * charges.number_density[i] ) \
-                                                                )
+                        charges.debye_length[i] = numpy.sqrt( - EPSILONZERO * ELECTRON_CHARGE * charges.kT(i)
+                                                              / ( charges.charge[i]**2 * charges.number_density[i] )  )
                 else:
                         charges.debye_length[i] = 0                        
-                charges.plasma_frequency[i] = numpy.sqrt( charges.charge[i]**2 * charges.number_density[i] / \
-                                                          ( EPSILONZERO * charges.mass[i] ) \
-                                                        )
+                charges.plasma_frequency[i] = numpy.sqrt(charges.charge[i]**2 * charges.number_density[i]
+                                                         / ( EPSILONZERO * charges.mass[i] ) )
 
-                if (options.debug_lev >= MIN_DEBUG_LEVEL): print('-> e-/ion, kTe, Dl, f =', i, \
-                                                  charges.kT(i), charges.debye_length[i], charges.plasma_frequency[i])
+                if (options.debug_lev >= MOVER_DEBUG_LEVEL):
+                        print('-> type, kT, Dl, f, vmin, vmax, vmean =',
+                              i, charges.kT(i), charges.debye_length[i], charges.plasma_frequency[i],
+                              charges.v_min(i), charges.v_max(i), charges.v_average(i) )
                 
         # Calculate neutrals dissociation rates and rate constants
         neutrals.dissociation_rate = neutrals.collisions_dissociation / ccp.volume / parameters.dt_output
         for i in range(neutrals.types):
                 if ( (neutrals.number_density[i] > 0) and (charges.number_density[0] > 0) ):
-                        neutrals.dissociation_rate_constant[i] = neutrals.dissociation_rate[i] / \
-                                                                 (neutrals.number_density[i]* charges.number_density[0])
+                        neutrals.dissociation_rate_constant[i] = ( neutrals.dissociation_rate[i]
+                                                                   / (neutrals.number_density[i]* charges.number_density[0]) )
                 else:
                         neutrals.dissociation_rate_constant[i] = 0
-                if (options.debug_lev >= MIN_DEBUG_LEVEL):                      
-                        print('-> neutral, n0, ne, R_diss, k_diss =', i, neutrals.number_density[i], charges.number_density[0],\
-                                                                           neutrals.number_density[i] * charges.number_density[0], \
-                                                                           neutrals.dissociation_rate[i], \
-                                                                           neutrals.dissociation_rate_constant[i])
+                if (options.debug_lev >= MOVER_DEBUG_LEVEL):
+                        print('-> neutral, n0, ne, R_diss, k_diss    =', i, neutrals.number_density[i], charges.number_density[0],
+                                                                         neutrals.number_density[i] * charges.number_density[0], 
+                                                                         neutrals.dissociation_rate[i], 
+                                                                         neutrals.dissociation_rate_constant[i])
 
         # Calculate angles between electron velocity and E-field, avoiding division by zero for particles having null velocity
         for i in range(charges.types):
@@ -281,9 +280,10 @@ def move_particles(charges, neutrals, ccp, parameters, options):
                                                      + str(charges.vz[i][k]),
                                                      " ratio=" + str(costheta_v) )
                                         else:
-                                             charges.theta[i][k] = numpy.arccos(charges.vz[i][k] / charges.v[i][k])
+                                             #charges.theta[i][k] = numpy.arccos(charges.vz[i][k] / charges.v[i][k])
+                                             charges.theta[i][k] = numpy.arccos(costheta_v)
 
-        if (options.debug_lev >= MIN_DEBUG_LEVEL): print('\n***** END OF PARTICLE MOVER *****\n')
+        if (options.debug_lev >= MOVER_DEBUG_LEVEL): print('\n***** END OF PARTICLE MOVER *****\n')
         
-        if (options.debug_lev >= MIN_DEBUG_LEVEL+1): wait_input()
+        #if (options.debug_lev >= MOVER_DEBUG_LEVEL+1): wait_input()
         

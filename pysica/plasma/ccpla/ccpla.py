@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 # Modules from the standard Python library
 import sys
 import math
+import time
 from random import random
 from optparse import OptionParser
 import tkinter as tk
@@ -38,14 +39,15 @@ from pysica.plasma.ccpla.ccpla_defaults import *
 # Import required modules, classes, and functions
 from pysica.managers.io.io_screen import wait_input, clear_screen
 from pysica.managers import unit_manager
+from pysica.managers import time_manager
 from pysica.plasma.ccpla import ccpla_gui
 from pysica.plasma.ccpla.discharge import reactors, target_particles, moving_particles, particle_mover
 from pysica.plasma.ccpla.ccpla_init import *
 from pysica.plasma.ccpla.ccpla_print import *
+from pysica.plasma.ccpla.ccpla_info import *
 
 # The gnuplot_installed flag is set to False if gnuplot is not installed
 from pysica.managers.gnuplot_manager import gnuplot_installed
-
 
 # +---------------------------------------------------+
 # | Manage how to write messages and exit the program |
@@ -109,8 +111,12 @@ parser = OptionParser(usage)
 
 # Use parallel Fortran module
 help_string = "use multicore parallel Fortran module"
-parser.add_option("-m", "--multicore", action="store_true",  dest="cpu_multicore", default=False, 
-                  help=help_string)
+parser.add_option("-m", "--multicore", action="store_true",  dest="cpu_multicore", default=False, help=help_string)
+
+# Number of threads to use in multicore mode
+help_string = "number of threads to use in multicore mode"
+parser.add_option("-n", "--threads-number", action="store", type="int", dest="cpu_threads",
+                  default=cpu_threads, help=help_string)
 
 # Do not start simulation, only print parameters values and exit
 help_string = "show parameters values and exit"
@@ -122,8 +128,8 @@ parser.add_option("-s", "--save-defaults", action="store_true",  dest="save_defa
                   help=help_string)
 
 # Batch mode
-help_string = "suppress all input from user"
-parser.add_option("-b", "--batch-mode", action="store_true", dest="batch_mode", default=batch_mode,
+help_string = "suppress all input from user and redirect output"
+parser.add_option("-b", "--batch-mode",    action="store_true", dest="batch_mode", default=batch_mode,
                   help=help_string)
 
 # GUI mode
@@ -152,29 +158,18 @@ help_string = ("Font size in GUI text window ["
 parser.add_option("-F", "--text-window-font", action="store", type="int", dest="text_window_font_size",
                   default=text_window_font_size, help=help_string)
 
-# Redirect output
-help_string = "redirect screen output to file \'" + FILENAME_OUTPUT_LOG + "\'"
-parser.add_option("-o", "--redirect-output", action="store_true", dest="redirect_output", default=redirect_output,
-                  help=help_string)        
-
-# Redirect error messages
-help_string = "redirect error messages to file \'" + FILENAME_ERROR_LOG + "\'"
-parser.add_option("-e", "--redirect-errors", action="store_true", dest="redirect_error_messages",
-                  default=redirect_error_messages,
-                  help=help_string)
-
 # Verbosity level
-help_string = "verbosity level [0..3] (default="+str(verbosity)+")"
+help_string = "verbosity level [0.." + str(MAX_VERBOSITY) + "] (default="+str(verbosity)+")"
 parser.add_option("-v", "--verbosity", action="store", type="int", dest="verbosity",  default=verbosity,
                   help=help_string)
 
 # Debug level for python code
-help_string = "Python debug level [0..2] (default="+str(debug_level_python)+")"
+help_string = "Python debug level [0.." + str(PYTHON_MAX_DEBUG_LEVEL) + "] (default="+str(debug_level_python)+")"
 parser.add_option("-d", "--debug-level-python", action="store", type="int", dest="debug_lev",
                   default=debug_level_python, help=help_string)
 
 # Debug level for Fotran code
-help_string = "Fortran debug level [0..3] (default="+str(debug_level_fortran)+")"
+help_string = "Fortran debug level [0.." + str(FORTRAN_MAX_DEBUG_LEVEL)  + "] (default="+str(debug_level_fortran)+")"
 parser.add_option("-D", "--debug-level-fortran", action="store", type="int", dest="debug_lev_for",
                   default=debug_level_fortran, help=help_string)        
         
@@ -183,32 +178,40 @@ help_string = "plot cross sections graphs before start"
 parser.add_option("-x", "--graph-xsec", action="store_true",  dest="plot_xsec", default=False, help=help_string)
 
 (cl_options, args) = parser.parse_args()
-
-if cl_options.redirect_error_messages:
-    sys.stderr = open(FILENAME_ERROR_LOG, 'w')
-    
-if cl_options.redirect_output:
-    sys.stdout = open(FILENAME_OUTPUT_LOG, 'w')
-    
+   
+if cl_options.batch_mode:
+    sys.stdout = open(FILENAME_OUTPUT_LOG, mode='w',buffering=1)
+    sys.stderr = open(FILENAME_ERROR_LOG,  mode='w',buffering=1)
 
 # +-----------------------------+   
 # | Error checking and warnings |
 # +-----------------------------+
 
-# This option must change an import directive in the discharge.particle_mover module
-# so it cannot be passed as a variable to a function inside the module
-# in this way it can be imported from this  module
-
-if (cl_options.verbosity not in list(range(4))):
-    exit_ccpla('ERROR: verbosity must be in range 0..3' + EOL,
+if cl_options.cpu_multicore:
+    # If multicore mode was selected
+    if (cl_options.cpu_threads < 0):
+       exit_ccpla('ERROR: number of threads cannot be negative' + EOL,gui=cl_options.gui_mode, error=True)
+    if (cl_options.cpu_threads == 1):
+       exit_ccpla('ERROR: single thread requested in multicore mode' + EOL,gui=cl_options.gui_mode, error=True)       
+    if (cl_options.cpu_threads > MAX_CPU_THREADS):
+       exit_ccpla('ERROR: on this machine the number of threads cannot be more than ' + str(MAX_CPU_THREADS) + EOL,
+                  gui=cl_options.gui_mode, error=True)
+else:
+    # If single core mode was selected
+    if (cl_options.cpu_threads != 0):
+        exit_ccpla('ERROR: -n option can be used only together with -m option' + EOL, gui=cl_options.gui_mode, error=True)
+    cl_options.cpu_threads = 1
+    
+if (cl_options.verbosity not in list(range(MAX_VERBOSITY+1))):
+    exit_ccpla('ERROR: verbosity must be in range 0..'+ str(MAX_VERBOSITY) + EOL,
                gui=cl_options.gui_mode, error=True)
     
-if (cl_options.debug_lev not in list(range(3))):
-    exit_ccpla('ERROR: Python debug level must be in range 0..2' + EOL,
+if (cl_options.debug_lev not in list(range(PYTHON_MAX_DEBUG_LEVEL+1))):
+    exit_ccpla('ERROR: Python debug level must be in range 0..' + str(PYTHON_MAX_DEBUG_LEVEL) + EOL,
                gui=cl_options.gui_mode, error=True)
     
-if (cl_options.debug_lev_for not in list(range(4))):
-    exit_ccpla('ERROR: Fortran debug level must be in range 0..3' + EOL,
+if (cl_options.debug_lev_for not in list(range(FORTRAN_MAX_DEBUG_LEVEL+1))):
+    exit_ccpla('ERROR: Fortran debug level must be in range 0..' + str(FORTRAN_MAX_DEBUG_LEVEL) + EOL,
                gui=cl_options.gui_mode, error=True)
     
 if cl_options.gui_mode:
@@ -271,6 +274,8 @@ if (cl_options.plot_xsec):
 
 cl_options.text_window_font = (TEXT_WINDOW_FONT_TYPE, str(cl_options.text_window_font_size))
 
+#print(cl_options)
+
 # +----------------------+
 # | Print copyright info |
 # +----------------------+
@@ -332,7 +337,7 @@ if (cl_options.verbosity > 0): print('\nReading gases properties from file \"' +
                                               parameters.e_max_sigma,
                                               parameters.e_min_sigma_ions,
                                               parameters.e_max_sigma_ions, 
-                                              debug=(cl_options.debug_lev>1) )
+                                              debug=(cl_options.debug_lev>2) )
 if (status != 0):
     ERROR = '\nERROR in file \"'+FILENAME_NEUTRALS+'\": '
     exit_ccpla(ERROR + message + EOL, gui=cl_options.gui_mode, error=True)
@@ -348,9 +353,9 @@ if (status != 0):
 if (status != 0): exit_ccpla(message + EOL, gui=cl_options.gui_mode, error=True)
 
 
-# +-----------------------------------+
-# | Electrons and ions initialization |
-# +-----------------------------------+
+# +---------------------------------+
+# | Electron and ion initialization |
+# +---------------------------------+
 
 # Define the ensamble of charged particles moving in the plasma: electrons and ions
 if (cl_options.verbosity > 0): print('\nDefining charged particles ensambles ...')
@@ -429,9 +434,14 @@ i_save_data = 1
 i_save_dist = 1
 save_dist   = True
 
+clock_time_start  = time.time_ns()
+thread_time_start = time.thread_time_ns()
+perf_time_start   = time.perf_counter_ns()
+
 while (charges.n_active(0) > 0):
 
-    if (cl_options.debug_lev > 0): 
+    if (cl_options.debug_lev > 0):
+        print()        
         print('t= ' + unit_manager.print_unit(charges.time,'s') + ' V= ' + unit_manager.print_unit(ccp.V,'V',3))
         print('E      min, max, mean, sigma [eV] ', charges.e_min(0), charges.e_max(0), 
                                                     charges.e_average(0), charges.e_sigma(0))
@@ -439,13 +449,13 @@ while (charges.n_active(0) > 0):
                                                     math.degrees(charges.theta_max(0)), 
                                                     math.degrees(charges.theta_average(0)),
                                                     math.degrees(charges.theta_sigma(0))) 
-        print()
 
     if (cl_options.verbosity > 2):
         time_before          = charges.time
         n_active_el_before   = charges.n_active(0)
         electric_bias_before = ccp.V
 
+    if (cl_options.debug_lev > 0): print('Calling particle mover')
     particle_mover.move_particles(charges, neutrals, ccp, parameters, cl_options)
 
     if (cl_options.verbosity > 2):
@@ -461,7 +471,7 @@ while (charges.n_active(0) > 0):
         
     # Save data to files, if required
     if (parameters.save_delay > 0):
-        # Data are seved every n cycles, where n = parameters.save_delay (if not zero)
+        # Data are saved every n cycles, where n = parameters.save_delay (if not zero)
         if ( (i_save_data >= parameters.save_delay) and (charges.n_active(0) > 0) ):
             # If required, energy and z distributions are not saved always,
             # but every n data saves only, to preserve disk space
@@ -479,11 +489,24 @@ while (charges.n_active(0) > 0):
             i_save_data = 0
         i_save_data += 1
 
+    if (cl_options.debug_lev > 2): wait_input()
+        
     # Exit the loop if a maximum duration was provided and it has been reached
     if ( (parameters.sim_duration > 0) and (charges.time >= parameters.sim_duration) ): break
-        
+
+clock_time  = time.time_ns()         - clock_time_start
+thread_time = time.thread_time_ns()  - thread_time_start
+perf_time   = time.perf_counter_ns() - perf_time_start
+
+if (parameters.save_delay > 0):
+    save_info_to_file( parameters.filename_info, cl_options, (clock_time, thread_time, perf_time) )
+
 if (cl_options.verbosity > 0): 
     if (charges.time < parameters.sim_duration):
-        print('\n\nSIMULATION INTERRUPTED (NO MORE ELECTRONS)\n\n')
+        print('\n\nSIMULATION INTERRUPTED (NO MORE ELECTRONS)\n')
     else:
-        print('\n\nSIMULATION COMPLETED\n\n')
+        print('\n\nSIMULATION COMPLETED\n')
+    print('Elapsed clock time:       ' + time_manager.print_timestamp2time(clock_time)  + ' (' + str(clock_time)  + ' ns)')  
+    print('Elapsed thread time:      ' + time_manager.print_timestamp2time(thread_time) + ' (' + str(thread_time) + ' ns)')
+    print('Elapsed performance time: ' + time_manager.print_timestamp2time(perf_time)   + ' (' + str(perf_time)   + ' ns)') 
+    print()

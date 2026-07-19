@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ import math
 import numpy
 from pysica.parameters import *
 from pysica.constants import *
+from pysica.managers import unit_manager
 from pysica.plasma.ccpla.ccpla_defaults import *
 from pysica.managers.io.io_files import write_to_disk
 
@@ -422,7 +423,7 @@ class MovingParticles:
                         Parameters
                         ----------
 
-                        i_type:  index that refers to to the type of particle
+                        i_type:  index that refers to the type of particle
 
                         self:    record of particles data
 
@@ -445,7 +446,7 @@ class MovingParticles:
                         Parameters
                         ----------
 
-                        i_type:  index that refers to to the type of particle
+                        i_type:  index that refers to the type of particle
 
                         self:    record of particles data
 
@@ -720,9 +721,12 @@ class MovingParticles:
         def save_data_to_files(self, save_edf=True, save_z=True):
                 """Saves actual data values to files """
 
+                # Export time with limited digits to mask binary-decimal rounding
+                self.time_export = unit_manager.fix_digits(1E9*self.time, TIME_EXPORT_RES)
                 # Save data on electron mean quantities
                 data_file = open(self.f_mean_ele_name, 'a')                             
-                data_file.write( str( 1E9*self.time                      ) + self.sep )
+#                data_file.write( str( 1E9*self.time                      ) + self.sep )
+                data_file.write( str( self.time_export                   ) + self.sep )
                 data_file.write( str( self.n_active(0)                   ) + self.sep ) # number of active electrons
                 data_file.write( str( self.weight[0]                     ) + self.sep ) # weight
                 data_file.write( str( self.e_average(0)                  ) + self.sep )
@@ -744,7 +748,8 @@ class MovingParticles:
                 for i in range(1, self.types):
                         i_file = i-1
                         data_file = open(self.f_mean_ion_names[i_file], 'a')                             
-                        data_file.write( str( 1E9*self.time                      ) + self.sep )
+#                        data_file.write( str( 1E9*self.time                      ) + self.sep )
+                        data_file.write( str( self.time_export                   ) + self.sep )                        
                         data_file.write( str( self.n_active(i)                   ) + self.sep ) # number of active ions
                         data_file.write( str( self.weight[i]                     ) + self.sep ) # weight
                         data_file.write( str( self.e_average(i)                  ) + self.sep )

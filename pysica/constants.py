@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,3 +33,9 @@ ZERO_CELSIUS            = 273.15                # / K
 ATM_PRESSURE_PA         = 1.0133E5              # / Pa          atmospheric pressure in pascal
 ATM_PRESSURE_TORR       = 760.0                 # / torr        atmospheric pressure in Torr
 ATM_PRESSURE_PSI        = 14.696                # / psi         atmospheric pressure in psi
+PLANCK_CONSTANT         = 6.626068763e-34       # / J s
+PLANCK_COSTANT_BAR      = 1.054571596e-34       # / J s
+RYDBERG_CONSTANT        = 10973731.568549       # / m**-1
+
+BOHR_RADIUS             = (PLANCK_COSTANT_BAR**2
+                          / (ELECTRON_MASS * ELECTRON_CHARGE**2) )

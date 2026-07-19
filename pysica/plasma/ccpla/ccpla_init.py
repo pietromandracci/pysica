@@ -1,4 +1,4 @@
-# COPYRIGHT (c) 2020-2024 Pietro Mandracci
+# COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,7 +40,6 @@ from pysica.managers.io.io_screen import wait_input
 from pysica.managers import data_manager, unit_manager
 from pysica.functions.physics import pressure_conversion, number_density
 
-
 def initialize_parameters(parameters, verbose=False, saveonly=False, filename_config='', filename_defaults='', restricted=False):
     """  Read the simulation parameters from a configuration file
 
@@ -48,8 +47,7 @@ def initialize_parameters(parameters, verbose=False, saveonly=False, filename_co
          verbose:           if True, write some info to the console
          saveonly:          if True, save default values of the parameters to a file and then return
          restricted:        if True, some parameters are not read 
-    """
-    
+    """   
 
     (status, message) = (0, OK)
 
@@ -322,7 +320,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
         (status, message) = neutrals.read_xsec_electrons_elastic(filename_sigma, '\t', neutral_index, 
                                                                  plot=( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
         if (status != 0): return (status, ERROR + message )
-        if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+        #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Read ionization cross-sections for electron impact
     for neutral_index in range(neutrals.types):
@@ -338,7 +336,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                                                                          )
                                                                    )
         if (status != 0): return (status, ERROR + message)
-        if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+        #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Read excitation cross-sections for electron impact
     for neutral_index in range(neutrals.types):
@@ -352,7 +350,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                     filename_sigma, '\t', neutral_index, exc_type, check=True,
                     plot=( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
             if (status != 0): return (status, ERROR + message )
-            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+            #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
         
     # Read dissociation cross-sections for electron impact
     for neutral_index in range(neutrals.types):
@@ -366,9 +364,11 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                     filename_sigma, '\t', neutral_index, diss_type, check=True,
                     plot=( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
             if (status != 0): return (status, ERROR + message )
-            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+            #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Calculate total cross-sections, scattering frequencies and probabilities for electron impact
+    if (cl_options.verbosity > 0):
+        print('\nCalculating total cross-sections, scattering rates and probabilities for electron/neutral scattering ...')    
     (status, message) = neutrals.calculate_total_xsec_electrons()
     if (status != 0): return (status, ERROR + message )
 
@@ -388,7 +388,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
     # | Load ion-neutral impact cross sections |
     # +----------------------------------------+
 
-    if (cl_options.verbosity > 0): print('\nReading cross-section tables for ion/neutrals scattering ...')
+    if (cl_options.verbosity > 0): print('\nReading cross-section tables for ion/neutral scattering ...')
         
     # Read elastic scattering cross-sections for ions
     filename_sigma = os.path.join(XSECT_DIRECTORY_NAME, SCRIPTNAME + NAME_ION_ELASTIC + EXT)
@@ -400,7 +400,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                     filename_sigma, '\t', ion_index, neutral_index,
                     ( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
             if (status != 0): return(status,  ERROR + message)
-            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+            #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Read charge exchange scattering cross-sections for ions
     filename_sigma = os.path.join(XSECT_DIRECTORY_NAME, SCRIPTNAME + NAME_ION_CHARGE_EX + EXT)
@@ -413,9 +413,11 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                 filename_sigma, '\t', ion_index, neutral_index,
                 ( cl_options.plot_xsec and (cl_options.debug_lev > 1) ) )
             if (status != 0): return(status, ERROR + message)
-            if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+            #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Calculate total cross-sections, scattering rates and probabilities for ions
+    if (cl_options.verbosity > 0):
+        print('\nCalculating total cross-sections, scattering rates and probabilities for ion/neutral scattering ...')
     (status, message) = neutrals.calculate_total_xsec_ions( )
     if (status != 0):
         return(status, ERROR + message)
@@ -428,7 +430,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                                                      plot_relative    = cl_options.plot_xsec and (cl_options.debug_lev > 0)
                                                    )
         if (status != 0): return(status, ERROR + message)
-        if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()  
+    if ( (cl_options.debug_lev > 0) and (not cl_options.batch_mode)): wait_input()  
 
                 
     # +------------------------------------------------+
@@ -451,7 +453,7 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                                                                       plot=( cl_options.plot_xsec and \
                                                                              (cl_options.debug_lev > 0) ) )
                 if (status != 0): return (status,  ERROR + message)
-                if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+                #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
             else:
                 # For molecules, load the dissociative recombination cross section
                 for diss_type in range(neutrals.dissociation_types[neutral_index]):
@@ -473,10 +475,12 @@ def initialize_cross_sections(neutrals, cl_options, recombination=False):
                                                                           )
                                                                          )
                     if (status != 0):  return (status,  ERROR + message)
-                    if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
+                    #if ( (cl_options.debug_lev > 1) and (not cl_options.batch_mode)): wait_input()
 
     # Calculate total cross-sections and scattering rates for electron recombination
     # (to do also if recombination is not active)
+    if (recombination and (cl_options.verbosity > 0)):
+        print('\nCalculating total cross-sections and scattering rates for electron/ion recombination ...')    
     (status, message) = neutrals.calculate_total_xsec_ele_ion_recomb()
     if (status != 0): return(status,  ERROR + message)
 
@@ -586,6 +590,7 @@ def initialize_filenames(neutrals, parameters, string=None):
         name += str(value) + unit.strip() + '_'        
         (value, unit) = unit_manager.change_unit(parameters.frequency, 'Hz')
         name += str(value) + unit.strip()
+        
     else:
         name = str(string)
     parameters.basename = name
@@ -616,8 +621,9 @@ def generate_save_file_names(parameters):
     parameters.filename_ipos_z      = os.path.join(parameters.save_directory, SCRIPTNAME + NAME_Z_IONS)
     parameters.filename_config      = os.path.join(parameters.save_directory, FILENAME_CONFIG)
     parameters.filename_neutrals    = os.path.join(parameters.save_directory, FILENAME_NEUTRALS)
+    parameters.filename_info        = os.path.join(parameters.save_directory, FILENAME_INFO)
         
-
+    
 def create_save_dir(parameters):
         
     generate_save_dir_name(parameters)

@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2024 Pietro Mandracci
+! COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ module f_pic
 contains
 
    subroutine calculate_velocity_increments(dv_z, rho, psi, z, isactive, weight, cm_ratio, &
-                                           &dt, psi_0, distance, area, N_cells, N_types, N_particles)
+                                           &dt, psi_0, distance, area, N_cells, N_types, N_particles, N_threads)
 
       ! Calculate the velocity increments (z-component) of electrons and ions, based on the values of potential at the electrodes
       ! and on the charge distribution, using the Particle In Cell method.
@@ -38,7 +38,8 @@ contains
       ! In steps (a) and (d) the "cell size" is considered: a function that weights the charge of each particle inside the cell
     
       !f2py intent(out)  :: dv_z, rho, psi
-      !f2py intent(in)   :: z, isactive, weight, cm_ratio, dt, psi_0, distance, area, N_cells, N_types, N_particles
+      !f2py intent(in)   :: z, isactive, weight, cm_ratio, dt, psi_0, distance, area, N_threads
+      !f3py intent(hide) :: N_cells, N_types, N_particles
 
       ! Parameters
       real(dp), dimension(0:N_types,1:N_particles),  intent(out) :: dv_z         ! Velocity increment during timestep, z-component
@@ -56,6 +57,7 @@ contains
       integer,                                       intent(in)  :: N_cells
       integer,                                       intent(in)  :: N_types
       integer,                                       intent(in)  :: N_particles
+      integer,                                       intent(in)  :: N_threads    ! Number of threads in multicore mode
 
       ! Local variables
       real(dp), dimension(1:N_cells) :: E            ! Electric field, z component
@@ -64,6 +66,8 @@ contains
 
       delta = distance / real(N_cells)
       psi_N = 0.0
+
+      if (N_threads.ne.1) continue ! Just a placeholder
 
       ! Calculate the charge density at the grid points
       call calculate_charge_density(rho, z, isactive, weight, delta, area, N_types, N_particles, N_cells)

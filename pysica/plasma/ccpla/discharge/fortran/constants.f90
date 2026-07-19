@@ -1,4 +1,4 @@
-! COPYRIGHT (c) 2020-2024 Pietro Mandracci
+! COPYRIGHT (c) 2020-2026 Pietro Mandracci
 
 ! This program is free software: you can redistribute it and/or modify
 ! it under the terms of the GNU General Public License as published by
@@ -31,6 +31,6 @@ module f_constants
    real(dp), parameter :: E_V2TOENERGY_AU      = 1.0447687E-13_dp       ! Multiply this by the squared velocity to obtain
                                                                         !   electron kinetic energy in atomic units
    real(dp), parameter :: EPSILONZERO          = 8.854187817E-12_dp     ! Electric permittivity of vacuum
-
+!   real(dp), parameter :: DT_MIN               = 1E-15_dp               ! Minimum possible timestep
 
 end module f_constants
